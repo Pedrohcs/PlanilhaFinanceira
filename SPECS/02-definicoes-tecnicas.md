@@ -3,7 +3,7 @@
 | Campo | Valor |
 |---|---|
 | Documento | `SPECS/02-definicoes-tecnicas.md` |
-| Versão | 1.3 |
+| Versão | 1.5 |
 | Atualizado em | 2026-09-29 |
 | Status | Aprovado para início |
 | Responde | **Com o quê** o sistema é construído: linguagens, bibliotecas, versões, integração com Google, convenções |
@@ -31,6 +31,7 @@
 | Frontend – UI | Angular Material + CDK | `^22` | Formulários, diálogos, tabela, snackbar |
 | Frontend – gráficos | chart.js | `^4` | Usado **diretamente**, via diretiva própria em `shared/grafico/` (ADR-11) — sem wrapper de terceiros |
 | Frontend – testes | Vitest | padrão do Angular CLI 22 (`@angular/build:unit-test`) | Karma está descontinuado desde a v21 |
+| Frontend – formatação | prettier | `^3.8` (vem com `ng new` na v22) | Formatador do frontend; `jsdom` acompanha o Vitest como ambiente de DOM (ADR-14) |
 | Runtime frontend | Node.js | 24 LTS (aceito `^22.22.3`) | Faixa exigida pelo Angular 22 |
 | SO do usuário | Windows | — | Comandos documentados em PowerShell |
 
@@ -101,6 +102,7 @@ Padrões obrigatórios (estilo "Angular moderno", padrão do CLI na v22):
 
 - **Zoneless:** projeto sem `zone.js` (padrão para projetos novos desde a v21). A detecção de mudanças depende de signals, eventos de template e `async` pipe — não dependa de `setTimeout`/callbacks externos para atualizar a tela; atualize um signal.
 - **Componentes standalone** (sem `NgModule`).
+- **Nomes de arquivo:** style guide **2025** (padrão de `ng new` na v22) — sem sufixo `.component` (`app.ts`, classe `App`); sufixos de papel mantidos (`*.store.ts`, `*.interceptor.ts`, `*.directive.ts`, `*.dialog.ts`). Ver ADR-13.
 - **Signals** para estado local e de tela (`signal`, `computed`, `effect` com parcimônia); `input()`/`output()` em vez de decorators.
 - **Novo control flow** (`@if`, `@for`, `@switch`) — não usar `*ngIf`/`*ngFor`.
 - **`inject()`** em vez de injeção por construtor.
@@ -257,6 +259,8 @@ Padrões da suíte do backend (`backend/pyproject.toml`, definidos em T-002): `a
 | ADR-10 | **Angular 22** (substitui a escolha inicial de Angular 19), com os padrões do CLI 22: zoneless, Vitest, TypeScript 6.0, Node 24 | Angular 19 (sem suporte desde 2026-05); Angular 21 (só LTS, fim em 2027-06) | Versão ativa com maior janela de suporte (ativa até 2027-06, LTS até 2028-06) | 2026-09-29 |
 | ADR-11 | Chart.js 4 usado diretamente com diretiva própria (`GraficoDirective`) | ng2-charts (sem release para Angular 22 e manutenção incerta); ngx-echarts | Remove dependência de wrapper que atrasa a cada major do Angular; a diretiva tem ~40 linhas e fica sob nosso controle | 2026-09-29 |
 | ADR-12 | Aplicação criada por fábrica (`criar_app()`) e `Settings` obtido preguiçosamente por `obter_settings()` com `lru_cache`; `app = criar_app()` no fim de `main.py` para o uvicorn | Instanciar `Settings` no import do módulo; ler `.env` direto em cada módulo | Importar `app.main` deixa de exigir um `.env` preenchido, então `pytest` roda em qualquer cópia do repo; a fábrica permite criar a aplicação com configuração de teste, o que T-005 (lifespan) e os testes de API reaproveitam | 2026-09-29 |
+| ADR-13 | Nomes de arquivo do frontend no style guide **2025** (`app.ts`, classe `App`) | Style guide 2016 (`app.component.ts`), que era o que `03` §3 descrevia | É o padrão do CLI 22 e o que `ng generate` usará daqui para frente; manter o estilo antigo exigiria um flag em toda geração e divergiria da documentação do Angular | 2026-09-29 |
+| ADR-14 | Manter o **prettier** que o `ng new` da v22 instala como formatador do frontend (com o `.prettierrc` gerado) | Remover a dependência e não formatar; adotar outro formatador | É o padrão do CLI 22 e `02` §4 manda seguir os padrões do CLI; remover exigiria editar o projeto gerado a cada atualização. **Não** entra na Definição de Pronto: o portão do frontend continua sendo `npm test` + `npm run build` | 2026-09-29 |
 
 Novas decisões: acrescente uma linha com o próximo ID. Decisões substituídas não são apagadas — marque "Substituída por ADR-xx".
 
@@ -282,3 +286,5 @@ Novas decisões: acrescente uma linha com o próximo ID. Decisões substituídas
 | 2026-09-29 | 1.1 | Frontend migrado de Angular 19 para **Angular 22** (ADR-10): TypeScript 6.0, Node 24, zoneless, Vitest. Gráficos com Chart.js direto via diretiva própria (ADR-11, substitui ADR-07). Riscos atualizados. |
 | 2026-09-29 | 1.2 | §10: mitigação do vazamento de credencial detalhada (T-001) — `deny` de terminal acrescentado a `.claude/settings.json`, com o alcance e os limites explicitados. |
 | 2026-09-29 | 1.3 | ADR-12 (fábrica `criar_app()` + `Settings` preguiçoso) e §8: padrões da suíte do backend definidos em T-002. |
+| 2026-09-29 | 1.4 | ADR-13 e §4: convenção de nomes de arquivo do frontend (style guide 2025). |
+| 2026-09-29 | 1.5 | ADR-14 e §1: prettier (e `jsdom`) registrados como dependências de desenvolvimento trazidas pelo CLI 22 em T-003. |

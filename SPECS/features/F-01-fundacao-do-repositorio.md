@@ -4,7 +4,7 @@
 |---|---|
 | Feature | F-01 |
 | Marco | M0 |
-| Status | Aprovada |
+| Status | Concluída |
 | Requisitos | RNF-01, RNF-05 (parcial), RNF-03 (locale), RNF-08 (infra de testes) |
 | Regras | — (nenhuma RN de negócio nesta feature) |
 | Depende de | — |
@@ -131,13 +131,13 @@ Origem em `04` §3 ("Concluída quando: `git status` não lista `credentials.jso
 
 **T-003 — frontend**
 
-- [ ] **CA-F01.13** Dado `npm install` concluído, quando `npm start` é executado, então `http://localhost:4200` abre a página padrão do Angular sem erro no console.
-- [ ] **CA-F01.14** Dado o backend rodando em `127.0.0.1:8000`, quando o frontend em `4200` chama uma URL relativa (`/openapi.json` ou `/api/...`), então o proxy encaminha para o backend, sem erro de CORS no navegador.
-- [ ] **CA-F01.15** Dado o projeto, quando `npm test` é executado (Vitest, execução única), então a suíte termina verde; e quando `npm run build` é executado, então termina sem erro.
-- [ ] **CA-F01.16** Dado `frontend/package.json`, quando as versões são inspecionadas, então `@angular/*` e `@angular/material` estão em `^22`, `typescript` em `>=6.0 <6.1`, `chart.js` em `^4`, e **`zone.js` não consta** em `dependencies` (projeto zoneless).
-- [ ] **CA-F01.17** Dado `app.config.ts`, quando o app é inicializado num teste, então `LOCALE_ID` é `pt-BR` e `DEFAULT_CURRENCY_CODE` é `BRL`; formatar `1234.56` com `CurrencyPipe` resulta em `R$ 1.234,56` e `2026-09-29` com `DatePipe`/`dd/MM/yyyy` em `29/09/2026` (RNF-03).
-- [ ] **CA-F01.18** Dado o frontend, quando se procura por wrapper de gráficos (`ng2-charts`, `ngx-echarts`, etc.) em `package.json`, então nenhum está presente (ADR-11).
-- [ ] **CA-F01.21** Dado `src/styles.scss`, quando o tema é inspecionado, então usa `mat.theme` com primária azul e `color-scheme: light dark`, e a página padrão abre legível tanto no modo claro quanto no escuro do sistema (Q2).
+- [x] **CA-F01.13** Dado `npm install` concluído, quando `npm start` é executado, então `http://localhost:4200` abre a página padrão do Angular sem erro no console.
+- [x] **CA-F01.14** Dado o backend rodando em `127.0.0.1:8000`, quando o frontend em `4200` chama uma URL relativa sob **`/api`** (único prefixo no `proxy.conf.json`), então a resposta é a do backend, byte a byte, sem erro de CORS no navegador. Caminhos fora de `/api` são servidos pelo próprio `ng serve`.
+- [x] **CA-F01.15** Dado o projeto, quando `npm test` é executado (Vitest, execução única), então a suíte termina verde; e quando `npm run build` é executado, então termina sem erro.
+- [x] **CA-F01.16** Dado `frontend/package.json`, quando as versões são inspecionadas, então `@angular/*` e `@angular/material` estão em `^22`, `typescript` em `>=6.0 <6.1`, `chart.js` em `^4`, e **`zone.js` não consta** em `dependencies` (projeto zoneless).
+- [x] **CA-F01.17** Dado `app.config.ts`, quando o app é inicializado num teste, então `LOCALE_ID` é `pt-BR` e `DEFAULT_CURRENCY_CODE` é `BRL`; formatar `1234.56` com `CurrencyPipe` resulta em `R$ 1.234,56` e `2026-09-29` com `DatePipe`/`dd/MM/yyyy` em `29/09/2026` (RNF-03).
+- [x] **CA-F01.18** Dado o frontend, quando se procura por wrapper de gráficos (`ng2-charts`, `ngx-echarts`, etc.) em `package.json`, então nenhum está presente (ADR-11).
+- [x] **CA-F01.21** Dado `src/styles.scss`, quando o tema é inspecionado, então usa `mat.theme` com primária azul e `color-scheme: light dark`, e a página padrão abre legível tanto no modo claro quanto no escuro do sistema (Q2).
 
 ---
 
@@ -214,6 +214,8 @@ Nomes seguem `02` §7 (o nome do teste cita o critério coberto).
 | `tests/integracao/test_marcador.py::test_integracao_pulado_sem_variavel__CA_F01_7` | integração BE (pulado por padrão) | CA-F01.7 |
 | `pytest` + `ruff check .` + `ruff format --check .` na conclusão de T-002 | comandos | CA-F01.6, CA-F01.8 |
 | `src/app/app.config.spec.ts` → `formata_moeda_e_data_ptBR__CA_F01_17` | unitário FE (Vitest) | CA-F01.17 |
+| `src/app/app.config.spec.ts` → `registra o locale pt-BR e o real como moeda padrão__CA_F01_17` | unitário FE (Vitest) | CA-F01.17 |
+| `src/app/app.spec.ts` (gerado pelo CLI, ajustado ao título) | unitário FE (Vitest) | CA-F01.15 |
 | `npm test` + `npm run build` na conclusão de T-003 | comandos | CA-F01.15 |
 | Inspeção de `frontend/package.json` registrada nas Notas de T-003 | manual (FE) | CA-F01.16, CA-F01.18 |
 | Abertura da página padrão nos modos claro e escuro do sistema | manual (FE) | CA-F01.21 |
@@ -229,7 +231,7 @@ Observação: T-001 é a única tarefa da feature sem teste automatizado — qua
 |---|---|---|
 | **T-001** (DOC) | `git init -b main` na raiz; `.gitignore`; pastas `backend/`, `frontend/`, `scripts/`; `deny` de Bash para a credencial; verificar que `credentials.json` está ignorado. | `.gitignore`, `backend/.gitkeep`, `scripts/.gitkeep`, `.claude/settings.json` |
 | **T-002** (BE) | Dependências, configuração de ferramentas, app FastAPI vazio com CORS, `Settings`, `.env.example`, infraestrutura de testes. | `backend/requirements.txt`, `backend/requirements-dev.txt`, `backend/pyproject.toml`, `backend/.env.example`, `backend/app/__init__.py`, `backend/app/main.py`, `backend/app/config.py`, `backend/tests/conftest.py`, `backend/tests/api/test_app.py`, `backend/tests/api/test_cors.py`, `backend/tests/unit/test_config.py`, `backend/tests/integracao/test_marcador.py` |
-| **T-003** (FE) | Projeto Angular 22 zoneless com Material 22, Chart.js 4, proxy e locale pt-BR/BRL. | `frontend/package.json`, `frontend/angular.json`, `frontend/tsconfig.json`, `frontend/proxy.conf.json`, `frontend/src/app/app.config.ts`, `frontend/src/app/app.routes.ts`, `frontend/src/app/app.component.*`, `frontend/src/app/app.config.spec.ts`, `frontend/src/styles.scss` |
+| **T-003** (FE) | Projeto Angular 22 zoneless com Material 22, Chart.js 4, proxy e locale pt-BR/BRL. | `frontend/package.json`, `frontend/angular.json`, `frontend/tsconfig.json`, `frontend/proxy.conf.json`, `frontend/src/app/app.config.ts`, `frontend/src/app/app.routes.ts`, `frontend/src/app/app.ts` + `app.html`/`app.scss`/`app.spec.ts`, `frontend/src/app/app.config.spec.ts`, `frontend/src/styles.scss` |
 
 Ordem: T-001 → (T-002 ‖ T-003). T-002 e T-003 são independentes entre si; ambas dependem apenas de T-001 (`05` §4).
 
@@ -252,6 +254,11 @@ Ordem: T-001 → (T-002 ‖ T-003). T-002 e T-003 são independentes entre si; a
 | `obter_settings()` converte `ValidationError` em `RuntimeError` com mensagem em pt-BR citando a variável (T-002). | A mensagem crua do Pydantic sai em inglês e cita `spreadsheet_id`; §7 exige pt-BR citando o nome da variável. `Settings()` direto continua levantando `ValidationError` (CA-F01.10). | Não |
 | `GOOGLE_CREDENTIALS_PATH` tipado como `str`, não `Path` (T-002). | CA-F01.9 compara com a string `"../credentials.json"`; o caminho é relativo ao diretório do processo (`backend/`). | Não |
 | `pythonpath = ["."]` e `[project]` mínimo no `pyproject.toml` (T-002). | `import app` a partir de `backend/` sem `__init__.py` nas pastas de teste; `[project]` é onde `requires-python` mora. | Não |
+| Nomes de arquivo no style guide **2025** (`app.ts`, classe `App`) (T-003). | Padrão do CLI 22; `03` §3 dizia `app.component.ts` e foi atualizado. | **Sim — ADR-13** |
+| `prettier` (e `jsdom`) aceitos como vieram do `ng new` (T-003). | São padrão do CLI 22; regra 7 do `CLAUDE.md` exige registrar dependência nova. Não entram na Definição de Pronto. | **Sim — ADR-14** |
+| `provideZonelessChangeDetection()` mantido explícito (T-003). | O CLI 22 não o emite mais (sem `zone.js` o padrão já é zoneless), mas a função existe e deixa a garantia visível no código, como §3 desta spec descreve. | Não |
+| O teste de moeda normaliza o espaço não-quebrável (T-003). | Em pt-BR o `CurrencyPipe` separa `R$` do número com U+00A0; visualmente é `R$ 1.234,56`, mas a comparação literal falharia. | Não |
+| `index.html` com `lang="pt-BR"` e título `Planilha Financeira` (T-003). | RNF-03 (interface em português); o CLI gera `lang="en"` e título `Frontend`. | Não |
 | Ruff com `line-length = 100` e regras `E, F, I, UP, B, SIM`. | `02` §7 exige PEP 8 via ruff sem fixar a configuração; 100 colunas acomodam type hints longos sem prejudicar a leitura. | Não — **confirmado em Q7** |
 | `.gitignore` estendido além da lista de `02` §6. | A lista de `02` §6 é o mínimo obrigatório; `.idea/`, `.ruff_cache/`, `*.py[cod]` evitam ruído (o `.idea/` já existe na raiz). | Não — **confirmado em Q4** |
 
@@ -287,3 +294,4 @@ Nenhuma questão em aberto — feature `Aprovada`.
 | 2026-09-29 | Q3, Q4 e Q7 respondidas (`frontend/` vazia sem `.gitkeep`; `.gitignore` estendido; ruff `line-length = 100` com `E, F, I, UP, B, SIM`). Nenhuma questão em aberto — status **Aprovada**; T-001 liberada para `/implementar-tarefa`. |
 | 2026-09-29 | **T-001 concluída.** CA-F01.1, .2, .3, .4, .19 e .20 verificados. `.gitignore` real acrescentou `.claude/settings.local.json`; registrada a ressalva sobre o alcance do `deny` de terminal. Restam CA-F01.5..18 e .21 (T-002/T-003). |
 | 2026-09-29 | **T-002 concluída.** CA-F01.5 a .12 verificados (9 testes verdes, `ruff` limpo, uvicorn real respondendo 200). CA-F01.7 refinado para o mecanismo de duas camadas (`addopts` + skip do `conftest`). ADR-12 registrado em `02`. Restam CA-F01.13..18 e .21 (T-003). |
+| 2026-09-29 | **T-003 concluída — feature F-01 completa.** CA-F01.13 a .18 e .21 verificados (4 testes Vitest verdes, build ok, `ng serve` com proxy encaminhando `/api` ao backend). CA-F01.14 refinado (só `/api` é encaminhado). ADR-13 e ADR-14 em `02`; `03` → 1.2. |

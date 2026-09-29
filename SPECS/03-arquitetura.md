@@ -3,7 +3,7 @@
 | Campo | Valor |
 |---|---|
 | Documento | `SPECS/03-arquitetura.md` |
-| Versão | 1.1 |
+| Versão | 1.2 |
 | Atualizado em | 2026-09-29 |
 | Status | Aprovado para início |
 | Responde | **Como** o sistema se organiza: componentes, pastas, camadas, modelo de dados na planilha, contrato da API e fluxos |
@@ -88,7 +88,7 @@ PlanilhaFinanceira/
 └── frontend/
     ├── proxy.conf.json
     └── src/app/
-        ├── app.config.ts  app.routes.ts  app.component.ts   # shell
+        ├── app.config.ts  app.routes.ts  app.ts (classe `App`)  # shell
         ├── core/
         │   ├── models/        # interfaces espelhando o JSON da API
         │   ├── api/           # um serviço HTTP por recurso
@@ -105,6 +105,10 @@ PlanilhaFinanceira/
             ├── categorias/
             └── recorrencias/
 ```
+
+---
+
+> **Nomes de arquivo (frontend):** style guide **2025** do Angular, padrão do CLI 22 — componentes sem sufixo `.component` (`app.ts`, classe `App`). Os sufixos que descrevem papel continuam: `*.store.ts`, `*.interceptor.ts`, `*.directive.ts`, `*.config.ts`, `*.dialog.ts` (ADR-13).
 
 ---
 
@@ -403,7 +407,7 @@ Falha no inicializador **não impede** o app de abrir.
 | `/categorias` | Gestão de categorias | REQ-11 |
 | `/recorrencias` | Gestão de recorrências | REQ-09 |
 
-O **shell** (`app.component`) tem barra superior com os botões **"Registrar gasto"** (primário) e "Registrar receita", navegação lateral e banner de erro de conexão.
+O **shell** (`app.ts`, classe `App`) tem barra superior com os botões **"Registrar gasto"** (primário) e "Registrar receita", navegação lateral e banner de erro de conexão.
 
 ### 8.2 Estado
 
@@ -435,4 +439,5 @@ Um único componente `lancamento-form.dialog` atende: novo gasto, nova receita, 
 | Data | Versão | Alteração |
 |---|---|---|
 | 2026-09-29 | 1.0 | Versão inicial. |
+| 2026-09-29 | 1.2 | §3 e §8: componente raiz passa a `app.ts` (classe `App`), style guide 2025 do Angular / padrão do CLI 22 (ADR-13, decidido em T-003). |
 | 2026-09-29 | 1.1 | Frontend em Angular 22 (zoneless); pasta `shared/grafico/` com diretiva Chart.js própria (§3, §8.2.1). |
