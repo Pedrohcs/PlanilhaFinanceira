@@ -3,7 +3,7 @@
 | Campo | Valor |
 |---|---|
 | Documento | `SPECS/03-arquitetura.md` |
-| Versão | 1.4 |
+| Versão | 1.5 |
 | Atualizado em | 2026-09-29 |
 | Status | Aprovado para início |
 | Responde | **Como** o sistema se organiza: componentes, pastas, camadas, modelo de dados na planilha, contrato da API e fluxos |
@@ -45,6 +45,7 @@ flowchart LR
 
 ```text
 PlanilhaFinanceira/
+├── README.md                      # instalação, preparação da planilha, execução e erros (T-006)
 ├── CLAUDE.md                      # contexto permanente para o Claude Code
 ├── credentials.json               # chave da service account — NUNCA versionar
 ├── .gitignore
@@ -454,4 +455,5 @@ Um único componente `lancamento-form.dialog` atende: novo gasto, nova receita, 
 | 2026-09-29 | 1.2 | §3 e §8: componente raiz passa a `app.ts` (classe `App`), style guide 2025 do Angular / padrão do CLI 22 (ADR-13, decidido em T-003). |
 | 2026-09-29 | 1.3 | §6.2: código `API_SHEETS_DESABILITADA`. §6.3: esquema do `GET /api/health` (sempre 200, `status` `ok`/`degradado`) — ambos decididos em F-02. |
 | 2026-09-29 | 1.4 | §6.2: erros do framework passam pelo mesmo envelope. §3: `ConexaoPlanilha` em `sheets_client.py` (T-005). |
+| 2026-09-29 | 1.5 | §3: `README.md` na raiz (T-006). |
 | 2026-09-29 | 1.1 | Frontend em Angular 22 (zoneless); pasta `shared/grafico/` com diretiva Chart.js própria (§3, §8.2.1). |

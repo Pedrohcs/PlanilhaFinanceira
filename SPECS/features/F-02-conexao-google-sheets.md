@@ -4,7 +4,7 @@
 |---|---|
 | Feature | F-02 |
 | Marco | M0 |
-| Status | Aprovada |
+| Status | Concluída |
 | Requisitos | REQ-16, RNF-05, RNF-06 (parcial) |
 | Regras | — (nenhuma RN de negócio; as regras aqui são de infraestrutura: `02` §5.4, §5.5, §5.6) |
 | Depende de | F-01 (**Concluída**) |
@@ -131,7 +131,7 @@ Seções, na ordem: pré-requisitos (Python 3.12+, Node 24) · preparação úni
 - [x] **CA-F02.11** Dado qualquer caminho de erro desta feature, quando os logs e as respostas são inspecionados, então não aparece nenhum campo de `credentials.json` além de `client_email` (RNF-05).
 - [x] **CA-F02.12** Dado o router de health, quando seus imports são inspecionados, então ele não importa `gspread` nem `app.infra` — só `main.py` e `api/deps.py` conhecem a implementação concreta (`03` §4.2).
 - [x] **CA-F02.14** Dado um 403 cujo `reason` é `SERVICE_DISABLED` ou `accessNotConfigured`, quando o erro é traduzido, então a exceção é `ApiSheetsDesabilitada` com a mensagem de ativar a API; dado qualquer outro 403, então é `SemPermissaoPlanilha`.
-- [ ] **CA-F02.13** Dado o `README.md` da raiz, quando um leitor novo o segue do zero, então há passo a passo para obter o `client_email`, compartilhar a planilha, pegar o ID, preencher o `.env` e subir backend e frontend, além de uma linha por mensagem de erro da tabela §3.3.
+- [~] **CA-F02.13** Dado o `README.md` da raiz, quando um leitor novo o segue do zero, então há passo a passo para obter o `client_email`, compartilhar a planilha, pegar o ID, preencher o `.env` e subir backend e frontend, além de uma linha por mensagem de erro da tabela §3.3. *(T-006: as duas partes automáticas — códigos/mensagens e passos essenciais — têm teste; a leitura "do zero" com planilha real depende do usuário.)*
 
 ---
 
@@ -228,7 +228,9 @@ Todos com **fakes**; nada nesta feature fala com o Google de verdade (`02` §8).
 | `...::test_domain_importa_apenas_biblioteca_padrao__CA_F02_12` | unitário BE | CA-F02.12 |
 | `...::test_infra_nao_importa_api_nem_services__CA_F02_12` | unitário BE | CA-F02.12 |
 | `tests/api/test_app.py::test_health_e_a_unica_rota_da_api__CA_F02_8` | API BE | fronteira: nada de endpoint de negócio antes de M1 |
-| Leitura do `README.md` seguindo os passos numa planilha nova | manual (DOC) | CA-F02.13 |
+| `tests/unit/test_readme.py::test_readme_documenta_cada_erro_de_planilha__CA_F02_13` (parametrizado por subclasse de `ErroPlanilha`) | unitário BE | CA-F02.13 |
+| `...::test_readme_cobre_a_preparacao_e_a_execucao__CA_F02_13` | unitário BE | CA-F02.13 |
+| Leitura do `README.md` seguindo os passos numa planilha nova | manual (DOC) | CA-F02.13 (parte não automatizável) |
 
 ---
 
@@ -271,6 +273,8 @@ Ordem: T-004 → T-005; T-006 depende só de T-004 (`05` §4) e pode ser escrita
 | Handler registrado para a `HTTPException` do **Starlette** (T-005). | O 404 de roteamento levanta a classe-mãe; registrar só a do FastAPI deixava passar `{"detail": ...}`. Descoberto por teste. | Não |
 | `logging.basicConfig` em nível INFO dentro de `criar_app` (T-005). | Cumpre `02` §3; sem isso o aviso de retry e o registro de abertura da planilha não apareciam no terminal do uvicorn. | Não |
 | `conftest` aponta `GOOGLE_CREDENTIALS_PATH` para arquivo inexistente (T-005). | O padrão `../credentials.json` é o arquivo real: com o lifespan, cada `pytest` tentaria autenticar no Google. Agora a suíte falha rápido, sem rede e sem tocar na credencial (RNF-05). | Não |
+| README manda descobrir o `client_email` pelo próprio `/api/health` (T-006). | A mensagem de 403 já traz o e-mail: evita mandar o usuário abrir a credencial. A instrução manual fica como alternativa. | Não |
+| Guarda automatizado do README (T-006). | A última cláusula de CA-F02.13 ("uma linha por mensagem de erro") é o que mais apodrece; o teste lê as subclasses de `ErroPlanilha` e cobra documentação quando um erro novo aparece. Validado com teste negativo. | Não |
 
 ---
 
@@ -295,3 +299,4 @@ Ordem: T-004 → T-005; T-006 depende só de T-004 (`05` §4) e pode ser escrita
 | 2026-09-29 | Q1–Q6 respondidas → status **Aprovada**. Acrescentados CA-F02.14 e o tratamento do 403 ambíguo; `02` → 1.6 e `03` → 1.3. |
 | 2026-09-29 | **T-004 concluída.** CA-F02.1, .2, .3, .4, .11 e .14 verificados por 20 testes unitários; CA-16.1 coberta na parte de domínio. §3.2 ganhou o expoente do backoff e as linhas de "não retenta". Restam CA-16.2, CA-F02.5..10, .12 (T-005) e .13 (T-006). |
 | 2026-09-29 | **T-005 concluída.** CA-16.1 (completa), CA-16.2 e CA-F02.5..10 e .12 verificados por 17 testes novos (46 no total) e por teste de fumaça com uvicorn real. `03` → 1.4. Resta CA-F02.13 (T-006, README). |
+| 2026-09-29 | **T-006 concluída — tarefas de F-02 completas.** `README.md` na raiz com preparação da planilha, execução e tabela de erros; 6 testes novos guardam a documentação. `03` → 1.5. CA-F02.13 aguarda apenas a leitura de ponta a ponta pelo usuário. |
