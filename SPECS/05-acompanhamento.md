@@ -22,14 +22,14 @@
 
 | Marco | Features | Tarefas | Não iniciada | Iniciada | Concluída | Progresso |
 |---|---|---|---|---|---|---|
-| M0 · Fundação | F-01..F-04 | 12 | 8 | 0 | 4 | 33% |
+| M0 · Fundação | F-01..F-04 | 12 | 7 | 0 | 5 | 42% |
 | M1 · Registro e consulta | F-05..F-08 | 8 | 8 | 0 | 0 | 0% |
 | M2 · Visão financeira | F-09..F-11 | 5 | 5 | 0 | 0 | 0% |
 | M3 · Automação | F-12..F-13 | 5 | 5 | 0 | 0 | 0% |
 | M4 · Acabamento | F-14..F-15 | 5 | 5 | 0 | 0 | 0% |
-| **Total** | **15** | **35** | **31** | **0** | **4** | **11%** |
+| **Total** | **15** | **35** | **30** | **0** | **5** | **14%** |
 
-**Próximas tarefas disponíveis:** **T-005** (BE, F-02, caminho crítico), **T-006** (DOC, README) e **T-007** (BE, início de F-03 — ainda sem spec de feature).
+**Próximas tarefas disponíveis:** **T-006** (DOC, README — última de F-02) e **T-007** (BE, início de F-03, caminho crítico — F-03 ainda sem spec de feature).
 
 ---
 
@@ -100,7 +100,7 @@ Camadas: **BE** = backend · **FE** = frontend · **DOC** = documentação/infra
 | T-002 | Esqueleto do backend: `requirements*.txt`, `pyproject.toml` (ruff, pytest com marcador `integracao`), `app/main.py` com app FastAPI e CORS, `app/config.py` (Settings), `.env.example`, `tests/conftest.py`, um teste trivial. | F-01 | BE | T-001 | Concluída | 2026-09-29 | 2026-09-29 | 9 testes verdes (1 `integracao` desselecionado), `ruff check`/`format` limpos, uvicorn real respondendo 200 em `/openapi.json` sem rotas `/api`. ADR-12 (fábrica + `Settings` preguiçoso). CA-F01.5 a .12. |
 | T-003 | Esqueleto do frontend: `ng new frontend` com Angular CLI 22 (standalone, zoneless, SCSS, roteamento, Vitest — padrões da v22), Angular Material 22, `chart.js@^4`, `proxy.conf.json`, locale pt-BR/BRL em `app.config.ts`, script `npm start` usando o proxy. Conferir Node 24 LTS e TypeScript 6.0. | F-01 | FE | T-001 | Concluída | 2026-09-29 | 2026-09-29 | Angular 22.2.0 zoneless (sem `zone.js`), Material/CDK 22.2.0 tema azure claro/escuro, chart.js 4.5.1, TypeScript 6.0.2, Vitest 5. 4 testes verdes, build 248 kB, proxy `/api` validado contra o uvicorn real. ADR-13 (nomes 2025) e ADR-14 (prettier). CA-F01.13 a .18 e .21. |
 | T-004 | `domain/erros.py` (exceções de conexão) e `infra/sheets_client.py`: carregar credenciais (`from_service_account_file`, escopos corretos), `open_by_key`, retry com backoff (429/5xx), mapear erros para exceções de domínio (`02` §5.6, incluindo o 403 de API desativada). Testes com cliente falso. | F-02 | BE | T-002 | Concluída | 2026-09-29 | 2026-09-29 | `domain/erros.py` (5 exceções de conexão + base) e `infra/sheets_client.py` (escopos, `open_by_key`, retry 2/4/8 s, tradução de §5.6 com 403 desambiguado). 20 testes novos, 29 no total; `ruff` limpo. CA-F02.1/.2/.3/.4/.11/.14 e a parte de domínio de CA-16.1. |
-| T-005 | `api/erros.py` (handlers no formato `03` §6.2, incluindo erros do Pydantic → `VALIDACAO`), `api/deps.py`, lifespan que conecta sem derrubar o servidor (uma tentativa), `GET /api/health` que reconecta sob demanda. Testes de API. | F-02 | BE | T-004 | Não iniciada | | | |
+| T-005 | `api/erros.py` (handlers no formato `03` §6.2, incluindo erros do Pydantic → `VALIDACAO`), `api/deps.py`, lifespan que conecta sem derrubar o servidor (uma tentativa), `GET /api/health` que reconecta sob demanda. Testes de API. | F-02 | BE | T-004 | Concluída | 2026-09-29 | 2026-09-29 | Handlers de `03` §6.2 (inclusive erros do framework), `api/deps.py`, `ConexaoPlanilha`, lifespan tolerante e `GET /api/health` sempre 200 com nova tentativa. Logging INFO de `02` §3. 17 testes novos (46 no total); `ruff` limpo; fumaça com uvicorn real. CA-16.1, CA-16.2, CA-F02.5..10 e .12. |
 | T-006 | `README.md` na raiz: pré-requisitos, preparação única da planilha (compartilhar com `client_email`, obter ID), configuração do `.env`, como rodar. | F-02 | DOC | T-004 | Não iniciada | | | |
 | T-007 | Domínio base: `enums.py`, `dinheiro.py` (tipo `Dinheiro`, divisão em parcelas RN-07), `datas.py` (`somar_meses`, `ajustar_dia`, iteração de meses `YYYY-MM`), `modelos.py`. Testes cobrindo RN-07 e fim de mês/ano bissexto. | F-03 | BE | T-002 | Não iniciada | | | |
 | T-008 | `infra/schema_planilha.py` (abas/colunas de `03` §5) e `infra/bootstrap.py` idempotente: cria abas e cabeçalhos, valida cabeçalhos, grava `versao_schema`, seed de categorias RN-15. Chamado no lifespan. Testes com planilha falsa. | F-03 | BE | T-005, T-007 | Não iniciada | | | |
@@ -158,6 +158,9 @@ Camadas: **BE** = backend · **FE** = frontend · **DOC** = documentação/infra
 
 | Data | Tarefa/Feature | Mudança | Observação |
 |---|---|---|---|
+| 2026-09-29 | T-005 | `Iniciada` → `Concluída` | Camada HTTP de erros e o primeiro endpoint do contrato. `03` → 1.4 (envelope para erros do framework; `ConexaoPlanilha` em §3). Teste de fronteira de T-002 renomeado (nota em F-01 §8). Sugestão de `logging` (aberta desde T-002) implementada. |
+| 2026-09-29 | T-005 | Sugestão anotada | `conexao.exigir_planilha()` já existe para os endpoints de negócio responderem 503 (`03` §4.5), mas ninguém a usa ainda — T-009/T-013 devem chamá-la em vez de checar conexão por conta própria. |
+| 2026-09-29 | T-005 | `Não iniciada` → `Iniciada` | Dependência T-004 `Concluída`. |
 | 2026-09-29 | T-004 | `Iniciada` → `Concluída` | Cliente da planilha com retry e tradução de erros. Nenhuma mudança em `02`/`03` (a árvore de `03` §3 já previa os dois módulos); refinamentos registrados em F-02 §3.2 e §10. |
 | 2026-09-29 | T-004 | Sugestão anotada | O retry está exposto como `executar_com_retry(...)` genérico; T-009 deve reaproveitá-lo nas leituras/escritas em vez de criar outro. |
 | 2026-09-29 | T-004 | `Não iniciada` → `Iniciada` | Dependência T-002 `Concluída`; spec F-02 `Aprovada`. F-02 passa a `Iniciada` (§2) e o mapa (§3) foi atualizado. |

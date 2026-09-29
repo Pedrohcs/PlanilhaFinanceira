@@ -13,8 +13,23 @@ def test_openapi_responde__CA_F01_5(cliente: TestClient) -> None:
     assert resposta.json()["info"]["title"] == TITULO
 
 
-def test_sem_rotas_de_negocio__CA_F01_5(cliente: TestClient) -> None:
-    """T-002 não cria endpoints sob `/api` — `/api/health` é de T-005 (F-01 §6)."""
+def test_health_e_a_unica_rota_da_api__CA_F02_8(cliente: TestClient) -> None:
+    """Guarda de fronteira: endpoints de negócio só entram em M1.
+
+    Em T-002 este teste exigia nenhuma rota sob `/api`; T-005 acrescentou
+    `/api/health`, e ele passa a garantir que nada além dela apareceu.
+    """
     caminhos = cliente.get("/openapi.json").json().get("paths", {})
 
-    assert [caminho for caminho in caminhos if caminho.startswith("/api")] == []
+    assert [caminho for caminho in caminhos if caminho.startswith("/api")] == ["/api/health"]
+
+
+def test_app_sobe_com_planilha_inacessivel__CA_F02_10(cliente: TestClient) -> None:
+    """A credencial de teste não existe, então a conexão falha na subida.
+
+    O servidor tem de continuar atendendo (`SPECS/03` §4.5).
+    """
+    assert cliente.get("/openapi.json").status_code == 200
+    saude = cliente.get("/api/health")
+    assert saude.status_code == 200
+    assert saude.json()["planilha"]["ok"] is False

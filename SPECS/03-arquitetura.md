@@ -3,7 +3,7 @@
 | Campo | Valor |
 |---|---|
 | Documento | `SPECS/03-arquitetura.md` |
-| Versão | 1.3 |
+| Versão | 1.4 |
 | Atualizado em | 2026-09-29 |
 | Status | Aprovado para início |
 | Responde | **Como** o sistema se organiza: componentes, pastas, camadas, modelo de dados na planilha, contrato da API e fluxos |
@@ -78,7 +78,8 @@ PlanilhaFinanceira/
 │   │   │   ├── memoria/           # implementações em memória (testes)
 │   │   │   └── planilha/          # implementações gspread
 │   │   └── infra/
-│   │       ├── sheets_client.py   # autenticação, abertura, retry/backoff, mapeamento de erros
+│   │       ├── sheets_client.py   # autenticação, abertura, retry/backoff, mapeamento de
+│       │                   # erros e `ConexaoPlanilha` (estado + nova tentativa)
 │   │       ├── schema_planilha.py # abas e colunas (fonte única)
 │   │       ├── bootstrap.py       # cria abas/cabeçalhos/seed de forma idempotente
 │   │       └── cache.py           # cache por aba com TTL
@@ -307,6 +308,8 @@ Base: `/api`. JSON em `snake_case`. Valores monetários como número com 2 casas
 | 503 | `PLANILHA_INDISPONIVEL`, `SEM_PERMISSAO_PLANILHA`, `PLANILHA_NAO_ENCONTRADA`, `CREDENCIAIS_INVALIDAS`, `API_SHEETS_DESABILITADA` | Falhas no Google (ver `02` §5.6) |
 | 500 | `ERRO_INTERNO` | Não previsto (mensagem genérica; detalhe só no log) |
 
+Erros do próprio framework também saem neste envelope: rota inexistente vira 404 `NAO_ENCONTRADO` e os demais `HTTPException` viram `ERRO_INTERNO` com o status original — assim o `erro.interceptor.ts` (§8.4) tem uma única forma para interpretar. O handler é registrado para a `HTTPException` do **Starlette**, classe-mãe da do FastAPI, porque o 404 de roteamento levanta a mãe.
+
 ### 6.3 Esquemas principais
 
 ```jsonc
@@ -450,4 +453,5 @@ Um único componente `lancamento-form.dialog` atende: novo gasto, nova receita, 
 | 2026-09-29 | 1.0 | Versão inicial. |
 | 2026-09-29 | 1.2 | §3 e §8: componente raiz passa a `app.ts` (classe `App`), style guide 2025 do Angular / padrão do CLI 22 (ADR-13, decidido em T-003). |
 | 2026-09-29 | 1.3 | §6.2: código `API_SHEETS_DESABILITADA`. §6.3: esquema do `GET /api/health` (sempre 200, `status` `ok`/`degradado`) — ambos decididos em F-02. |
+| 2026-09-29 | 1.4 | §6.2: erros do framework passam pelo mesmo envelope. §3: `ConexaoPlanilha` em `sheets_client.py` (T-005). |
 | 2026-09-29 | 1.1 | Frontend em Angular 22 (zoneless); pasta `shared/grafico/` com diretiva Chart.js própria (§3, §8.2.1). |

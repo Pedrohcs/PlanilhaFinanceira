@@ -191,3 +191,68 @@ def abrir_planilha(
     )
     logger.info("Planilha aberta: %s", planilha.titulo)
     return planilha
+
+
+class ConexaoPlanilha:
+    """Mantém a planilha aberta e o último erro, permitindo nova tentativa.
+
+    Uma instância vive durante todo o processo (criada no lifespan). Guardar o
+    erro em vez de propagá-lo é o que deixa o servidor no ar com a planilha
+    inacessível (`SPECS/03` §4.5) e o que permite ao `GET /api/health` tentar
+    de novo sem reiniciar (CA-16.2).
+    """
+
+    def __init__(
+        self,
+        caminho_credenciais: str | Path,
+        spreadsheet_id: str,
+        *,
+        tentativas: int = 1,
+    ) -> None:
+        self._caminho_credenciais = caminho_credenciais
+        self._spreadsheet_id = spreadsheet_id
+        self._tentativas = tentativas
+        self._planilha: PlanilhaAberta | None = None
+        self._erro: ErroPlanilha | None = None
+
+    @property
+    def planilha(self) -> PlanilhaAberta | None:
+        return self._planilha
+
+    @property
+    def erro(self) -> ErroPlanilha | None:
+        return self._erro
+
+    @property
+    def conectada(self) -> bool:
+        return self._planilha is not None
+
+    def conectar(self) -> PlanilhaAberta | None:
+        """Tenta abrir a planilha, sem propagar falha.
+
+        Reaproveita a conexão já estabelecida (cotas — `SPECS/02` §5.5). Em
+        caso de falha, guarda a exceção de domínio e devolve `None`.
+        """
+        if self._planilha is not None:
+            return self._planilha
+        try:
+            self._planilha = abrir_planilha(
+                self._caminho_credenciais,
+                self._spreadsheet_id,
+                tentativas=self._tentativas,
+            )
+            self._erro = None
+        except ErroPlanilha as erro:
+            self._planilha = None
+            self._erro = erro
+            logger.warning("Planilha inacessível: %s", erro.mensagem)
+        return self._planilha
+
+    def exigir_planilha(self) -> PlanilhaAberta:
+        """Devolve a planilha aberta ou levanta o erro que impediu a conexão.
+
+        É o que faz os endpoints de negócio responderem 503 (`SPECS/03` §4.5).
+        """
+        if self._planilha is not None:
+            return self._planilha
+        raise self._erro or PlanilhaIndisponivel()

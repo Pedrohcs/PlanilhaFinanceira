@@ -208,7 +208,7 @@ Nomes seguem `02` §7 (o nome do teste cita o critério coberto).
 | `tests/unit/test_config.py::test_cors_origins_aceita_lista__CA_F01_9` | unitário BE | CA-F01.9, borda 11 |
 | `tests/unit/test_config.py::test_settings_exige_spreadsheet_id__CA_F01_10` | unitário BE | CA-F01.10 |
 | `tests/unit/test_config.py::test_obter_settings_mensagem_em_portugues__CA_F01_10` | unitário BE | CA-F01.10 + §7 (mensagem em pt-BR) |
-| `tests/api/test_app.py::test_sem_rotas_de_negocio__CA_F01_5` | API BE | fronteira com T-005 (§6) |
+| `tests/api/test_app.py::test_sem_rotas_de_negocio__CA_F01_5` | API BE | fronteira com T-005 (§6) — **renomeado em T-005** para `test_health_e_a_unica_rota_da_api__CA_F02_8`, já que `/api/health` passou a existir; agora garante que nada além dela aparece antes de M1 |
 | `tests/api/test_cors.py::test_cors_permite_localhost_4200__CA_F01_11` | API BE | CA-F01.11 |
 | `tests/api/test_cors.py::test_cors_rejeita_outra_origem__CA_F01_11` | API BE | CA-F01.11 |
 | `tests/integracao/test_marcador.py::test_integracao_pulado_sem_variavel__CA_F01_7` | integração BE (pulado por padrão) | CA-F01.7 |

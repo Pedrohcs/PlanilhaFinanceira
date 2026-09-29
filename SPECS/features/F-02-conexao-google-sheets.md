@@ -111,8 +111,8 @@ Seções, na ordem: pré-requisitos (Python 3.12+, Node 24) · preparação úni
 
 **Herdados de `01` (REQ-16)**
 
-- [~] **CA-16.1** Dado que a planilha não foi compartilhada com a service account, quando o backend tenta abri-la, então a falha vira `SemPermissaoPlanilha` → HTTP 503 `SEM_PERMISSAO_PLANILHA`, e a mensagem diz para compartilhar a planilha **como Editor**. *(T-004 cobriu a exceção e o texto, com o `client_email` real; o status 503 é T-005.)*
-- [ ] **CA-16.2** Dado que a conexão falhou por causa temporária e o usuário corrigiu a causa, quando `GET /api/health` é chamado de novo, então a resposta passa a `planilha.ok = true` **sem reiniciar o processo**.
+- [x] **CA-16.1** Dado que a planilha não foi compartilhada com a service account, quando o backend tenta abri-la, então a falha vira `SemPermissaoPlanilha` → HTTP 503 `SEM_PERMISSAO_PLANILHA`, e a mensagem diz para compartilhar a planilha **como Editor**. *(T-004: exceção e texto; T-005: o 503 no envelope.)*
+- [x] **CA-16.2** Dado que a conexão falhou por causa temporária e o usuário corrigiu a causa, quando `GET /api/health` é chamado de novo, então a resposta passa a `planilha.ok = true` **sem reiniciar o processo**.
 
 > **CA-16.3** (linhas inválidas ignoradas e contadas) **não** é desta feature — é T-009, em F-03.
 
@@ -122,14 +122,14 @@ Seções, na ordem: pré-requisitos (Python 3.12+, Node 24) · preparação úni
 - [x] **CA-F02.2** Dado um erro 429, quando a operação é executada, então há **até 4 tentativas** com espera crescente e, se todas falharem, o resultado é `PlanilhaIndisponivel`.
 - [x] **CA-F02.3** Dado um erro 403 ou 404, quando a operação é executada, então **não há retry** (exatamente 1 chamada ao Google) e a exceção específica é levantada de imediato.
 - [x] **CA-F02.4** Dada cada linha da tabela de `02` §5.6, quando a situação correspondente ocorre, então a exceção de domínio e a mensagem são as daquela linha — uma verificação por linha.
-- [ ] **CA-F02.5** Dado qualquer erro tratado por esta feature, quando a resposta HTTP é gerada, então o corpo segue `03` §6.2 (`{"erro": {"codigo", "mensagem", "detalhes"}}`) com status 503 e o `codigo` da tabela de §6.2.
-- [ ] **CA-F02.6** Dado um corpo de requisição inválido, quando o Pydantic rejeita, então a resposta é 422 `VALIDACAO` no formato de `03` §6.2, com um item em `detalhes` por campo.
-- [ ] **CA-F02.7** Dada uma exceção não prevista em um endpoint, quando a resposta é gerada, então é 500 `ERRO_INTERNO` com mensagem genérica, **sem** traceback nem caminho de arquivo no corpo.
-- [ ] **CA-F02.8** Dada a planilha acessível, quando `GET /api/health` é chamado, então responde 200 com `status: "ok"`, `planilha.ok = true` e `planilha.titulo` igual ao título real da planilha.
-- [ ] **CA-F02.9** Dada a planilha inacessível por qualquer causa da tabela §3.3, quando `GET /api/health` é chamado, então responde **200** (não 503) com `planilha.ok = false` e `planilha.erro` contendo `codigo` e `mensagem` daquela causa.
-- [ ] **CA-F02.10** Dada a planilha inacessível na inicialização, quando o servidor sobe, então `uvicorn` **continua no ar** e qualquer requisição é atendida (nada de processo morto — `03` §4.5).
+- [x] **CA-F02.5** Dado qualquer erro tratado por esta feature, quando a resposta HTTP é gerada, então o corpo segue `03` §6.2 (`{"erro": {"codigo", "mensagem", "detalhes"}}`) com status 503 e o `codigo` da tabela de §6.2.
+- [x] **CA-F02.6** Dado um corpo de requisição inválido, quando o Pydantic rejeita, então a resposta é 422 `VALIDACAO` no formato de `03` §6.2, com um item em `detalhes` por campo.
+- [x] **CA-F02.7** Dada uma exceção não prevista em um endpoint, quando a resposta é gerada, então é 500 `ERRO_INTERNO` com mensagem genérica, **sem** traceback nem caminho de arquivo no corpo.
+- [x] **CA-F02.8** Dada a planilha acessível, quando `GET /api/health` é chamado, então responde 200 com `status: "ok"`, `planilha.ok = true` e `planilha.titulo` igual ao título real da planilha.
+- [x] **CA-F02.9** Dada a planilha inacessível por qualquer causa da tabela §3.3, quando `GET /api/health` é chamado, então responde **200** (não 503) com `planilha.ok = false` e `planilha.erro` contendo `codigo` e `mensagem` daquela causa.
+- [x] **CA-F02.10** Dada a planilha inacessível na inicialização, quando o servidor sobe, então `uvicorn` **continua no ar** e qualquer requisição é atendida (nada de processo morto — `03` §4.5).
 - [x] **CA-F02.11** Dado qualquer caminho de erro desta feature, quando os logs e as respostas são inspecionados, então não aparece nenhum campo de `credentials.json` além de `client_email` (RNF-05).
-- [ ] **CA-F02.12** Dado o router de health, quando seus imports são inspecionados, então ele não importa `gspread` nem `app.infra` — só `main.py` e `api/deps.py` conhecem a implementação concreta (`03` §4.2).
+- [x] **CA-F02.12** Dado o router de health, quando seus imports são inspecionados, então ele não importa `gspread` nem `app.infra` — só `main.py` e `api/deps.py` conhecem a implementação concreta (`03` §4.2).
 - [x] **CA-F02.14** Dado um 403 cujo `reason` é `SERVICE_DISABLED` ou `accessNotConfigured`, quando o erro é traduzido, então a exceção é `ApiSheetsDesabilitada` com a mensagem de ativar a API; dado qualquer outro 403, então é `SemPermissaoPlanilha`.
 - [ ] **CA-F02.13** Dado o `README.md` da raiz, quando um leitor novo o segue do zero, então há passo a passo para obter o `client_email`, compartilhar a planilha, pegar o ID, preencher o `.env` e subir backend e frontend, além de uma linha por mensagem de erro da tabela §3.3.
 
@@ -220,10 +220,14 @@ Todos com **fakes**; nada nesta feature fala com o Google de verdade (`02` §8).
 | `...::test_health_sem_permissao_pede_compartilhar_como_editor__CA_16_1` | API BE | **CA-16.1** |
 | `...::test_health_nao_reautentica_quando_ja_conectado__CA_F02_8` | API BE | borda 11 |
 | `tests/api/test_erros.py::test_formato_de_erro_503__CA_F02_5` | API BE | CA-F02.5 |
+| `...::test_rota_inexistente_usa_o_envelope_padrao__CA_F02_5` | API BE | CA-F02.5 (erro do framework) |
 | `...::test_validacao_pydantic_vira_422__CA_F02_6` | API BE | CA-F02.6 |
 | `...::test_excecao_inesperada_vira_500_generico__CA_F02_7` | API BE | CA-F02.7 |
 | `tests/api/test_app.py::test_app_sobe_com_planilha_inacessivel__CA_F02_10` | API BE | CA-F02.10 |
 | `tests/unit/test_camadas.py::test_router_nao_importa_infra__CA_F02_12` | unitário BE | CA-F02.12 |
+| `...::test_domain_importa_apenas_biblioteca_padrao__CA_F02_12` | unitário BE | CA-F02.12 |
+| `...::test_infra_nao_importa_api_nem_services__CA_F02_12` | unitário BE | CA-F02.12 |
+| `tests/api/test_app.py::test_health_e_a_unica_rota_da_api__CA_F02_8` | API BE | fronteira: nada de endpoint de negócio antes de M1 |
 | Leitura do `README.md` seguindo os passos numa planilha nova | manual (DOC) | CA-F02.13 |
 
 ---
@@ -261,6 +265,12 @@ Ordem: T-004 → T-005; T-006 depende só de T-004 (`05` §4) e pode ser escrita
 | Erro que não é falha de planilha **sobe intacto**, sem retry (T-004). | Retentar e reetiquetar um `AttributeError` como "Google indisponível" esconderia defeito nosso por ~14 s; `03` §6.2 já prevê `ERRO_INTERNO` para o imprevisto. | Não |
 | `open_by_key` no gspread 6 levanta `APIError` 404, não `SpreadsheetNotFound` (T-004). | As duas formas são tratadas; `SpreadsheetNotFound` é de `open()` por nome. | Não |
 | `obter_client_email` nunca levanta (T-004). | Montar uma mensagem de erro não pode gerar outro erro; sem o arquivo, a mensagem cai na versão genérica. | Não |
+| `ConexaoPlanilha` vive em `infra/sheets_client.py`; o router a recebe pelo alias `ConexaoDep` de `deps.py` (T-005). | Ela guarda um `Spreadsheet` do gspread, logo é infraestrutura; o alias mantém o arquivo do router sem importar `infra` (CA-F02.12). `03` §3 atualizado. | Não |
+| `criar_app(conexao=...)` para os testes (T-005). | O estado nasce no lifespan, onde `dependency_overrides` de `02` §8 não alcança. Extensão natural de ADR-12. | Não |
+| Erros do framework entram no envelope de `03` §6.2 (T-005). | §6.2 diz "todas as respostas ≥ 400"; uma única forma simplifica o `erro.interceptor.ts` de T-011. Registrado em `03` → 1.4. | Não |
+| Handler registrado para a `HTTPException` do **Starlette** (T-005). | O 404 de roteamento levanta a classe-mãe; registrar só a do FastAPI deixava passar `{"detail": ...}`. Descoberto por teste. | Não |
+| `logging.basicConfig` em nível INFO dentro de `criar_app` (T-005). | Cumpre `02` §3; sem isso o aviso de retry e o registro de abertura da planilha não apareciam no terminal do uvicorn. | Não |
+| `conftest` aponta `GOOGLE_CREDENTIALS_PATH` para arquivo inexistente (T-005). | O padrão `../credentials.json` é o arquivo real: com o lifespan, cada `pytest` tentaria autenticar no Google. Agora a suíte falha rápido, sem rede e sem tocar na credencial (RNF-05). | Não |
 
 ---
 
@@ -284,3 +294,4 @@ Ordem: T-004 → T-005; T-006 depende só de T-004 (`05` §4) e pode ser escrita
 | 2026-09-29 | Criação (`/especificar-feature F-02`). Status `Rascunho` — 6 questões em aberto. |
 | 2026-09-29 | Q1–Q6 respondidas → status **Aprovada**. Acrescentados CA-F02.14 e o tratamento do 403 ambíguo; `02` → 1.6 e `03` → 1.3. |
 | 2026-09-29 | **T-004 concluída.** CA-F02.1, .2, .3, .4, .11 e .14 verificados por 20 testes unitários; CA-16.1 coberta na parte de domínio. §3.2 ganhou o expoente do backoff e as linhas de "não retenta". Restam CA-16.2, CA-F02.5..10, .12 (T-005) e .13 (T-006). |
+| 2026-09-29 | **T-005 concluída.** CA-16.1 (completa), CA-16.2 e CA-F02.5..10 e .12 verificados por 17 testes novos (46 no total) e por teste de fumaça com uvicorn real. `03` → 1.4. Resta CA-F02.13 (T-006, README). |
