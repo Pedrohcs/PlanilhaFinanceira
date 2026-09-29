@@ -3,7 +3,7 @@
 | Campo | Valor |
 |---|---|
 | Documento | `SPECS/03-arquitetura.md` |
-| Versão | 1.2 |
+| Versão | 1.3 |
 | Atualizado em | 2026-09-29 |
 | Status | Aprovado para início |
 | Responde | **Como** o sistema se organiza: componentes, pastas, camadas, modelo de dados na planilha, contrato da API e fluxos |
@@ -304,10 +304,19 @@ Base: `/api`. JSON em `snake_case`. Valores monetários como número com 2 casas
 | 422 | `VALIDACAO` | Entrada inválida (inclui erros do Pydantic, convertidos para este formato) |
 | 404 | `NAO_ENCONTRADO` | `id` inexistente |
 | 409 | `CATEGORIA_DUPLICADA`, `CATEGORIA_EM_USO`, `CATEGORIA_INATIVA`, `CATEGORIA_TIPO_INCOMPATIVEL` | Conflitos de regra |
-| 503 | `PLANILHA_INDISPONIVEL`, `SEM_PERMISSAO_PLANILHA`, `PLANILHA_NAO_ENCONTRADA`, `CREDENCIAIS_INVALIDAS` | Falhas no Google (ver `02` §5.6) |
+| 503 | `PLANILHA_INDISPONIVEL`, `SEM_PERMISSAO_PLANILHA`, `PLANILHA_NAO_ENCONTRADA`, `CREDENCIAIS_INVALIDAS`, `API_SHEETS_DESABILITADA` | Falhas no Google (ver `02` §5.6) |
 | 500 | `ERRO_INTERNO` | Não previsto (mensagem genérica; detalhe só no log) |
 
 ### 6.3 Esquemas principais
+
+```jsonc
+// Health (GET /api/health) — sempre HTTP 200, para o frontend distinguir
+// "backend fora" de "planilha com problema" (banner em §7.2)
+{ "status": "ok",          // "ok" quando a planilha responde, "degradado" quando não
+  "planilha": { "ok": true, "titulo": "Planilha Financeira", "erro": null } }
+// degradado: planilha.ok = false, titulo = null,
+//            erro = { codigo, mensagem } com um dos códigos 503 de §6.2
+```
 
 ```jsonc
 // LancamentoEntrada
@@ -440,4 +449,5 @@ Um único componente `lancamento-form.dialog` atende: novo gasto, nova receita, 
 |---|---|---|
 | 2026-09-29 | 1.0 | Versão inicial. |
 | 2026-09-29 | 1.2 | §3 e §8: componente raiz passa a `app.ts` (classe `App`), style guide 2025 do Angular / padrão do CLI 22 (ADR-13, decidido em T-003). |
+| 2026-09-29 | 1.3 | §6.2: código `API_SHEETS_DESABILITADA`. §6.3: esquema do `GET /api/health` (sempre 200, `status` `ok`/`degradado`) — ambos decididos em F-02. |
 | 2026-09-29 | 1.1 | Frontend em Angular 22 (zoneless); pasta `shared/grafico/` com diretiva Chart.js própria (§3, §8.2.1). |

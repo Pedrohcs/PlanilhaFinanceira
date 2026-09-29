@@ -3,7 +3,7 @@
 | Campo | Valor |
 |---|---|
 | Documento | `SPECS/02-definicoes-tecnicas.md` |
-| Versão | 1.5 |
+| Versão | 1.6 |
 | Atualizado em | 2026-09-29 |
 | Status | Aprovado para início |
 | Responde | **Com o quê** o sistema é construído: linguagens, bibliotecas, versões, integração com Google, convenções |
@@ -186,10 +186,13 @@ Limites da Sheets API: **60 requisições de leitura e 60 de escrita por minuto 
 
 ### 5.6 Mapeamento de erros do Google
 
+> **403 tem duas causas distintas.** Antes de concluir "planilha não compartilhada", inspecione o motivo dentro do `APIError`: se for `SERVICE_DISABLED`/`accessNotConfigured`, o problema é a API desativada no projeto, não o compartilhamento. Mensagem errada aqui manda o usuário para o lugar errado na configuração inicial.
+
 | Situação | Detecção | Exceção de domínio | HTTP | Mensagem ao usuário |
 |---|---|---|---|---|
 | `credentials.json` ausente/inválido | `FileNotFoundError` / `ValueError` na carga | `CredenciaisInvalidas` | 503 | "Arquivo de credenciais não encontrado ou inválido." |
 | Planilha não compartilhada | `gspread.exceptions.APIError` 403 | `SemPermissaoPlanilha` | 503 | "Compartilhe a planilha com <client_email> como Editor." |
+| Google Sheets API desativada no projeto | `APIError` 403 com `reason` em {`SERVICE_DISABLED`, `accessNotConfigured`} | `ApiSheetsDesabilitada` | 503 | "Ative a Google Sheets API no projeto do Google Cloud e tente novamente." |
 | ID inexistente | `SpreadsheetNotFound` / 404 | `PlanilhaNaoEncontrada` | 503 | "Planilha não encontrada. Confira SPREADSHEET_ID." |
 | Cota / instabilidade | 429 / 5xx após retries | `PlanilhaIndisponivel` | 503 | "Google Sheets indisponível no momento. Tente novamente." |
 | Sem internet | `requests.ConnectionError`/`TransportError` | `PlanilhaIndisponivel` | 503 | idem |
@@ -288,3 +291,4 @@ Novas decisões: acrescente uma linha com o próximo ID. Decisões substituídas
 | 2026-09-29 | 1.3 | ADR-12 (fábrica `criar_app()` + `Settings` preguiçoso) e §8: padrões da suíte do backend definidos em T-002. |
 | 2026-09-29 | 1.4 | ADR-13 e §4: convenção de nomes de arquivo do frontend (style guide 2025). |
 | 2026-09-29 | 1.5 | ADR-14 e §1: prettier (e `jsdom`) registrados como dependências de desenvolvimento trazidas pelo CLI 22 em T-003. |
+| 2026-09-29 | 1.6 | §5.6: 403 desambiguado — nova exceção `ApiSheetsDesabilitada` para Sheets API desativada no projeto (decidido em F-02). |
