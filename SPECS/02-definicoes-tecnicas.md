@@ -3,7 +3,7 @@
 | Campo | Valor |
 |---|---|
 | Documento | `SPECS/02-definicoes-tecnicas.md` |
-| Versão | 1.2 |
+| Versão | 1.3 |
 | Atualizado em | 2026-09-29 |
 | Status | Aprovado para início |
 | Responde | **Com o quê** o sistema é construído: linguagens, bibliotecas, versões, integração com Google, convenções |
@@ -237,6 +237,8 @@ Limites da Sheets API: **60 requisições de leitura e 60 de escrita por minuto 
 
 Definição de pronto de qualquer tarefa: testes do nível correspondente passando + `ruff check` limpo (backend) + `ng build` sem erros (frontend).
 
+Padrões da suíte do backend (`backend/pyproject.toml`, definidos em T-002): `addopts = "-m 'not integracao'"` — um `pytest` simples **nunca** toca a planilha real, mesmo com `SPREADSHEET_ID_TESTE` definida (para rodar, `pytest -m integracao`, que sobrescreve o padrão); além disso o `conftest` **pula** os testes `integracao` quando a variável não existe, e `filterwarnings` transforma marcador não declarado em falha.
+
 ---
 
 ## 9. Registro de decisões técnicas (ADR resumido)
@@ -254,6 +256,7 @@ Definição de pronto de qualquer tarefa: testes do nível correspondente passan
 | ADR-09 | JSON em snake_case espelhado no TS | camelCase com mapeamento | Menos código de conversão; uma única nomenclatura | 2026-09-29 |
 | ADR-10 | **Angular 22** (substitui a escolha inicial de Angular 19), com os padrões do CLI 22: zoneless, Vitest, TypeScript 6.0, Node 24 | Angular 19 (sem suporte desde 2026-05); Angular 21 (só LTS, fim em 2027-06) | Versão ativa com maior janela de suporte (ativa até 2027-06, LTS até 2028-06) | 2026-09-29 |
 | ADR-11 | Chart.js 4 usado diretamente com diretiva própria (`GraficoDirective`) | ng2-charts (sem release para Angular 22 e manutenção incerta); ngx-echarts | Remove dependência de wrapper que atrasa a cada major do Angular; a diretiva tem ~40 linhas e fica sob nosso controle | 2026-09-29 |
+| ADR-12 | Aplicação criada por fábrica (`criar_app()`) e `Settings` obtido preguiçosamente por `obter_settings()` com `lru_cache`; `app = criar_app()` no fim de `main.py` para o uvicorn | Instanciar `Settings` no import do módulo; ler `.env` direto em cada módulo | Importar `app.main` deixa de exigir um `.env` preenchido, então `pytest` roda em qualquer cópia do repo; a fábrica permite criar a aplicação com configuração de teste, o que T-005 (lifespan) e os testes de API reaproveitam | 2026-09-29 |
 
 Novas decisões: acrescente uma linha com o próximo ID. Decisões substituídas não são apagadas — marque "Substituída por ADR-xx".
 
@@ -278,3 +281,4 @@ Novas decisões: acrescente uma linha com o próximo ID. Decisões substituídas
 | 2026-09-29 | 1.0 | Versão inicial. |
 | 2026-09-29 | 1.1 | Frontend migrado de Angular 19 para **Angular 22** (ADR-10): TypeScript 6.0, Node 24, zoneless, Vitest. Gráficos com Chart.js direto via diretiva própria (ADR-11, substitui ADR-07). Riscos atualizados. |
 | 2026-09-29 | 1.2 | §10: mitigação do vazamento de credencial detalhada (T-001) — `deny` de terminal acrescentado a `.claude/settings.json`, com o alcance e os limites explicitados. |
+| 2026-09-29 | 1.3 | ADR-12 (fábrica `criar_app()` + `Settings` preguiçoso) e §8: padrões da suíte do backend definidos em T-002. |

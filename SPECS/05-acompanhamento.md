@@ -22,14 +22,14 @@
 
 | Marco | Features | Tarefas | Não iniciada | Iniciada | Concluída | Progresso |
 |---|---|---|---|---|---|---|
-| M0 · Fundação | F-01..F-04 | 12 | 11 | 0 | 1 | 8% |
+| M0 · Fundação | F-01..F-04 | 12 | 10 | 0 | 2 | 17% |
 | M1 · Registro e consulta | F-05..F-08 | 8 | 8 | 0 | 0 | 0% |
 | M2 · Visão financeira | F-09..F-11 | 5 | 5 | 0 | 0 | 0% |
 | M3 · Automação | F-12..F-13 | 5 | 5 | 0 | 0 | 0% |
 | M4 · Acabamento | F-14..F-15 | 5 | 5 | 0 | 0 | 0% |
-| **Total** | **15** | **35** | **34** | **0** | **1** | **3%** |
+| **Total** | **15** | **35** | **33** | **0** | **2** | **6%** |
 
-**Próximas tarefas disponíveis:** T-002 (BE) e T-003 (FE) — independentes entre si, ambas desbloqueadas.
+**Próximas tarefas disponíveis:** T-003 (FE, última de F-01), T-004 (BE, início de F-02) e T-007 (BE, início de F-03).
 
 ---
 
@@ -96,7 +96,7 @@ Camadas: **BE** = backend · **FE** = frontend · **DOC** = documentação/infra
 | ID | Tarefa (escopo) | Feature | Camada | Depende de | Status | Início | Conclusão | Notas |
 |---|---|---|---|---|---|---|---|---|
 | T-001 | `git init`; `.gitignore` com todos os itens de `02` §6; pastas `backend/`, `frontend/`, `scripts/`; confirmar que `credentials.json` não aparece em `git status`. | F-01 | DOC | — | Concluída | 2026-09-29 | 2026-09-29 | Repo em `main`; `.gitignore` cobre `02` §6 + `.idea/`, `.vscode/`, `.ruff_cache/`, `*.py[cod]`, `.claude/settings.local.json`; `backend/` e `scripts/` com `.gitkeep`, `frontend/` vazia para o `ng new`; `deny` de terminal para a credencial em `.claude/settings.json`. CA-F01.1/.2/.3/.4/.19/.20 verificados. |
-| T-002 | Esqueleto do backend: `requirements*.txt`, `pyproject.toml` (ruff, pytest com marcador `integracao`), `app/main.py` com app FastAPI e CORS, `app/config.py` (Settings), `.env.example`, `tests/conftest.py`, um teste trivial. | F-01 | BE | T-001 | Não iniciada | | | |
+| T-002 | Esqueleto do backend: `requirements*.txt`, `pyproject.toml` (ruff, pytest com marcador `integracao`), `app/main.py` com app FastAPI e CORS, `app/config.py` (Settings), `.env.example`, `tests/conftest.py`, um teste trivial. | F-01 | BE | T-001 | Concluída | 2026-09-29 | 2026-09-29 | 9 testes verdes (1 `integracao` desselecionado), `ruff check`/`format` limpos, uvicorn real respondendo 200 em `/openapi.json` sem rotas `/api`. ADR-12 (fábrica + `Settings` preguiçoso). CA-F01.5 a .12. |
 | T-003 | Esqueleto do frontend: `ng new frontend` com Angular CLI 22 (standalone, zoneless, SCSS, roteamento, Vitest — padrões da v22), Angular Material 22, `chart.js@^4`, `proxy.conf.json`, locale pt-BR/BRL em `app.config.ts`, script `npm start` usando o proxy. Conferir Node 24 LTS e TypeScript 6.0. | F-01 | FE | T-001 | Não iniciada | | | |
 | T-004 | `infra/sheets_client.py`: carregar credenciais (`from_service_account_file`, escopos corretos), `open_by_key`, retry com backoff (429/5xx), mapear erros para exceções de domínio (`02` §5.6). Testes com cliente falso. | F-02 | BE | T-002 | Não iniciada | | | |
 | T-005 | `domain/erros.py`, `api/erros.py` (handlers no formato `03` §6.2, incluindo erros do Pydantic → `VALIDACAO`), lifespan que conecta sem derrubar o servidor, `GET /api/health`. Testes de API. | F-02 | BE | T-004 | Não iniciada | | | |
@@ -157,6 +157,9 @@ Camadas: **BE** = backend · **FE** = frontend · **DOC** = documentação/infra
 
 | Data | Tarefa/Feature | Mudança | Observação |
 |---|---|---|---|
+| 2026-09-29 | T-002 | `Iniciada` → `Concluída` | Esqueleto do backend com `Settings`, CORS e suíte de testes. `02` → 1.3 (ADR-12 e padrões da suíte). CA-F01.7 refinado na spec de F-01. |
+| 2026-09-29 | T-002 | Sugestões anotadas | (1) `logging` nível INFO (`02` §3) não foi configurado — fora do escopo de T-002; fazer em **T-005**, que já mexe em inicialização e erros. (2) O Starlette instalado avisa que `httpx` no `TestClient` está deprecado em favor de `httpx2`; trocar exige mudar `02` §1.1 + ADR — avaliar quando incomodar. |
+| 2026-09-29 | T-002 | `Não iniciada` → `Iniciada` | Dependência T-001 `Concluída`. |
 | 2026-09-29 | T-001 | `Iniciada` → `Concluída` | `git init -b main`, `.gitignore`, pastas e reforço do `deny` da credencial. `02` → 1.2 (§10). Sem teste automatizado (ainda não há executor no repo); verificação por comando registrada nas Notas. |
 | 2026-09-29 | T-001 | `Não iniciada` → `Iniciada` | Sem dependências; spec F-01 `Aprovada`. F-01 passa a `Iniciada` (§2) e o mapa (§3) foi atualizado. |
 | 2026-09-29 | F-01 | Spec da feature criada | `features/F-01-fundacao-do-repositorio.md` **Aprovada**: Q1–Q7 respondidas pelo usuário. Nenhum status de tarefa alterado. |

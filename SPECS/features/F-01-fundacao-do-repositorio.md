@@ -120,14 +120,14 @@ Origem em `04` §3 ("Concluída quando: `git status` não lista `credentials.jso
 
 **T-002 — backend**
 
-- [ ] **CA-F01.5** Dado `.venv` com `requirements-dev.txt` instalado e um `.env` válido, quando `uvicorn app.main:app --host 127.0.0.1 --port 8000` é executado, então o servidor sobe sem erro e `GET /openapi.json` responde **200**.
-- [ ] **CA-F01.6** Dado o esqueleto, quando `pytest` é executado, então a suíte termina **verde**, com pelo menos 1 teste coletado e **0** falhas.
-- [ ] **CA-F01.7** Dado um teste marcado com `@pytest.mark.integracao` e a variável `SPREADSHEET_ID_TESTE` ausente, quando `pytest` roda sem `-m integracao`, então esse teste é **pulado** (nunca falha) e não há aviso de marcador desconhecido.
-- [ ] **CA-F01.8** Dado o código do backend, quando `ruff check .` e `ruff format --check .` são executados, então ambos terminam sem apontamentos.
-- [ ] **CA-F01.9** Dado um `.env` com as 5 variáveis de `02` §6, quando `Settings()` é instanciado, então cada campo recebe o valor do arquivo; e com `.env` contendo só `SPREADSHEET_ID`, então `GOOGLE_CREDENTIALS_PATH == "../credentials.json"`, `CACHE_TTL_SEGUNDOS == 30` e `CORS_ORIGINS == ["http://localhost:4200"]`.
-- [ ] **CA-F01.10** Dado nenhum `SPREADSHEET_ID` no ambiente nem no `.env`, quando `Settings()` é instanciado, então é levantado `ValidationError` mencionando `SPREADSHEET_ID` (mensagem acionável — ver Questão Q5).
-- [ ] **CA-F01.11** Dado o app, quando uma requisição chega com `Origin: http://localhost:4200`, então a resposta traz `access-control-allow-origin: http://localhost:4200`; com `Origin: http://exemplo.com`, então esse cabeçalho **não** é devolvido.
-- [ ] **CA-F01.12** Dado `backend/.env.example` versionado, quando comparado com `02` §6, então lista as 5 variáveis, sem nenhum valor real de `SPREADSHEET_ID`, e `backend/.env` não é versionado.
+- [x] **CA-F01.5** Dado `.venv` com `requirements-dev.txt` instalado e um `.env` válido, quando `uvicorn app.main:app --host 127.0.0.1 --port 8000` é executado, então o servidor sobe sem erro e `GET /openapi.json` responde **200**.
+- [x] **CA-F01.6** Dado o esqueleto, quando `pytest` é executado, então a suíte termina **verde**, com pelo menos 1 teste coletado e **0** falhas.
+- [x] **CA-F01.7** Dado um teste marcado com `@pytest.mark.integracao`, quando `pytest` roda sem argumentos, então ele é **desselecionado** pelo `addopts` padrão (`-m 'not integracao'`) e nunca falha; e quando roda com `pytest -m integracao` **sem** `SPREADSHEET_ID_TESTE`, então é **pulado** com motivo explícito. Em nenhum dos casos há aviso de marcador desconhecido (`filterwarnings` o transforma em falha).
+- [x] **CA-F01.8** Dado o código do backend, quando `ruff check .` e `ruff format --check .` são executados, então ambos terminam sem apontamentos.
+- [x] **CA-F01.9** Dado um `.env` com as 5 variáveis de `02` §6, quando `Settings()` é instanciado, então cada campo recebe o valor do arquivo; e com `.env` contendo só `SPREADSHEET_ID`, então `GOOGLE_CREDENTIALS_PATH == "../credentials.json"`, `CACHE_TTL_SEGUNDOS == 30` e `CORS_ORIGINS == ["http://localhost:4200"]`.
+- [x] **CA-F01.10** Dado nenhum `SPREADSHEET_ID` no ambiente nem no `.env`, quando `Settings()` é instanciado, então é levantado `ValidationError` mencionando `SPREADSHEET_ID` (mensagem acionável — ver Questão Q5).
+- [x] **CA-F01.11** Dado o app, quando uma requisição chega com `Origin: http://localhost:4200`, então a resposta traz `access-control-allow-origin: http://localhost:4200`; com `Origin: http://exemplo.com`, então esse cabeçalho **não** é devolvido.
+- [x] **CA-F01.12** Dado `backend/.env.example` versionado, quando comparado com `02` §6, então lista as 5 variáveis, sem nenhum valor real de `SPREADSHEET_ID`, e `backend/.env` não é versionado.
 
 **T-003 — frontend**
 
@@ -207,6 +207,8 @@ Nomes seguem `02` §7 (o nome do teste cita o critério coberto).
 | `tests/unit/test_config.py::test_settings_aplica_padroes__CA_F01_9` | unitário BE | CA-F01.9 |
 | `tests/unit/test_config.py::test_cors_origins_aceita_lista__CA_F01_9` | unitário BE | CA-F01.9, borda 11 |
 | `tests/unit/test_config.py::test_settings_exige_spreadsheet_id__CA_F01_10` | unitário BE | CA-F01.10 |
+| `tests/unit/test_config.py::test_obter_settings_mensagem_em_portugues__CA_F01_10` | unitário BE | CA-F01.10 + §7 (mensagem em pt-BR) |
+| `tests/api/test_app.py::test_sem_rotas_de_negocio__CA_F01_5` | API BE | fronteira com T-005 (§6) |
 | `tests/api/test_cors.py::test_cors_permite_localhost_4200__CA_F01_11` | API BE | CA-F01.11 |
 | `tests/api/test_cors.py::test_cors_rejeita_outra_origem__CA_F01_11` | API BE | CA-F01.11 |
 | `tests/integracao/test_marcador.py::test_integracao_pulado_sem_variavel__CA_F01_7` | integração BE (pulado por padrão) | CA-F01.7 |
@@ -246,6 +248,10 @@ Ordem: T-001 → (T-002 ‖ T-003). T-002 e T-003 são independentes entre si; a
 | `deny` de `Bash` sobre `credentials.json` em `.claude/settings.json`. | Fecha a lacuna da mitigação descrita em `02` §10 (hoje só `Read`/`Edit`/`Write` são bloqueados). | Não — **confirmado em Q6** |
 | O `deny` de terminal cobre os leitores óbvios (`cat`, `head`, `tail`, `less`, `more`, `strings`, e qualquer comando PowerShell citando o arquivo), **não** é hermético. | As regras de Bash casam por prefixo de comando e qualquer interpretador (`python`, `sed`, `awk`, `base64`) leria o arquivo por outro caminho. É defesa em profundidade: a garantia de RNF-05 continua sendo o `.gitignore` (CA-F01.1) + regra 1 do `CLAUDE.md`. | Não |
 | `.claude/settings.local.json` também no `.gitignore`. | Arquivo de permissões local, por máquina, criado pelo Claude Code; versioná-lo gera ruído. Extensão da decisão de Q4. | Não |
+| Fábrica `criar_app()` + `obter_settings()` com `lru_cache` (T-002). | Importar `app.main` não exige `.env` preenchido, então `pytest` roda em qualquer cópia do repo. | **Sim — ADR-12** |
+| `obter_settings()` converte `ValidationError` em `RuntimeError` com mensagem em pt-BR citando a variável (T-002). | A mensagem crua do Pydantic sai em inglês e cita `spreadsheet_id`; §7 exige pt-BR citando o nome da variável. `Settings()` direto continua levantando `ValidationError` (CA-F01.10). | Não |
+| `GOOGLE_CREDENTIALS_PATH` tipado como `str`, não `Path` (T-002). | CA-F01.9 compara com a string `"../credentials.json"`; o caminho é relativo ao diretório do processo (`backend/`). | Não |
+| `pythonpath = ["."]` e `[project]` mínimo no `pyproject.toml` (T-002). | `import app` a partir de `backend/` sem `__init__.py` nas pastas de teste; `[project]` é onde `requires-python` mora. | Não |
 | Ruff com `line-length = 100` e regras `E, F, I, UP, B, SIM`. | `02` §7 exige PEP 8 via ruff sem fixar a configuração; 100 colunas acomodam type hints longos sem prejudicar a leitura. | Não — **confirmado em Q7** |
 | `.gitignore` estendido além da lista de `02` §6. | A lista de `02` §6 é o mínimo obrigatório; `.idea/`, `.ruff_cache/`, `*.py[cod]` evitam ruído (o `.idea/` já existe na raiz). | Não — **confirmado em Q4** |
 
@@ -280,3 +286,4 @@ Nenhuma questão em aberto — feature `Aprovada`.
 | 2026-09-29 | Q1, Q2, Q5 e Q6 respondidas pelo usuário: branch `main` + commit de T-001 autorizado; tema Material azul seguindo o sistema; falha na inicialização sem `SPREADSHEET_ID`; `deny` de Bash para a credencial. Acrescentados CA-F01.19..21. Restam Q3, Q4, Q7. |
 | 2026-09-29 | Q3, Q4 e Q7 respondidas (`frontend/` vazia sem `.gitkeep`; `.gitignore` estendido; ruff `line-length = 100` com `E, F, I, UP, B, SIM`). Nenhuma questão em aberto — status **Aprovada**; T-001 liberada para `/implementar-tarefa`. |
 | 2026-09-29 | **T-001 concluída.** CA-F01.1, .2, .3, .4, .19 e .20 verificados. `.gitignore` real acrescentou `.claude/settings.local.json`; registrada a ressalva sobre o alcance do `deny` de terminal. Restam CA-F01.5..18 e .21 (T-002/T-003). |
+| 2026-09-29 | **T-002 concluída.** CA-F01.5 a .12 verificados (9 testes verdes, `ruff` limpo, uvicorn real respondendo 200). CA-F01.7 refinado para o mecanismo de duas camadas (`addopts` + skip do `conftest`). ADR-12 registrado em `02`. Restam CA-F01.13..18 e .21 (T-003). |

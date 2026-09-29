@@ -1,0 +1,20 @@
+[project]
+name = "planilha-financeira-backend"
+version = "0.1.0"
+description = "Backend do controle financeiro pessoal em planilha Google"
+requires-python = ">=3.12"
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "-m 'not integracao'"
+markers = [
+    "integracao: exige a planilha real de teste (SPREADSHEET_ID_TESTE); rode com -m integracao",
+]
+filterwarnings = ["error::pytest.PytestUnknownMarkWarning"]
