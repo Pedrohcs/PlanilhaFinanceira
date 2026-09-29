@@ -1,0 +1,25 @@
+# Credenciais e configuracao local (RNF-05)
+credentials.json
+backend/.env
+.env
+
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+
+# Node / Angular
+node_modules/
+dist/
+.angular/
+
+# Ferramentas locais
+.claude/settings.local.json
+
+# IDEs e SO
+.idea/
+.vscode/
+Thumbs.db
+desktop.ini

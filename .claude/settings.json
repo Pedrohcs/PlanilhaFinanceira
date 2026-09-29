@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "deny": [
+      "Read(**/credentials.json)",
+      "Edit(**/credentials.json)",
+      "Write(**/credentials.json)",
+      "Bash(cat *credentials.json*)",
+      "Bash(head *credentials.json*)",
+      "Bash(tail *credentials.json*)",
+      "Bash(less *credentials.json*)",
+      "Bash(more *credentials.json*)",
+      "Bash(strings *credentials.json*)",
+      "PowerShell(*credentials.json*)"
+    ]
+  }
+}
