@@ -3,7 +3,7 @@
 | Campo | Valor |
 |---|---|
 | Documento | `SPECS/03-arquitetura.md` |
-| Versão | 1.23 |
+| Versão | 1.24 |
 | Atualizado em | 2026-09-30 |
 | Status | Aprovado para início |
 | Responde | **Como** o sistema se organiza: componentes, pastas, camadas, modelo de dados na planilha, contrato da API e fluxos |
@@ -74,8 +74,8 @@ PlanilhaFinanceira/
 │   │   │   ├── dinheiro.py        # tipo Dinheiro, divisão em parcelas
 │   │   │   └── datas.py           # ajustar_dia, somar_meses, data_da_parcela, mes_de,
 │   │   │                          # proximo_mes, mes_anterior, meses_entre, mes_corrente
-│   │   ├── services/              # categoria_service.py (T-013), lancamento_service.py (T-015);
-│   │   │                          # parcelamento, recorrencia, resumo
+│   │   ├── services/              # categoria_service.py (T-013), lancamento_service.py (T-015),
+│   │   │                          # parcelamento_service.py (T-026); recorrencia, resumo
 │   │   ├── repositories/
 │   │   │   ├── base.py            # Protocols dos repositórios (`Repositorio[T]` + 3 específicos)
 │   │   │   ├── memoria/           # implementações em memória (testes), mesmo comportamento
@@ -172,7 +172,7 @@ class LancamentoRepository(Protocol):
 |---|---|---|
 | `categoria_service` | CRUD, geração de slug, unicidade, bloqueio de exclusão em uso (o seed das categorias padrão de RN-15 é do `bootstrap`, §4.5) | RN-12 |
 | `lancamento_service` | criar/editar/excluir, validar categoria ativa e do mesmo tipo, forma de pagamento, listar por mês com filtros e totais | RN-01..06, RN-13 |
-| `parcelamento_service` | dividir valor, calcular datas, criar lote, excluir parcelamento | RN-07, RN-08 |
+| `parcelamento_service` | dividir valor, calcular datas, criar lote, excluir parcelamento (as parcelas restantes; uma nova tentativa se a planilha mudou dentro do TTL); reusa `validar_categoria_e_forma` do `lancamento_service` | RN-07, RN-08 |
 | `recorrencia_service` | CRUD, mudança de status, sincronização idempotente por marca d'água `ultimo_mes_gerado` | RN-09..11 |
 | `resumo_service` | resumo mensal, histórico, agregações em `Decimal` | RN-13, RN-16 |
 
@@ -500,4 +500,5 @@ Quando o **backend não responde** (status 0, ou 502/504 sem o envelope de §6.2
 | 2026-09-30 | 1.21 | §6.3: ordem, totais filtrados, saldo negativo e categoria ausente em `ListaLancamentos` (T-017). |
 | 2026-09-30 | 1.22 | §3: página de lançamentos e `filtros.ts` (T-018). |
 | 2026-09-30 | 1.23 | §3: edição no `lancamento-form.dialog`, `editarLancamento` e menu ⋮ da listagem (T-020). |
+| 2026-09-30 | 1.24 | §3 e §4.4: `parcelamento_service` e validação compartilhada com `lancamento_service` (T-026). |
 | 2026-09-29 | 1.1 | Frontend em Angular 22 (zoneless); pasta `shared/grafico/` com diretiva Chart.js própria (§3, §8.2.1). |

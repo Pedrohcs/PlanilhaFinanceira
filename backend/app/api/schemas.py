@@ -5,11 +5,12 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel, BeforeValidator, Field
 
-from app.domain.dinheiro import Dinheiro, Montante
+from app.domain.dinheiro import PARCELAS_MAX, PARCELAS_MIN, Dinheiro, Montante
 from app.domain.enums import FormaPagamento, TipoLancamento
 from app.domain.modelos import Data
 from app.services.categoria_service import CategoriaComUso, normalizar_nome
 from app.services.lancamento_service import LancamentoComCategoria, ListaDoMes
+from app.services.parcelamento_service import ParcelamentoCriado
 
 STATUS_OK = "ok"
 STATUS_DEGRADADO = "degradado"
@@ -193,4 +194,33 @@ class ListaLancamentosSaida(BaseModel):
                 saldo=lista.totais.saldo,
             ),
             linhas_ignoradas=lista.linhas_ignoradas,
+        )
+
+
+# Parcelamentos (F-12) ------------------------------------------------------------
+
+
+class ParcelamentoEntrada(BaseModel):
+    """`POST /api/parcelamentos` (`SPECS/03` §6.3). Sem `tipo`: é sempre gasto (REQ-07)."""
+
+    data: Data
+    descricao: DescricaoEntrada
+    valor_total: Dinheiro
+    parcelas: Annotated[int, Field(ge=PARCELAS_MIN, le=PARCELAS_MAX)]
+    categoria_id: Annotated[str, Field(min_length=1)]
+    forma_pagamento: FormaPagamento | None = None
+    observacao: ObservacaoEntrada = None
+
+
+class ParcelamentoSaida(BaseModel):
+    """`201` de `POST /api/parcelamentos`: parcelas em ordem de `parcela_numero`."""
+
+    parcelamento_id: str
+    lancamentos: list[LancamentoSaida]
+
+    @classmethod
+    def de(cls, criado: ParcelamentoCriado) -> "ParcelamentoSaida":
+        return cls(
+            parcelamento_id=criado.parcelamento_id,
+            lancamentos=[LancamentoSaida.de(item) for item in criado.lancamentos],
         )

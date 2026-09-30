@@ -86,23 +86,23 @@ Registrar uma compra parcelada uma vez só — informando o valor total e o núm
 
 **Herdados de `01`**
 
-- [ ] **CA-07.1** Dado um gasto de R$ 1.000,00 em 3 parcelas com data 15/01, quando confirmado, então são criados 3 lançamentos: R$ 333,34 em 15/01, R$ 333,33 em 15/02 e R$ 333,33 em 15/03 (ver RN-07).
-- [ ] **CA-07.2** Dado uma compra em 31/01 em 2 parcelas, então a 2ª parcela fica em 28/02 (ou 29/02 em ano bissexto).
-- [ ] **CA-07.3** Dado parcelas criadas, quando listadas, então cada uma exibe "k/N" e a descrição original.
-- [ ] **CA-08.1** Dado uma parcela, quando o usuário a edita, então apenas aquela parcela muda.
-- [ ] **CA-08.2** Dado uma parcela, quando o usuário escolhe "excluir parcelamento inteiro" e confirma, então todas as parcelas daquele parcelamento são removidas, em qualquer mês.
+- [x] **CA-07.1** Dado um gasto de R$ 1.000,00 em 3 parcelas com data 15/01, quando confirmado, então são criados 3 lançamentos: R$ 333,34 em 15/01, R$ 333,33 em 15/02 e R$ 333,33 em 15/03 (ver RN-07).
+- [x] **CA-07.2** Dado uma compra em 31/01 em 2 parcelas, então a 2ª parcela fica em 28/02 (ou 29/02 em ano bissexto).
+- [x] **CA-07.3** Dado parcelas criadas, quando listadas, então cada uma exibe "k/N" e a descrição original. *(T-026: a API devolve `parcela_numero`/`parcela_total` e a descrição original; o "k/N" na tela já existia desde F-07.)*
+- [x] **CA-08.1** Dado uma parcela, quando o usuário a edita, então apenas aquela parcela muda.
+- [~] **CA-08.2** Dado uma parcela, quando o usuário escolhe "excluir parcelamento inteiro" e confirma, então todas as parcelas daquele parcelamento são removidas, em qualquer mês. *(T-026: remoção na API; a ação na tela é T-027.)*
 
 **Refinados — backend (T-026)**
 
-- [ ] **CA-F12.1** Dado `POST /api/parcelamentos` válido com N parcelas, então 201 com `parcelamento_id` e N lançamentos em ordem: todos `GASTO`, mesma descrição/categoria/forma/observação, `parcelamento_id` comum, `parcela_numero` 1..N, `parcela_total` N, `id` distintos, mesmo `criado_em`; a soma dos valores é exatamente o total.
-- [ ] **CA-F12.2** Dado o `POST` válido, então as N linhas são gravadas com **uma** chamada de escrita (`append_rows` RAW + `INSERT_ROWS`) — verificado na planilha falsa.
-- [ ] **CA-F12.3** Dado `parcelas` fora de 2..48, ou `valor_total` menor que N × R$ 0,01, então 422 no campo (`parcelas` / `valor_total`) e nada é gravado.
-- [ ] **CA-F12.4** Dado categoria inexistente (422), inativa (409), de receita (409) ou gasto sem forma (422), então o erro é o mesmo do registro e nada é gravado.
-- [ ] **CA-F12.5** Dado um parcelamento de 3 parcelas em meses diferentes, quando `DELETE /api/parcelamentos/{id}`, então 204 e só aquelas 3 linhas somem — com **um** `batch_update` — inclusive depois de o usuário reordenar a planilha à mão; as listagens dos 3 meses recalculam os totais.
-- [ ] **CA-F12.6** Dado que uma parcela foi excluída e outra editada (data mudada de mês) antes, quando o parcelamento inteiro é excluído, então as restantes — inclusive a editada — somem; 204.
-- [ ] **CA-F12.7** Dado `parcelamento_id` inexistente (ou com todas as parcelas já excluídas), então 404 "Parcelamento não encontrado." e nada muda.
-- [ ] **CA-F12.8** Dado que uma parcela foi apagada à mão depois da última leitura (cache), quando o parcelamento é excluído, então as restantes são removidas mesmo assim (uma nova tentativa com a aba relida).
-- [ ] **CA-F12.9** Dado a planilha inacessível, então `POST`/`DELETE` → 503 com a causa e nada é gravado ou removido.
+- [x] **CA-F12.1** Dado `POST /api/parcelamentos` válido com N parcelas, então 201 com `parcelamento_id` e N lançamentos em ordem: todos `GASTO`, mesma descrição/categoria/forma/observação, `parcelamento_id` comum, `parcela_numero` 1..N, `parcela_total` N, `id` distintos, mesmo `criado_em`; a soma dos valores é exatamente o total.
+- [x] **CA-F12.2** Dado o `POST` válido, então as N linhas são gravadas com **uma** chamada de escrita (`append_rows` RAW + `INSERT_ROWS`) — verificado na planilha falsa.
+- [x] **CA-F12.3** Dado `parcelas` fora de 2..48, ou `valor_total` menor que N × R$ 0,01, então 422 no campo (`parcelas` / `valor_total`) e nada é gravado.
+- [x] **CA-F12.4** Dado categoria inexistente (422), inativa (409), de receita (409) ou gasto sem forma (422), então o erro é o mesmo do registro e nada é gravado.
+- [x] **CA-F12.5** Dado um parcelamento de 3 parcelas em meses diferentes, quando `DELETE /api/parcelamentos/{id}`, então 204 e só aquelas 3 linhas somem — com **um** `batch_update` — inclusive depois de o usuário reordenar a planilha à mão; as listagens dos 3 meses recalculam os totais.
+- [x] **CA-F12.6** Dado que uma parcela foi excluída e outra editada (data mudada de mês) antes, quando o parcelamento inteiro é excluído, então as restantes — inclusive a editada — somem; 204.
+- [x] **CA-F12.7** Dado `parcelamento_id` inexistente (ou com todas as parcelas já excluídas), então 404 "Parcelamento não encontrado." e nada muda.
+- [x] **CA-F12.8** Dado que uma parcela foi apagada à mão depois da última leitura (cache), quando o parcelamento é excluído, então as restantes são removidas mesmo assim (uma nova tentativa com a aba relida).
+- [x] **CA-F12.9** Dado a planilha inacessível, então `POST`/`DELETE` → 503 com a causa e nada é gravado ou removido.
 
 **Refinados — frontend (T-027)**
 
@@ -193,7 +193,9 @@ Erros de campo em `detalhes[].campo`: `valor_total`, `parcelas`, `categoria_id`,
 | `…::test_excluir_inexistente_404__CA_F12_7` | unitário BE | CA-F12.7, borda 13 |
 | `…::test_excluir_tenta_de_novo_apos_mudanca_manual__CA_F12_8` | unitário BE | CA-F12.8, borda 14 |
 | `tests/api/test_parcelamentos.py::test_post_uma_escrita__CA_F12_2` (planilha falsa) | API BE | CA-F12.1, CA-F12.2, borda 16 |
-| `…::test_post_validacoes__CA_F12_3` | API BE | CA-F12.3, CA-F12.4 |
+| `…::test_post_validacoes__CA_F12_3` e `test_valor_minimo_mensagem__RN_07` | API BE | CA-F12.3, CA-F12.4 |
+| `…::test_delete_apos_linha_apagada_a_mao__CA_F12_8` (planilha falsa com cache) | API BE | CA-F12.8, borda 14 |
+| `…::test_delete_404__CA_F12_7` | API BE | CA-F12.7 |
 | `…::test_delete_so_as_parcelas_apos_reordenacao__CA_F12_5` (planilha falsa) | API BE | CA-08.2, CA-F12.5 |
 | `…::test_listagem_mostra_k_de_n__CA_07_3` | API BE | CA-07.3 |
 | `…::test_editar_parcela_so_ela__CA_08_1` | API BE | CA-08.1, borda 11 |
@@ -227,7 +229,8 @@ Ordem: T-026 → T-027 (T-027 também depende de T-020, concluída).
 | Decisão | Motivo | Virou ADR? |
 |---|---|---|
 | Parcela = lançamento `GASTO` comum com a descrição original, sem sufixo "(k/N)". | CA-07.3 ("a descrição original"); o "k/N" vem das colunas J/K. | Não |
-| Validação de categoria e forma **reusa** a do `lancamento_service` (mesmas mensagens e códigos). | Uma regra só para RN-04/RN-05 (F-08 §10). | Não |
+| Validação de categoria e forma **reusa** a do `lancamento_service` (mesmas mensagens e códigos): o antigo método `_validar` virou a função `validar_categoria_e_forma` do módulo (T-026). | Uma regra só para RN-04/RN-05 (F-08 §10), sem um serviço depender do outro. | Não |
+| Limites de parcelas e de valor checados **antes** da categoria (T-026). | Não precisam ler a planilha; uma entrada com os dois problemas recebe 422 no campo, não 409. | Não |
 | Qualquer forma de pagamento é aceita no parcelamento. | RN-05 e REQ-07 não restringem ao cartão (ex.: boleto parcelado). | Não |
 | Excluir parcelamento remove as parcelas **restantes**; 404 só quando não resta nenhuma. | RN-08: as parcelas são independentes; já ter excluído uma não deve impedir excluir o resto. | Não |
 | Na exclusão, se a planilha mudou dentro do TTL, **uma** nova tentativa com a aba relida. | O `remover` é tudo ou nada e invalida o cache ao falhar (F-03); sem a nova tentativa, uma edição manual recente daria um 404 enganoso. | Não |
@@ -255,3 +258,4 @@ Ordem: T-026 → T-027 (T-027 também depende de T-020, concluída).
 |---|---|
 | 2026-09-30 | Criação (`/especificar-feature F-12`). Status `Rascunho` — 3 questões em aberto. |
 | 2026-09-30 | Q1–Q3 respondidas (todas na opção recomendada) → status **Aprovada**. Três decisões em §10. |
+| 2026-09-30 | T-026 concluída: CA-07.1, CA-07.2, CA-07.3, CA-08.1 e CA-F12.1 a .9 verificados por teste (inclui planilha reordenada e linha apagada à mão com cache "quente"); CA-08.2 com a parte da API. Duas decisões em §10. |

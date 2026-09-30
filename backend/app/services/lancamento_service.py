@@ -72,8 +72,36 @@ def totalizar(lancamentos: list[Lancamento]) -> Totais:
     )
 
 
+def validar_categoria_e_forma(
+    categorias: CategoriaRepository,
+    categoria_id: str,
+    tipo: TipoLancamento,
+    forma_pagamento: FormaPagamento | None,
+    *,
+    categoria_atual: str | None = None,
+) -> Categoria:
+    """Categoria existe, é do tipo e está ativa (RN-04); gasto exige forma (RN-05).
+
+    Na edição, a categoria **atual** do lançamento pode estar inativa: RN-04
+    vale para lançamentos novos (F-08 Q1). Usada também pelo parcelamento
+    (F-12 §3.1.2), para as mensagens e os códigos serem os mesmos.
+    """
+    for categoria in categorias.listar().itens:
+        if categoria.id == categoria_id:
+            break
+    else:
+        raise ErroValidacao.no_campo("categoria_id", MENSAGEM_CATEGORIA_INEXISTENTE)
+    if categoria.tipo != tipo:
+        raise CategoriaTipoIncompativel.para(categoria.nome, categoria.tipo, tipo)
+    if not categoria.ativa and categoria.id != categoria_atual:
+        raise CategoriaInativa.para(categoria.nome)
+    if tipo is TipoLancamento.GASTO and forma_pagamento is None:
+        raise ErroValidacao.no_campo("forma_pagamento", MENSAGEM_FORMA_OBRIGATORIA)
+    return categoria
+
+
 def gerar_id() -> str:
-    """`uuid4().hex` para lançamentos (`SPECS/02` §3)."""
+    """`uuid4().hex` para lançamentos e parcelamentos (`SPECS/02` §3)."""
     return uuid4().hex
 
 
@@ -102,7 +130,7 @@ class LancamentoService:
         forma_pagamento: FormaPagamento | None,
         observacao: str | None,
     ) -> LancamentoComCategoria:
-        categoria = self._validar(categoria_id, tipo, forma_pagamento)
+        categoria = validar_categoria_e_forma(self._categorias, categoria_id, tipo, forma_pagamento)
 
         instante = self._relogio()
         lancamento = Lancamento(
@@ -138,8 +166,12 @@ class LancamentoService:
         reordenação manual (CA-05.2).
         """
         atual = self._obter(id)  # 404 antes de qualquer regra de categoria
-        categoria = self._validar(
-            categoria_id, tipo, forma_pagamento, categoria_atual=atual.categoria_id
+        categoria = validar_categoria_e_forma(
+            self._categorias,
+            categoria_id,
+            tipo,
+            forma_pagamento,
+            categoria_atual=atual.categoria_id,
         )
         editado = Lancamento.model_validate(
             {
@@ -204,32 +236,6 @@ class LancamentoService:
         except NaoEncontrado as erro:
             # A mensagem do repositório cita o `id`, que nada diz ao usuário.
             raise NaoEncontrado(MENSAGEM_LANCAMENTO_INEXISTENTE) from erro
-
-    def _validar(
-        self,
-        categoria_id: str,
-        tipo: TipoLancamento,
-        forma_pagamento: FormaPagamento | None,
-        *,
-        categoria_atual: str | None = None,
-    ) -> Categoria:
-        """Categoria existe, é do tipo e está ativa (RN-04); gasto exige forma (RN-05).
-
-        Na edição, a categoria **atual** do lançamento pode estar inativa: RN-04
-        vale para lançamentos novos (F-08 Q1).
-        """
-        for categoria in self._categorias.listar().itens:
-            if categoria.id == categoria_id:
-                break
-        else:
-            raise ErroValidacao.no_campo("categoria_id", MENSAGEM_CATEGORIA_INEXISTENTE)
-        if categoria.tipo != tipo:
-            raise CategoriaTipoIncompativel.para(categoria.nome, categoria.tipo, tipo)
-        if not categoria.ativa and categoria.id != categoria_atual:
-            raise CategoriaInativa.para(categoria.nome)
-        if tipo is TipoLancamento.GASTO and forma_pagamento is None:
-            raise ErroValidacao.no_campo("forma_pagamento", MENSAGEM_FORMA_OBRIGATORIA)
-        return categoria
 
 
 def _com_categoria(

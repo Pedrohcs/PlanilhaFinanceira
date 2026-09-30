@@ -25,11 +25,11 @@
 | M0 · Fundação | F-01..F-04 | 12 | 0 | 0 | 12 | 100% |
 | M1 · Registro e consulta | F-05..F-08 | 8 | 0 | 0 | 8 | 100% |
 | M2 · Visão financeira | F-09..F-11 | 5 | 5 | 0 | 0 | 0% |
-| M3 · Automação | F-12..F-13 | 5 | 5 | 0 | 0 | 0% |
+| M3 · Automação | F-12..F-13 | 5 | 4 | 0 | 1 | 20% |
 | M4 · Acabamento | F-14..F-15 | 5 | 5 | 0 | 0 | 0% |
-| **Total** | **15** | **35** | **15** | **0** | **20** | **57%** |
+| **Total** | **15** | **35** | **14** | **0** | **21** | **60%** |
 
-**M0 e M1 concluídos (F-01 a F-08).** Próximo passo: `/implementar-tarefa T-026` (BE, F-12, caminho crítico; spec aprovada). Também desbloqueadas: T-021 (BE, F-09 — sem spec) e T-028 (BE, F-13 — sem spec). Pendentes com o usuário, sem bloquear: seguir o README com a planilha real (CA-F02.13), rodar `pytest -m integracao` (CA-15.1/15.2) e a conferência visual (CA-F04.7, CA-F04.30, CA-F05.20, F-06 borda 16, CA-F07.18, menu ⋮ de F-08 em 360 px).
+**M0 e M1 concluídos (F-01 a F-08).** Próxima tarefa disponível: **T-027** (FE, última de F-12, caminho crítico). Também desbloqueadas: T-021 (BE, F-09 — sem spec) e T-028 (BE, F-13 — sem spec). Pendentes com o usuário, sem bloquear: seguir o README com a planilha real (CA-F02.13), rodar `pytest -m integracao` (CA-15.1/15.2) e a conferência visual (CA-F04.7, CA-F04.30, CA-F05.20, F-06 borda 16, CA-F07.18, menu ⋮ de F-08 em 360 px).
 
 ---
 
@@ -48,7 +48,7 @@
 | F-09 | Resumo mensal | M2 | Não iniciada | — |
 | F-10 | Gráficos do mês | M2 | Não iniciada | — |
 | F-11 | Histórico | M2 | Não iniciada | — |
-| F-12 | Parcelamentos | M3 | Não iniciada | [`F-12-parcelamentos.md`](features/F-12-parcelamentos.md) (Aprovada) |
+| F-12 | Parcelamentos | M3 | Iniciada | [`F-12-parcelamentos.md`](features/F-12-parcelamentos.md) (Aprovada) |
 | F-13 | Recorrências | M3 | Não iniciada | — |
 | F-14 | Polimento e resiliência | M4 | Não iniciada | — |
 | F-15 | Entrega local e verificação E2E | M4 | Não iniciada | — |
@@ -81,7 +81,8 @@ flowchart LR
     classDef naoIniciada fill:#eeeeee,stroke:#9e9e9e,color:#424242;
     classDef iniciada fill:#fff3cd,stroke:#f0ad4e,color:#5c4400;
     classDef concluida fill:#d4edda,stroke:#28a745,color:#155724;
-    class F09,F10,F11,F12,F13,F14,F15 naoIniciada;
+    class F09,F10,F11,F13,F14,F15 naoIniciada;
+    class F12 iniciada;
     class F01,F02,F03,F04,F05,F06,F07,F08 concluida;
 ```
 
@@ -135,7 +136,7 @@ Camadas: **BE** = backend · **FE** = frontend · **DOC** = documentação/infra
 
 | ID | Tarefa (escopo) | Feature | Camada | Depende de | Status | Início | Conclusão | Notas |
 |---|---|---|---|---|---|---|---|---|
-| T-026 | `parcelamento_service` (RN-07/08) + `POST /api/parcelamentos` (uma única escrita em lote) + `DELETE /api/parcelamentos/{id}`. Testes CA-07.x, CA-08.x. | F-12 | BE | T-019 | Não iniciada | | | |
+| T-026 | `parcelamento_service` (RN-07/08) + `POST /api/parcelamentos` (uma única escrita em lote) + `DELETE /api/parcelamentos/{id}`. Testes CA-07.x, CA-08.x. | F-12 | BE | T-019 | Concluída | 2026-09-30 | 2026-09-30 | `parcelamento_service.criar` (limites de parcelas/valor antes da categoria, com erro no campo; validação compartilhada `validar_categoria_e_forma`; `dividir_em_parcelas` + `data_da_parcela`; N parcelas num `inserir`) e `excluir` (parcelas restantes em qualquer mês, num `remover`; uma nova tentativa com a aba relida se a planilha mudou; 404 "Parcelamento não encontrado."); `POST`/`DELETE /api/parcelamentos`. 34 testes novos (763 no total), inclusive com planilha reordenada e linha apagada à mão; `ruff` limpo. CA-07.1..3, CA-08.1, CA-F12.1..9 (+ parte BE de CA-08.2). |
 | T-027 | No diálogo: opção "Compra parcelada" + nº de parcelas com prévia do valor da parcela; na listagem: exibir "k/N" e ação "Excluir parcelamento inteiro". | F-12 | FE | T-026, T-020 | Não iniciada | | | |
 | T-028 | Aba/repositório de recorrências (se ainda faltar), `recorrencia_service` CRUD + mudança de status (reativação sem retroativos) + routers GET/POST/PUT/PATCH status. Testes CA-09.x. | F-13 | BE | T-015 | Não iniciada | | | |
 | T-029 | `recorrencia_service.sincronizar` (algoritmo `03` §4.4) + `POST /api/recorrencias/sincronizar`. Testes CA-10.1..10.4, dia 31, `mes_fim`, pausa. | F-13 | BE | T-028 | Não iniciada | | | |
@@ -157,6 +158,8 @@ Camadas: **BE** = backend · **FE** = frontend · **DOC** = documentação/infra
 
 | Data | Tarefa/Feature | Mudança | Observação |
 |---|---|---|---|
+| 2026-09-30 | T-026 | `Iniciada` → `Concluída` | Parcelamentos no backend. `03` → 1.24 (§3, §4.4). Guarda de rotas com `POST /api/parcelamentos` e `DELETE /api/parcelamentos/{parcelamento_id}`. Nenhuma dependência nova. |
+| 2026-09-30 | T-026 | `Não iniciada` → `Iniciada` | Dependência T-019 `Concluída`; spec F-12 `Aprovada`. F-12 passa a `Iniciada` (§2) e o mapa (§3) foi atualizado. |
 | 2026-09-30 | F-12 | Spec da feature criada e **aprovada** | `features/F-12-parcelamentos.md`: Q1–Q3 respondidas (todas na opção recomendada). Nenhuma mudança em 01–03. Nenhum status de tarefa alterado. |
 | 2026-09-30 | M1 | **Marco concluído** | F-05 a F-08 `Concluída`. Caminho crítico segue em F-12 (sem spec). |
 | 2026-09-30 | F-08 | `Iniciada` → `Concluída` | Última tarefa (T-020) concluída; §2 e mapa (§3) atualizados. |
