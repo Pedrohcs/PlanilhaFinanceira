@@ -9,7 +9,7 @@ import { routes } from './app.routes';
 
 /** `provisoria`: página ainda placeholder de F-04 (vira `false` quando a tela real chega). */
 const PAGINAS = [
-  { url: '/resumo', titulo: 'Resumo', provisoria: true },
+  { url: '/resumo', titulo: 'Resumo', provisoria: false },
   { url: '/lancamentos', titulo: 'Lançamentos', provisoria: false },
   { url: '/historico', titulo: 'Histórico', provisoria: true },
   { url: '/categorias', titulo: 'Categorias', provisoria: false },

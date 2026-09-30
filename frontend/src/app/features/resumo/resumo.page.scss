@@ -1,0 +1,68 @@
+// Resumo do mês (F-09 §3.2). Tabelas lado a lado só em janela larga (≥ 960 px).
+:host {
+  display: block;
+}
+
+.cabecalho {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.conteudo.recarregando {
+  opacity: 0.6;
+  transition: opacity 150ms;
+}
+
+.tabelas {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 24px;
+
+  &.lado-a-lado {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+h2 {
+  margin: 0 0 8px;
+  font: var(--mat-sys-title-medium);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  padding: 8px;
+  text-align: left;
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+}
+
+th {
+  font: var(--mat-sys-label-large);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.nome {
+  overflow-wrap: anywhere;
+}
+
+.numero {
+  text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.cor {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-right: 6px;
+  border-radius: 50%;
+}

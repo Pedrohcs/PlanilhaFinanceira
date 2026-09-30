@@ -60,3 +60,20 @@ export function interpretarValor(texto: string): ResultadoValor {
 export function formatarValor(valor: number): string {
   return FORMATO.format(valor);
 }
+
+const MENOS = '\u2212';
+
+const PERCENTUAL = new Intl.NumberFormat('pt-BR', {
+  minimumFractionDigits: 1,
+  maximumFractionDigits: 1,
+});
+
+/** Total ou saldo vindo da API: `R$ 1.234,56`; negativo `− R$ 60,00` (F-07 §3.2). */
+export function formatarMontante(valor: number): string {
+  return valor < 0 ? `${MENOS} R$ ${formatarValor(-valor)}` : `R$ ${formatarValor(valor)}`;
+}
+
+/** Percentual pronto da API (1 casa): 45.3 → `45,3%` (F-09 §3.2.3). */
+export function formatarPercentual(percentual: number): string {
+  return `${PERCENTUAL.format(percentual)}%`;
+}

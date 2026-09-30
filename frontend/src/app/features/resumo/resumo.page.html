@@ -1,0 +1,77 @@
+<header class="cabecalho">
+  <h1>Resumo</h1>
+  <app-seletor-mes />
+</header>
+
+@if (resumo() === null && carregando()) {
+  <app-carregando texto="Carregando resumo…" />
+} @else if (erro()) {
+  <app-estado-vazio icone="cloud_off" mensagem="Não foi possível carregar o resumo." />
+} @else if (resumo(); as dados) {
+  <div class="conteudo" [class.recarregando]="carregando()">
+    <app-totais
+      [gastos]="dados.total_gastos"
+      [receitas]="dados.total_receitas"
+      [saldo]="dados.saldo"
+    />
+
+    @if (dados.por_categoria.length === 0) {
+      <app-estado-vazio
+        [mensagem]="
+          (dados.total_receitas > 0 ? 'Nenhum gasto em ' : 'Nenhum lançamento em ') +
+          mesPorExtenso(dados.mes) +
+          '.'
+        "
+      />
+    } @else {
+      <div class="tabelas" [class.lado-a-lado]="ladoALado()">
+        <section class="grupo por-categoria" aria-labelledby="titulo-categoria">
+          <h2 id="titulo-categoria">Gastos por categoria</h2>
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Categoria</th>
+                <th scope="col" class="numero">Valor</th>
+                <th scope="col" class="numero">%</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (item of dados.por_categoria; track item.categoria_id) {
+                <tr>
+                  <td class="nome">
+                    <span class="cor" aria-hidden="true" [style.background-color]="item.cor"></span>
+                    {{ item.nome }}
+                  </td>
+                  <td class="numero valor">{{ montante(item.total) }}</td>
+                  <td class="numero percentual">{{ percentual(item.percentual) }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </section>
+
+        <section class="grupo por-forma" aria-labelledby="titulo-forma">
+          <h2 id="titulo-forma">Gastos por forma de pagamento</h2>
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Forma de pagamento</th>
+                <th scope="col" class="numero">Valor</th>
+                <th scope="col" class="numero">%</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (item of dados.por_forma_pagamento; track item.forma_pagamento) {
+                <tr>
+                  <td class="nome">{{ item.nome }}</td>
+                  <td class="numero valor">{{ montante(item.total) }}</td>
+                  <td class="numero percentual">{{ percentual(item.percentual) }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </section>
+      </div>
+    }
+  </div>
+}

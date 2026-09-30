@@ -4,7 +4,7 @@
 |---|---|
 | Feature | F-09 |
 | Marco | M2 |
-| Status | Aprovada |
+| Status | Concluída |
 | Requisitos | REQ-12 (CA-12.1, CA-12.2); dados de REQ-13 (acumulado diário, usado em F-10) |
 | Regras | RN-03, RN-13, RN-14, RN-16 |
 | Depende de | F-06 (**Concluída**); T-022 também usa o seletor de mês de F-04 (T-011, **Concluída**) |
@@ -72,8 +72,8 @@ Abrir o aplicativo e ver, num relance, como está o mês: quanto saiu, quanto en
 
 **Herdados de `01`**
 
-- [~] **CA-12.1** Dado os lançamentos de um mês, então os totais exibidos batem, centavo a centavo, com a soma dos lançamentos da planilha naquele mês. *(T-021: a API soma centavo a centavo, com os mesmos totais da listagem; a tela é T-022.)*
-- [ ] **CA-12.2** Dado um saldo negativo, então ele é destacado visualmente.
+- [x] **CA-12.1** Dado os lançamentos de um mês, então os totais exibidos batem, centavo a centavo, com a soma dos lançamentos da planilha naquele mês. *(T-021: a API soma centavo a centavo, com os mesmos totais da listagem; T-022: a tela mostra os números da API sem somar nada.)*
+- [x] **CA-12.2** Dado um saldo negativo, então ele é destacado visualmente.
 
 **Refinados — backend (T-021)**
 
@@ -89,13 +89,13 @@ Abrir o aplicativo e ver, num relance, como está o mês: quanto saiu, quanto en
 
 **Refinados — frontend (T-022)**
 
-- [ ] **CA-F09.10** Dado a resposta da API, então os cards mostram Gastos, Receitas e Saldo com os números dela, sem nenhuma conta no frontend (CA-12.1).
-- [ ] **CA-F09.11** Dado saldo negativo, então o card de Saldo fica destacado e mostra `− R$ 60,00` (CA-12.2).
-- [ ] **CA-F09.12** Dado a resposta, então as tabelas por categoria (com a cor) e por forma mostram nome, valor e percentual (`45,3%`) na ordem da API.
-- [ ] **CA-F09.13** Dado um mês sem lançamentos, então os cards mostram R$ 0,00 e aparece "Nenhum lançamento em <mês>."; dado um mês só com receitas, "Nenhum gasto em <mês>.".
-- [ ] **CA-F09.14** Dado a troca de mês no seletor, ou `DadosStore.versao` incrementada, então o resumo é buscado de novo; uma resposta antiga que chega depois é descartada.
-- [ ] **CA-F09.15** Dado um erro de carga, então aparece "Não foi possível carregar o resumo." e nenhum card com números velhos.
-- [ ] **CA-F09.16** Dado a janela de 360 px e a de 1280 px, então as tabelas ficam uma sobre a outra / lado a lado, sem rolagem horizontal (RNF-07).
+- [x] **CA-F09.10** Dado a resposta da API, então os cards mostram Gastos, Receitas e Saldo com os números dela, sem nenhuma conta no frontend (CA-12.1).
+- [x] **CA-F09.11** Dado saldo negativo, então o card de Saldo fica destacado e mostra `− R$ 60,00` (CA-12.2).
+- [x] **CA-F09.12** Dado a resposta, então as tabelas por categoria (com a cor) e por forma mostram nome, valor e percentual (`45,3%`) na ordem da API.
+- [x] **CA-F09.13** Dado um mês sem lançamentos, então os cards mostram R$ 0,00 e aparece "Nenhum lançamento em <mês>."; dado um mês só com receitas, "Nenhum gasto em <mês>.".
+- [x] **CA-F09.14** Dado a troca de mês no seletor, ou `DadosStore.versao` incrementada, então o resumo é buscado de novo; uma resposta antiga que chega depois é descartada.
+- [x] **CA-F09.15** Dado um erro de carga, então aparece "Não foi possível carregar o resumo." e nenhum card com números velhos.
+- [x] **CA-F09.16** Dado a janela de 360 px e a de 1280 px, então as tabelas ficam uma sobre a outra / lado a lado, sem rolagem horizontal (RNF-07).
 
 ---
 
@@ -177,7 +177,9 @@ A única precisão sobre `03` é que `mes` é **obrigatório** (a tabela de §6.
 | `…::test_linha_invalida_ignorada__CA_16_3` (planilha falsa) | API BE | CA-F09.8, borda 11 |
 | `…::test_uma_leitura_por_aba__RNF_04` (planilha falsa) | API BE | CA-F09.9 |
 | `tests/api/test_app.py` (guarda de rotas) | API BE | `GET /api/resumo/mensal` |
-| `frontend/…/core/api/resumo.api.spec.ts` › `mensal` | unitário FE | §6 |
+| `frontend/…/core/api/resumo.api.spec.ts` › `mensal__F09` | unitário FE | §6 |
+| `…/core/utils/valor.spec.ts` › `montante_e_percentual__F09` | unitário FE | §3.2.2–3 |
+| `…/shared/components/totais/totais.spec.ts` › `numeros_saldo_negativo_e_legenda__CA_12_2` | unitário FE | CA-12.2 |
 | `…/features/resumo/resumo.page.spec.ts` › `cards_com_numeros_da_api__CA_12_1` | unitário FE | CA-F09.10 |
 | `…` › `saldo_negativo_destacado__CA_12_2` | unitário FE | CA-F09.11 |
 | `…` › `tabelas_por_categoria_e_forma__CA_F09_12` | unitário FE | CA-F09.12 |
@@ -232,3 +234,4 @@ Ordem: T-021 → T-022 (T-022 também depende de T-011, concluída).
 | 2026-09-30 | Criação (`/especificar-feature F-09`). Status `Rascunho` — 2 questões em aberto. |
 | 2026-09-30 | Q1–Q2 respondidas (ambas na opção recomendada) → status **Aprovada**. Duas decisões em §10. |
 | 2026-09-30 | T-021 concluída: CA-F09.1 a .9 verificados por teste (inclui 5.000 linhas com uma leitura por aba); CA-12.1 com a parte da API. `03` §6.1 com `mes` obrigatório. |
+| 2026-09-30 | T-022 concluída → feature **Concluída**. CA-12.1, CA-12.2 e CA-F09.10 a .16 verificados por teste (a conferência visual em 360 px fica com o usuário); a listagem passou a usar o componente `totais`, sem mudança de comportamento. |

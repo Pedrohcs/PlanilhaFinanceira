@@ -36,6 +36,7 @@ import { Carregando } from '../../shared/components/carregando/carregando';
 import { EstadoVazio } from '../../shared/components/estado-vazio/estado-vazio';
 import { confirmar } from '../../shared/components/confirmacao-dialog/confirmacao.dialog';
 import { SeletorMes } from '../../shared/components/seletor-mes/seletor-mes';
+import { Totais } from '../../shared/components/totais/totais';
 import { editarLancamento } from './abrir-lancamento';
 import { filtrosParaParams, lerFiltros, temFiltro } from './filtros';
 
@@ -65,6 +66,7 @@ interface GrupoDeCategorias {
     MatMenuModule,
     MatSelectModule,
     SeletorMes,
+    Totais,
     Carregando,
     EstadoVazio,
   ],
@@ -181,10 +183,6 @@ export class LancamentosPage {
   }
 
   /** Totais e saldo: o saldo pode ser negativo (RN-13). */
-  protected montante(valor: number): string {
-    return valor < 0 ? `${MENOS} R$ ${formatarValor(-valor)}` : `R$ ${formatarValor(valor)}`;
-  }
-
   protected forma(lancamento: Lancamento): string {
     if (!lancamento.forma_pagamento) {
       return '—';

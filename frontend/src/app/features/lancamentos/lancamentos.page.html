@@ -72,23 +72,15 @@
   <app-estado-vazio icone="cloud_off" mensagem="Não foi possível carregar os lançamentos." />
 } @else if (lista(); as dados) {
   <div class="conteudo" [class.recarregando]="carregando()">
-    <section class="totais" aria-label="Totais">
-      <div class="total">
-        <span class="rotulo">Gastos</span>
-        <span class="numero">{{ montante(dados.totais.gastos) }}</span>
-      </div>
-      <div class="total">
-        <span class="rotulo">Receitas</span>
-        <span class="numero">{{ montante(dados.totais.receitas) }}</span>
-      </div>
-      <div class="total saldo" [class.negativo]="dados.totais.saldo < 0">
-        <span class="rotulo">Saldo</span>
-        <span class="numero">{{ montante(dados.totais.saldo) }}</span>
-      </div>
+    <app-totais
+      [gastos]="dados.totais.gastos"
+      [receitas]="dados.totais.receitas"
+      [saldo]="dados.totais.saldo"
+    >
       @if (filtrando()) {
         <p class="legenda">Totais dos lançamentos filtrados</p>
       }
-    </section>
+    </app-totais>
 
     @if (dados.itens.length === 0) {
       @if (filtrando()) {

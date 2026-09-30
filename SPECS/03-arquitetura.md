@@ -3,7 +3,7 @@
 | Campo | Valor |
 |---|---|
 | Documento | `SPECS/03-arquitetura.md` |
-| Versão | 1.26 |
+| Versão | 1.27 |
 | Atualizado em | 2026-09-30 |
 | Status | Aprovado para início |
 | Responde | **Como** o sistema se organiza: componentes, pastas, camadas, modelo de dados na planilha, contrato da API e fluxos |
@@ -99,7 +99,7 @@ PlanilhaFinanceira/
         ├── core/
         │   ├── models/        # interfaces espelhando o JSON da API
         │   ├── api/           # um serviço HTTP por recurso (health, categorias, lancamentos,
-        │   │                  # parcelamentos, formas-pagamento)
+        │   │                  # parcelamentos, resumo, formas-pagamento)
         │   ├── state/         # mes-selecionado, conexao, dados, categorias, formas-pagamento .store.ts
         │   ├── interceptors/  # erro.interceptor.ts
         │   ├── avisos/        # avisos.ts: snackbar carregado sob demanda
@@ -108,11 +108,12 @@ PlanilhaFinanceira/
         │                      # RN-07 só para exibir, F-12 Q1)
         ├── shared/
         │   ├── components/    # seletor-mes, confirmacao-dialog, estado-vazio, carregando,
-        │   │                  # banner-conexao
+        │   │                  # banner-conexao, totais (cards Gastos/Receitas/Saldo)
         │   └── grafico/       # grafico.directive.ts + grafico.config.ts (Chart.js, ADR-11;
         │                      # tokens FABRICA_GRAFICO e CORES_DO_TEMA para testes)
         └── features/          # uma pasta por tela; página em <nome>/<nome>.page.ts (classe <Nome>Page)
-            ├── resumo/        # dashboard do mês (cards + gráficos)
+            ├── resumo/        # resumo.page: cards (totais), tabelas por categoria e por forma
+            │                  # (F-09); gráficos em F-10
             ├── lancamentos/   # lancamentos.page (listagem, filtros.ts, menu ⋮ editar/excluir)
             │                  # + lancamento-form.dialog (registro e edição) + abrir-lancamento.ts
             │                  # (abrirLancamento: shell via import sob demanda; editarLancamento: página)
@@ -505,4 +506,5 @@ Quando o **backend não responde** (status 0, ou 502/504 sem o envelope de §6.2
 | 2026-09-30 | 1.24 | §3 e §4.4: `parcelamento_service` e validação compartilhada com `lancamento_service` (T-026). |
 | 2026-09-30 | 1.25 | §3: `parcelamentos.api` e `utils/parcelas.ts` no frontend (T-027). |
 | 2026-09-30 | 1.26 | §3: `resumo_service`; §6.1: `mes` obrigatório no resumo; §6.3: arredondamento do percentual, empates e acumulado diário (T-021). |
+| 2026-09-30 | 1.27 | §3: `resumo.api`, componente compartilhado `totais` e página de resumo (T-022). |
 | 2026-09-29 | 1.1 | Frontend em Angular 22 (zoneless); pasta `shared/grafico/` com diretiva Chart.js própria (§3, §8.2.1). |

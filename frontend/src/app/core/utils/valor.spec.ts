@@ -1,4 +1,10 @@
-import { formatarValor, interpretarValor, ResultadoValor } from './valor';
+import {
+  formatarMontante,
+  formatarPercentual,
+  formatarValor,
+  interpretarValor,
+  ResultadoValor,
+} from './valor';
 
 /** O `Intl` de pt-BR usa espaço fixo; aqui só há separadores, sem `R$`. */
 describe('utils/valor (F-06 §3.2.1)', () => {
@@ -42,5 +48,15 @@ describe('utils/valor (F-06 §3.2.1)', () => {
     expect(semEspacoFixo(formatarValor(42.5))).toBe('42,50');
     expect(semEspacoFixo(formatarValor(1234.5))).toBe('1.234,50');
     expect(semEspacoFixo(formatarValor(9999999999.99))).toBe('9.999.999.999,99');
+  });
+
+  it('montante_e_percentual__F09', () => {
+    const texto = (valor: string) => valor.replace(/\u00a0/g, ' ');
+    expect(texto(formatarMontante(1234.5))).toBe('R$ 1.234,50');
+    expect(texto(formatarMontante(0))).toBe('R$ 0,00');
+    expect(texto(formatarMontante(-60))).toBe('\u2212 R$ 60,00');
+    expect(formatarPercentual(45.3)).toBe('45,3%');
+    expect(formatarPercentual(100)).toBe('100,0%');
+    expect(formatarPercentual(0.1)).toBe('0,1%');
   });
 });

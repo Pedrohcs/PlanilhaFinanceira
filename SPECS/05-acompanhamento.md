@@ -24,12 +24,12 @@
 |---|---|---|---|---|---|---|
 | M0 · Fundação | F-01..F-04 | 12 | 0 | 0 | 12 | 100% |
 | M1 · Registro e consulta | F-05..F-08 | 8 | 0 | 0 | 8 | 100% |
-| M2 · Visão financeira | F-09..F-11 | 5 | 4 | 0 | 1 | 20% |
+| M2 · Visão financeira | F-09..F-11 | 5 | 3 | 0 | 2 | 40% |
 | M3 · Automação | F-12..F-13 | 5 | 3 | 0 | 2 | 40% |
 | M4 · Acabamento | F-14..F-15 | 5 | 5 | 0 | 0 | 0% |
-| **Total** | **15** | **35** | **12** | **0** | **23** | **66%** |
+| **Total** | **15** | **35** | **11** | **0** | **24** | **69%** |
 
-**M0 e M1 concluídos (F-01 a F-08); F-12 concluída.** O caminho crítico (F-14) agora espera F-10, F-11 e F-13. Próxima tarefa disponível: **T-022** (FE, última de F-09). Também desbloqueadas: T-024 (BE, F-11 — sem spec) e T-028 (BE, F-13 — sem spec). Pendentes com o usuário, sem bloquear: seguir o README com a planilha real (CA-F02.13), rodar `pytest -m integracao` (CA-15.1/15.2) e a conferência visual (CA-F04.7, CA-F04.30, CA-F05.20, F-06 borda 16, CA-F07.18, menu ⋮ de F-08 em 360 px).
+**M0 e M1 concluídos (F-01 a F-08); F-09 e F-12 concluídas.** O caminho crítico (F-14) espera F-10, F-11 e F-13. Desbloqueadas: **T-023** (FE, F-10 — sem spec; próximo passo: `/especificar-feature F-10`), T-024 (BE, F-11 — sem spec) e T-028 (BE, F-13 — sem spec). Pendentes com o usuário, sem bloquear: seguir o README com a planilha real (CA-F02.13), rodar `pytest -m integracao` (CA-15.1/15.2) e a conferência visual (CA-F04.7, CA-F04.30, CA-F05.20, F-06 borda 16, CA-F07.18, menu ⋮ de F-08 e caixa "Compra parcelada" de F-12 em 360 px, resumo de F-09 em 360 px).
 
 ---
 
@@ -45,7 +45,7 @@
 | F-06 | Registrar lançamento | M1 | Concluída | [`F-06-registrar-lancamento.md`](features/F-06-registrar-lancamento.md) (Concluída) |
 | F-07 | Listagem mensal | M1 | Concluída | [`F-07-listagem-mensal.md`](features/F-07-listagem-mensal.md) (Concluída) |
 | F-08 | Editar e excluir lançamentos | M1 | Concluída | [`F-08-editar-excluir-lancamentos.md`](features/F-08-editar-excluir-lancamentos.md) (Concluída) |
-| F-09 | Resumo mensal | M2 | Iniciada | [`F-09-resumo-mensal.md`](features/F-09-resumo-mensal.md) (Aprovada) |
+| F-09 | Resumo mensal | M2 | Concluída | [`F-09-resumo-mensal.md`](features/F-09-resumo-mensal.md) (Concluída) |
 | F-10 | Gráficos do mês | M2 | Não iniciada | — |
 | F-11 | Histórico | M2 | Não iniciada | — |
 | F-12 | Parcelamentos | M3 | Concluída | [`F-12-parcelamentos.md`](features/F-12-parcelamentos.md) (Concluída) |
@@ -82,8 +82,7 @@ flowchart LR
     classDef iniciada fill:#fff3cd,stroke:#f0ad4e,color:#5c4400;
     classDef concluida fill:#d4edda,stroke:#28a745,color:#155724;
     class F10,F11,F13,F14,F15 naoIniciada;
-    class F09 iniciada;
-    class F01,F02,F03,F04,F05,F06,F07,F08,F12 concluida;
+    class F01,F02,F03,F04,F05,F06,F07,F08,F09,F12 concluida;
 ```
 
 ---
@@ -127,7 +126,7 @@ Camadas: **BE** = backend · **FE** = frontend · **DOC** = documentação/infra
 | ID | Tarefa (escopo) | Feature | Camada | Depende de | Status | Início | Conclusão | Notas |
 |---|---|---|---|---|---|---|---|---|
 | T-021 | `resumo_service.mensal` (totais, saldo, por categoria/forma com %, acumulado diário) + `GET /api/resumo/mensal`. Testes CA-12.x e RN-16 (somas em centavos). | F-09 | BE | T-015 | Concluída | 2026-09-30 | 2026-09-30 | `resumo_service.mensal` (totais pela `totalizar` da listagem; por categoria e por forma só de gastos, maior primeiro, empates por nome/RN-05, `percentual` com 1 casa linha a linha — Q1; acumulado com todos os dias do mês — Q2; categoria ausente como na listagem), `dias_no_mes` no domínio, `GET /api/resumo/mensal` (`mes` obrigatório). 24 testes novos (787 no total), inclusive 5.000 linhas com uma leitura por aba; `ruff` limpo. CA-F09.1..9 (+ parte BE de CA-12.1). |
-| T-022 | Página `/resumo`: cards de gastos/receitas/saldo (saldo negativo destacado), tabela por categoria e por forma, seletor de mês. | F-09 | FE | T-021, T-011 | Não iniciada | | | |
+| T-022 | Página `/resumo`: cards de gastos/receitas/saldo (saldo negativo destacado), tabela por categoria e por forma, seletor de mês. | F-09 | FE | T-021, T-011 | Concluída | 2026-09-30 | 2026-09-30 | `ResumoApi`; `formatarMontante`/`formatarPercentual` em `utils/valor.ts`; componente compartilhado `shared/components/totais` (cards, saldo negativo destacado; a listagem passou a usá-lo); página `/resumo` com tabelas por categoria (cor) e por forma, lado a lado ≥ 960 px, vazio ("Nenhum lançamento/gasto em <mês>."), erro, recarga por mês e `versao` descartando resposta antiga. 10 testes novos (193 no total); build 476,21 kB inicial (ver Log). CA-12.1, CA-12.2, CA-F09.10..16. |
 | T-023 | Gráficos no `/resumo`: rosca por categoria (cores da categoria), barras por forma de pagamento, linha do acumulado diário; estados vazios. | F-10 | FE | T-022 | Não iniciada | | | |
 | T-024 | `resumo_service.historico` (meses sem lançamento com zero, por categoria alinhado aos meses, total e média) + `GET /api/resumo/historico` (padrão últimos 12). Testes CA-14.x. | F-11 | BE | T-021 | Não iniciada | | | |
 | T-025 | Página `/historico`: seletor de intervalo, barras gastos x receitas, linha de saldo, barras empilhadas por categoria, total e média do período. | F-11 | FE | T-024, T-011 | Não iniciada | | | |
@@ -158,6 +157,10 @@ Camadas: **BE** = backend · **FE** = frontend · **DOC** = documentação/infra
 
 | Data | Tarefa/Feature | Mudança | Observação |
 |---|---|---|---|
+| 2026-09-30 | F-09 | `Iniciada` → `Concluída` | Última tarefa (T-022) concluída; §2 e mapa (§3) atualizados. |
+| 2026-09-30 | T-022 | `Iniciada` → `Concluída` | Resumo na tela. `03` → 1.27 (§3). Nenhuma dependência nova. Pacote inicial de 475,94 para 476,21 kB: a lista de exports do `main` para os pedaços sob demanda cresceu (a página nova usa símbolos que já estavam no pacote inicial); nenhum código novo no carregamento inicial. Teste de rotas de F-04: `/resumo` deixou de ser provisória. |
+| 2026-09-30 | T-022 | Sugestão anotada | Clicar numa categoria do resumo para abrir a listagem filtrada por ela (F-09 §2, fora de escopo). |
+| 2026-09-30 | T-022 | `Não iniciada` → `Iniciada` | Dependências T-021 e T-011 `Concluída`. Última tarefa de F-09. |
 | 2026-09-30 | T-021 | `Iniciada` → `Concluída` | Resumo mensal no backend. `03` → 1.26 (§3, §6.1, §6.3). Guarda de rotas com `GET /api/resumo/mensal`. Nenhuma dependência nova. |
 | 2026-09-30 | T-021 | `Não iniciada` → `Iniciada` | Dependência T-015 `Concluída`; spec F-09 `Aprovada`. F-09 passa a `Iniciada` (§2) e o mapa (§3) foi atualizado. |
 | 2026-09-30 | F-09 | Spec da feature criada e **aprovada** | `features/F-09-resumo-mensal.md`: Q1–Q2 respondidas (ambas na opção recomendada). Única precisão sobre `03`: `mes` obrigatório em `GET /api/resumo/mensal` (T-021 marca em §6.1). Nenhum status de tarefa alterado. |
