@@ -72,20 +72,20 @@ Abrir o aplicativo e ver, num relance, como está o mês: quanto saiu, quanto en
 
 **Herdados de `01`**
 
-- [ ] **CA-12.1** Dado os lançamentos de um mês, então os totais exibidos batem, centavo a centavo, com a soma dos lançamentos da planilha naquele mês.
+- [~] **CA-12.1** Dado os lançamentos de um mês, então os totais exibidos batem, centavo a centavo, com a soma dos lançamentos da planilha naquele mês. *(T-021: a API soma centavo a centavo, com os mesmos totais da listagem; a tela é T-022.)*
 - [ ] **CA-12.2** Dado um saldo negativo, então ele é destacado visualmente.
 
 **Refinados — backend (T-021)**
 
-- [ ] **CA-F09.1** Dado lançamentos de setembro (gastos e receitas, inclusive parcelas e recorrentes) e de outros meses, quando `GET /api/resumo/mensal?mes=2026-09`, então `total_gastos`, `total_receitas` e `saldo` são os mesmos de `GET /api/lancamentos?mes=2026-09` sem filtros, e só os de setembro contam (RN-03, RN-13).
-- [ ] **CA-F09.2** Dado 0,10 + 0,20 somados 3 vezes (valores que dão erro em ponto flutuante), então os totais saem exatos: R$ 0,90 (RN-16).
-- [ ] **CA-F09.3** Dado gastos em 3 categorias e 2 formas, então `por_categoria` e `por_forma_pagamento` trazem só gastos, um item por categoria/forma com gasto, com nome e cor atuais, ordenados do maior para o menor (empates pela regra de §3.1.4–5), e `percentual` com 1 casa.
-- [ ] **CA-F09.4** Dado uma categoria inativa com gasto no mês e outra apagada à mão, então a inativa aparece com seu nome e a apagada como "Categoria não encontrada" (`#9E9E9E`).
-- [ ] **CA-F09.5** Dado gastos nos dias 1, 15 e 30 de setembro, então `gasto_acumulado_diario` tem 30 itens, cresce nesses dias e fica constante entre eles; fevereiro de 2028 tem 29 itens (Q2).
-- [ ] **CA-F09.6** Dado um mês sem lançamentos, então 200 com totais 0, listas vazias e acumulado zerado.
-- [ ] **CA-F09.7** Dado `mes` ausente ou fora do formato, então 422 no campo `mes`; dado a planilha inacessível, então 503 com a causa.
-- [ ] **CA-F09.8** Dado uma linha inválida na aba, então ela não entra em nenhuma soma e `linhas_ignoradas` = 1 (CA-16.3).
-- [ ] **CA-F09.9** Dado o resumo pedido, então há uma leitura de cada aba (pelo cache), sem escrita (RNF-04).
+- [x] **CA-F09.1** Dado lançamentos de setembro (gastos e receitas, inclusive parcelas e recorrentes) e de outros meses, quando `GET /api/resumo/mensal?mes=2026-09`, então `total_gastos`, `total_receitas` e `saldo` são os mesmos de `GET /api/lancamentos?mes=2026-09` sem filtros, e só os de setembro contam (RN-03, RN-13).
+- [x] **CA-F09.2** Dado 0,10 + 0,20 somados 3 vezes (valores que dão erro em ponto flutuante), então os totais saem exatos: R$ 0,90 (RN-16).
+- [x] **CA-F09.3** Dado gastos em 3 categorias e 2 formas, então `por_categoria` e `por_forma_pagamento` trazem só gastos, um item por categoria/forma com gasto, com nome e cor atuais, ordenados do maior para o menor (empates pela regra de §3.1.4–5), e `percentual` com 1 casa.
+- [x] **CA-F09.4** Dado uma categoria inativa com gasto no mês e outra apagada à mão, então a inativa aparece com seu nome e a apagada como "Categoria não encontrada" (`#9E9E9E`).
+- [x] **CA-F09.5** Dado gastos nos dias 1, 15 e 30 de setembro, então `gasto_acumulado_diario` tem 30 itens, cresce nesses dias e fica constante entre eles; fevereiro de 2028 tem 29 itens (Q2).
+- [x] **CA-F09.6** Dado um mês sem lançamentos, então 200 com totais 0, listas vazias e acumulado zerado.
+- [x] **CA-F09.7** Dado `mes` ausente ou fora do formato, então 422 no campo `mes`; dado a planilha inacessível, então 503 com a causa.
+- [x] **CA-F09.8** Dado uma linha inválida na aba, então ela não entra em nenhuma soma e `linhas_ignoradas` = 1 (CA-16.3).
+- [x] **CA-F09.9** Dado o resumo pedido, então há uma leitura de cada aba (pelo cache), sem escrita (RNF-04).
 
 **Refinados — frontend (T-022)**
 
@@ -166,8 +166,10 @@ A única precisão sobre `03` é que `mes` é **obrigatório** (a tabela de §6.
 | `tests/unit/test_resumo_service.py::test_totais_iguais_aos_da_listagem__CA_12_1` | unitário BE | CA-12.1, CA-F09.1, borda 1 |
 | `…::test_somas_exatas_em_centavos__RN_16` | unitário BE | CA-F09.2, borda 2 |
 | `…::test_por_categoria_e_forma_ordenados__CA_F09_3` | unitário BE | CA-F09.3, bordas 5–7 |
-| `…::test_categoria_inativa_e_apagada__CA_F09_4` | unitário BE | CA-F09.4, bordas 8–10 |
+| `…::test_categoria_inativa_renomeada_e_apagada__CA_F09_4` | unitário BE | CA-F09.4, bordas 8–10 |
 | `…::test_acumulado_diario__CA_F09_5` (parametrizado: set/2026, fev/2028) | unitário BE | CA-F09.5, bordas 12–13 |
+| `…::test_empate_de_forma_segue_rn_05` | unitário BE | §3.1.5 |
+| `tests/unit/test_datas.py::test_dias_no_mes` | unitário BE | §3.1.7 |
 | `…::test_mes_vazio_e_so_receitas__CA_F09_6` | unitário BE | CA-F09.6, borda 3 |
 | `…::test_percentuais_arredondados__Q1` | unitário BE | borda 6 |
 | `tests/api/test_resumo.py::test_get_formato__CA_12_1` | API BE | contrato §6 |
@@ -210,6 +212,7 @@ Ordem: T-021 → T-022 (T-022 também depende de T-011, concluída).
 | `gasto_acumulado_diario` entregue já em T-021. | O contrato `ResumoMensal` é um só (`03` §6.3); F-10 só desenha. | Não |
 | Percentual arredondado linha a linha, sem forçar soma 100 (Q1). | Cada linha é fiel ao próprio valor; linhas de mesmo valor têm o mesmo percentual. | Não |
 | Acumulado diário com todos os dias do mês (Q2). | Coerente com os totais, que já incluem gastos com data futura no mês (RN-03). | Não |
+| `dias_no_mes(mes)` em `domain/datas.py` (T-021). | Aritmética de calendário fica no domínio, ao lado de `ajustar_dia`. | Não |
 
 ---
 
@@ -228,3 +231,4 @@ Ordem: T-021 → T-022 (T-022 também depende de T-011, concluída).
 |---|---|
 | 2026-09-30 | Criação (`/especificar-feature F-09`). Status `Rascunho` — 2 questões em aberto. |
 | 2026-09-30 | Q1–Q2 respondidas (ambas na opção recomendada) → status **Aprovada**. Duas decisões em §10. |
+| 2026-09-30 | T-021 concluída: CA-F09.1 a .9 verificados por teste (inclui 5.000 linhas com uma leitura por aba); CA-12.1 com a parte da API. `03` §6.1 com `mes` obrigatório. |

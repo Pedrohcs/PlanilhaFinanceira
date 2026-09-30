@@ -1,9 +1,10 @@
 """DTOs de entrada e saída da API (`SPECS/03` §6.3)."""
 
 from datetime import date, datetime
+from decimal import Decimal
 from typing import Annotated, Literal
 
-from pydantic import BaseModel, BeforeValidator, Field
+from pydantic import BaseModel, BeforeValidator, Field, PlainSerializer
 
 from app.domain.dinheiro import PARCELAS_MAX, PARCELAS_MIN, Dinheiro, Montante
 from app.domain.enums import FormaPagamento, TipoLancamento
@@ -11,6 +12,7 @@ from app.domain.modelos import Data
 from app.services.categoria_service import CategoriaComUso, normalizar_nome
 from app.services.lancamento_service import LancamentoComCategoria, ListaDoMes
 from app.services.parcelamento_service import ParcelamentoCriado
+from app.services.resumo_service import ResumoDoMes
 
 STATUS_OK = "ok"
 STATUS_DEGRADADO = "degradado"
@@ -223,4 +225,61 @@ class ParcelamentoSaida(BaseModel):
         return cls(
             parcelamento_id=criado.parcelamento_id,
             lancamentos=[LancamentoSaida.de(item) for item in criado.lancamentos],
+        )
+
+
+# Resumo (F-09) -----------------------------------------------------------------------
+
+Percentual = Annotated[Decimal, PlainSerializer(float, return_type=float, when_used="json")]
+"""0 a 100 com 1 casa (`SPECS/03` §6.3); sai no JSON como número."""
+
+
+class GastoPorCategoriaSaida(BaseModel):
+    categoria_id: str
+    nome: str
+    cor: str
+    total: Montante
+    percentual: Percentual
+
+
+class GastoPorFormaSaida(BaseModel):
+    forma_pagamento: FormaPagamento
+    nome: str
+    total: Montante
+    percentual: Percentual
+
+
+class GastoAcumuladoSaida(BaseModel):
+    dia: int
+    total: Montante
+
+
+class ResumoMensalSaida(BaseModel):
+    """`GET /api/resumo/mensal` (`SPECS/03` §6.3). Listas só de gastos, maior primeiro."""
+
+    mes: str
+    total_gastos: Montante
+    total_receitas: Montante
+    saldo: Montante
+    por_categoria: list[GastoPorCategoriaSaida]
+    por_forma_pagamento: list[GastoPorFormaSaida]
+    gasto_acumulado_diario: list[GastoAcumuladoSaida]
+    linhas_ignoradas: int
+
+    @classmethod
+    def de(cls, resumo: ResumoDoMes) -> "ResumoMensalSaida":
+        return cls(
+            mes=resumo.mes,
+            total_gastos=resumo.totais.gastos,
+            total_receitas=resumo.totais.receitas,
+            saldo=resumo.totais.saldo,
+            por_categoria=[GastoPorCategoriaSaida(**vars(item)) for item in resumo.por_categoria],
+            por_forma_pagamento=[
+                GastoPorFormaSaida(**vars(item)) for item in resumo.por_forma_pagamento
+            ],
+            gasto_acumulado_diario=[
+                GastoAcumuladoSaida(dia=dia, total=total)
+                for dia, total in enumerate(resumo.gasto_acumulado_diario, start=1)
+            ],
+            linhas_ignoradas=resumo.linhas_ignoradas,
         )

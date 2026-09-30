@@ -13,7 +13,14 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.deps import criar_repositorios_planilha
 from app.api.erros import registrar_handlers
-from app.api.routers import categorias, formas_pagamento, health, lancamentos, parcelamentos
+from app.api.routers import (
+    categorias,
+    formas_pagamento,
+    health,
+    lancamentos,
+    parcelamentos,
+    resumo,
+)
 from app.config import Settings, obter_settings
 from app.infra.bootstrap import preparar_planilha
 from app.infra.cache import CacheAbas
@@ -76,6 +83,7 @@ def criar_app(settings: Settings | None = None, conexao: ConexaoPlanilha | None 
     app.include_router(formas_pagamento.router, prefix=PREFIXO_API)
     app.include_router(lancamentos.router, prefix=PREFIXO_API)
     app.include_router(parcelamentos.router, prefix=PREFIXO_API)
+    app.include_router(resumo.router, prefix=PREFIXO_API)
     return app
 
 

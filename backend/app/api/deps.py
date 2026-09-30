@@ -24,6 +24,7 @@ from app.repositories.planilha import (
 from app.services.categoria_service import CategoriaService
 from app.services.lancamento_service import LancamentoService
 from app.services.parcelamento_service import ParcelamentoService
+from app.services.resumo_service import ResumoService
 
 
 @dataclass(frozen=True)
@@ -75,7 +76,14 @@ def obter_parcelamento_service(
     return ParcelamentoService(repositorios.categorias, repositorios.lancamentos)
 
 
+def obter_resumo_service(
+    repositorios: Annotated[Repositorios, Depends(obter_repositorios)],
+) -> ResumoService:
+    return ResumoService(repositorios.categorias, repositorios.lancamentos)
+
+
 ConexaoDep = Annotated[ConexaoPlanilha, Depends(obter_conexao)]
 CategoriaServiceDep = Annotated[CategoriaService, Depends(obter_categoria_service)]
 LancamentoServiceDep = Annotated[LancamentoService, Depends(obter_lancamento_service)]
 ParcelamentoServiceDep = Annotated[ParcelamentoService, Depends(obter_parcelamento_service)]
+ResumoServiceDep = Annotated[ResumoService, Depends(obter_resumo_service)]

@@ -3,7 +3,7 @@
 | Campo | Valor |
 |---|---|
 | Documento | `SPECS/03-arquitetura.md` |
-| Versão | 1.25 |
+| Versão | 1.26 |
 | Atualizado em | 2026-09-30 |
 | Status | Aprovado para início |
 | Responde | **Como** o sistema se organiza: componentes, pastas, camadas, modelo de dados na planilha, contrato da API e fluxos |
@@ -75,7 +75,8 @@ PlanilhaFinanceira/
 │   │   │   └── datas.py           # ajustar_dia, somar_meses, data_da_parcela, mes_de,
 │   │   │                          # proximo_mes, mes_anterior, meses_entre, mes_corrente
 │   │   ├── services/              # categoria_service.py (T-013), lancamento_service.py (T-015),
-│   │   │                          # parcelamento_service.py (T-026); recorrencia, resumo
+│   │   │                          # parcelamento_service.py (T-026), resumo_service.py (T-021);
+│   │   │                          # recorrencia
 │   │   ├── repositories/
 │   │   │   ├── base.py            # Protocols dos repositórios (`Repositorio[T]` + 3 específicos)
 │   │   │   ├── memoria/           # implementações em memória (testes), mesmo comportamento
@@ -301,7 +302,7 @@ Base: `/api`. JSON em `snake_case`. Valores monetários como número com 2 casas
 | PUT | `/api/recorrencias/{id}` | `RecorrenciaEntrada` | `200 Recorrencia` | REQ-09 |
 | PATCH | `/api/recorrencias/{id}/status` | `{status}` | `200 Recorrencia` | REQ-09 |
 | POST | `/api/recorrencias/sincronizar` | — | `200 {lancamentos_gerados, detalhes: [{recorrencia_id, meses: [YYYY-MM]}]}` | REQ-10 |
-| GET | `/api/resumo/mensal` | `?mes=YYYY-MM` | `200 ResumoMensal` | REQ-12, REQ-13 |
+| GET | `/api/resumo/mensal` | `?mes=YYYY-MM` (obrig.) | `200 ResumoMensal` | REQ-12, REQ-13 |
 | GET | `/api/resumo/historico` | `?inicio=YYYY-MM&fim=YYYY-MM` (padrão: últimos 12) | `200 ResumoHistorico` | REQ-14 |
 
 ### 6.2 Formato de erro (todas as respostas ≥ 400)
@@ -385,7 +386,7 @@ Erros do próprio framework também saem neste envelope: rota inexistente vira 4
   "por_categoria": [{ "categoria_id", "nome", "cor", "valores": [0, 0, ...] }],   // um valor por mês, na ordem de "meses"
   "total_gastos_periodo": 0, "media_mensal_gastos": 0 }
 ```
-`percentual` é número de 0 a 100 com 1 casa. `por_categoria` e `por_forma_pagamento` consideram só gastos e vêm ordenados do maior para o menor.
+`percentual` é número de 0 a 100 com 1 casa, arredondado linha a linha (`ROUND_HALF_UP`; a soma pode dar 99,9 ou 100,1 — F-09 Q1). `por_categoria` e `por_forma_pagamento` consideram só gastos e vêm ordenados do maior para o menor; empates: categoria pelo nome sem acento/caixa, forma na ordem de RN-05. Os totais do `ResumoMensal` são os mesmos da `ListaLancamentos` sem filtro. `gasto_acumulado_diario` tem um item por dia do mês, todos os dias (F-09 Q2).
 
 ---
 
@@ -503,4 +504,5 @@ Quando o **backend não responde** (status 0, ou 502/504 sem o envelope de §6.2
 | 2026-09-30 | 1.23 | §3: edição no `lancamento-form.dialog`, `editarLancamento` e menu ⋮ da listagem (T-020). |
 | 2026-09-30 | 1.24 | §3 e §4.4: `parcelamento_service` e validação compartilhada com `lancamento_service` (T-026). |
 | 2026-09-30 | 1.25 | §3: `parcelamentos.api` e `utils/parcelas.ts` no frontend (T-027). |
+| 2026-09-30 | 1.26 | §3: `resumo_service`; §6.1: `mes` obrigatório no resumo; §6.3: arredondamento do percentual, empates e acumulado diário (T-021). |
 | 2026-09-29 | 1.1 | Frontend em Angular 22 (zoneless); pasta `shared/grafico/` com diretiva Chart.js própria (§3, §8.2.1). |

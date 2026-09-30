@@ -9,6 +9,7 @@ from app.domain.datas import (
     ajustar_dia,
     ano_e_mes,
     data_da_parcela,
+    dias_no_mes,
     mes_anterior,
     mes_corrente,
     mes_de,
@@ -136,3 +137,10 @@ def test_agora_sem_microssegundos_e_sem_fuso() -> None:
     assert instante.microsecond == 0
     assert instante.tzinfo is None
     assert len(instante.isoformat()) == len("2026-09-29T10:15:00")
+
+
+@pytest.mark.parametrize(
+    ("mes", "dias"), [("2026-09", 30), ("2026-10", 31), ("2026-02", 28), ("2028-02", 29)]
+)
+def test_dias_no_mes(mes: str, dias: int) -> None:
+    assert dias_no_mes(mes) == dias

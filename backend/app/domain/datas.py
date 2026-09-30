@@ -61,6 +61,12 @@ def mes_anterior(mes: str) -> str:
     return mes_de(somar_meses(date(ano, numero, 1), -1))
 
 
+def dias_no_mes(mes: str) -> int:
+    """`"2026-09"` → 30; `"2028-02"` → 29 (acumulado diário do resumo, F-09 Q2)."""
+    ano, numero = ano_e_mes(mes)
+    return calendar.monthrange(ano, numero)[1]
+
+
 def meses_entre(inicio: str, fim: str) -> list[str]:
     """Meses de `inicio` a `fim`, inclusive nas pontas; vazio se `fim < inicio`."""
     ano_e_mes(inicio)
