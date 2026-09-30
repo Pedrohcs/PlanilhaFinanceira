@@ -1,15 +1,12 @@
 import { TestBed } from '@angular/core/testing';
-import {
-  MAT_DATE_LOCALE,
-  MATERIAL_ANIMATIONS,
-  provideNativeDateAdapter,
-} from '@angular/material/core';
+import { MAT_DATE_LOCALE, provideNativeDateAdapter } from '@angular/material/core';
 import { MatDatepicker } from '@angular/material/datepicker';
 import { By } from '@angular/platform-browser';
 import { provideRouter, Router } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { routes } from '../../../app.routes';
 import { MesSelecionadoStore } from '../../../core/state/mes-selecionado.store';
+import { provideMaterialParaTestes } from '../../../../testing/material';
 
 describe('SeletorMes', () => {
   let harness: RouterTestingHarness;
@@ -20,8 +17,7 @@ describe('SeletorMes', () => {
         provideRouter(routes),
         provideNativeDateAdapter(),
         { provide: MAT_DATE_LOCALE, useValue: 'pt-BR' },
-        // O jsdom não dispara fim de animação CSS: sem isto o calendário não conclui o fechar.
-        { provide: MATERIAL_ANIMATIONS, useValue: { animationsDisabled: true } },
+        provideMaterialParaTestes(),
       ],
     });
     harness = await RouterTestingHarness.create();

@@ -1,9 +1,8 @@
-import { InteractivityChecker } from '@angular/cdk/a11y';
 import { ApplicationRef } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { MATERIAL_ANIMATIONS } from '@angular/material/core';
 import { MatDialog } from '@angular/material/dialog';
 import { firstValueFrom } from 'rxjs';
+import { provideMaterialParaTestes } from '../../../../testing/material';
 import { confirmar, DadosConfirmacao } from './confirmacao.dialog';
 
 const DADOS: DadosConfirmacao = {
@@ -16,16 +15,8 @@ describe('ConfirmacaoDialog', () => {
   let dialog: MatDialog;
 
   beforeEach(() => {
-    // O jsdom não dispara fim de animação CSS: sem isto o diálogo nunca "termina" de abrir.
     TestBed.configureTestingModule({
-      providers: [
-        { provide: MATERIAL_ANIMATIONS, useValue: { animationsDisabled: true } },
-        // No jsdom todo elemento tem tamanho zero, e o CDK o julgaria "não focável".
-        {
-          provide: InteractivityChecker,
-          useValue: { isFocusable: () => true, isTabbable: () => true, isVisible: () => true },
-        },
-      ],
+      providers: [provideMaterialParaTestes()],
     });
     dialog = TestBed.inject(MatDialog);
   });

@@ -68,7 +68,7 @@ describe('App (shell)', () => {
   }
 
   function linksDaNavegacao(): HTMLAnchorElement[] {
-    return Array.from(elemento.querySelectorAll<HTMLAnchorElement>('mat-nav-list a'));
+    return Array.from(elemento.querySelectorAll<HTMLAnchorElement>('nav.lista-navegacao a'));
   }
 
   beforeEach(() => {
@@ -109,7 +109,7 @@ describe('App (shell)', () => {
     const links = linksDaNavegacao();
     const texto = (link: HTMLAnchorElement, seletor: string) =>
       link.querySelector(seletor)?.textContent?.trim();
-    expect(links.map((link) => texto(link, '[matListItemTitle]'))).toEqual([
+    expect(links.map((link) => texto(link, '.rotulo-navegacao'))).toEqual([
       'Resumo',
       'Lançamentos',
       'Histórico',
@@ -259,18 +259,16 @@ describe('App (shell)', () => {
     TestBed.inject(HttpClient)
       .get('/api/lancamentos')
       .subscribe({ error: () => undefined });
-    controle
-      .expectOne('/api/lancamentos')
-      .flush(
-        {
-          erro: {
-            codigo: 'PLANILHA_INDISPONIVEL',
-            mensagem: 'Google Sheets indisponível.',
-            detalhes: [],
-          },
+    controle.expectOne('/api/lancamentos').flush(
+      {
+        erro: {
+          codigo: 'PLANILHA_INDISPONIVEL',
+          mensagem: 'Google Sheets indisponível.',
+          detalhes: [],
         },
-        { status: 503, statusText: 'x' },
-      );
+      },
+      { status: 503, statusText: 'x' },
+    );
     await fixture.whenStable();
 
     expect(banner()?.textContent).toContain('Google Sheets indisponível.');

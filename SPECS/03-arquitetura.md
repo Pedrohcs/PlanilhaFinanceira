@@ -3,7 +3,7 @@
 | Campo | Valor |
 |---|---|
 | Documento | `SPECS/03-arquitetura.md` |
-| Versão | 1.15 |
+| Versão | 1.16 |
 | Atualizado em | 2026-09-30 |
 | Status | Aprovado para início |
 | Responde | **Como** o sistema se organiza: componentes, pastas, camadas, modelo de dados na planilha, contrato da API e fluxos |
@@ -97,8 +97,8 @@ PlanilhaFinanceira/
         ├── app.config.ts  app.routes.ts  app.ts (classe `App`)  # shell
         ├── core/
         │   ├── models/        # interfaces espelhando o JSON da API
-        │   ├── api/           # um serviço HTTP por recurso
-        │   ├── state/         # mes-selecionado, conexao, dados (+ categorias em T-014) .store.ts
+        │   ├── api/           # um serviço HTTP por recurso (health, categorias…)
+        │   ├── state/         # mes-selecionado, conexao, dados, categorias .store.ts
         │   ├── interceptors/  # erro.interceptor.ts
         │   ├── avisos/        # avisos.ts: snackbar carregado sob demanda
         │   └── utils/         # mes.ts (YYYY-MM), formatação
@@ -111,7 +111,7 @@ PlanilhaFinanceira/
             ├── resumo/        # dashboard do mês (cards + gráficos)
             ├── lancamentos/   # listagem + lancamento-form.dialog
             ├── historico/
-            ├── categorias/
+            ├── categorias/    # categorias.page, categoria-form.dialog, paleta.ts
             └── recorrencias/
 ```
 
@@ -436,7 +436,7 @@ Falha no inicializador **não impede** o app de abrir: o `provideAppInitializer`
 | `/categorias` | Gestão de categorias | REQ-11 |
 | `/recorrencias` | Gestão de recorrências | REQ-09 |
 
-O **shell** (`app.ts`, classe `App`) tem barra superior com os botões **"Registrar gasto"** (primário) e "Registrar receita", navegação lateral e banner de erro de conexão. Layout por largura (F-04 Q1): navegação fixa em ≥ 960 px, sobreposta pelo ☰ abaixo disso; em < 600 px a barra perde o título e os botões viram "+ Gasto"/"+ Receita". Título da aba: `"<Página> · Planilha Financeira"`. Rota desconhecida → `/resumo`.
+O **shell** (`app.ts`, classe `App`) tem barra superior com os botões **"Registrar gasto"** (primário) e "Registrar receita", navegação lateral (links simples com `routerLinkActive`, sem `mat-nav-list`, que arrastaria `@angular/forms` para o pacote inicial) e banner de erro de conexão. Layout por largura (F-04 Q1): navegação fixa em ≥ 960 px, sobreposta pelo ☰ abaixo disso; em < 600 px a barra perde o título e os botões viram "+ Gasto"/"+ Receita". Título da aba: `"<Página> · Planilha Financeira"`. Rota desconhecida → `/resumo`.
 
 ### 8.2 Estado
 
@@ -484,4 +484,5 @@ Quando o **backend não responde** (status 0, ou 502/504 sem o envelope de §6.2
 | 2026-09-30 | 1.13 | §7.2: inicializador sem espera e comportamento do "Tentar novamente". §8.4: status real do proxy com o backend desligado (502), conferido em T-012. |
 | 2026-09-30 | 1.14 | §6.3: esquema `Categoria` com `em_uso` calculado e a ordem da listagem (F-05, Q3/Q4). |
 | 2026-09-30 | 1.15 | §3: `services/categoria_service.py`, `deps.py` com `Repositorios`. §4.5: cache e repositórios únicos criados no lifespan (T-013). |
+| 2026-09-30 | 1.16 | §3: `categorias.api.ts`, `categorias.store.ts`, página e diálogo de categorias, `paleta.ts`; `frontend/src/testing/` (T-014). §8.1: navegação lateral com links simples, sem `mat-nav-list` (pacote inicial). |
 | 2026-09-29 | 1.1 | Frontend em Angular 22 (zoneless); pasta `shared/grafico/` com diretiva Chart.js própria (§3, §8.2.1). |

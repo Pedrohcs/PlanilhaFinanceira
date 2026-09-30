@@ -1,3 +1,5 @@
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { MAT_DATE_LOCALE, provideNativeDateAdapter } from '@angular/material/core';
 import { Title } from '@angular/platform-browser';
@@ -5,12 +7,13 @@ import { provideRouter, Router } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { routes } from './app.routes';
 
+/** `provisoria`: página ainda placeholder de F-04 (vira `false` quando a tela real chega). */
 const PAGINAS = [
-  { url: '/resumo', titulo: 'Resumo' },
-  { url: '/lancamentos', titulo: 'Lançamentos' },
-  { url: '/historico', titulo: 'Histórico' },
-  { url: '/categorias', titulo: 'Categorias' },
-  { url: '/recorrencias', titulo: 'Recorrências' },
+  { url: '/resumo', titulo: 'Resumo', provisoria: true },
+  { url: '/lancamentos', titulo: 'Lançamentos', provisoria: true },
+  { url: '/historico', titulo: 'Histórico', provisoria: true },
+  { url: '/categorias', titulo: 'Categorias', provisoria: false },
+  { url: '/recorrencias', titulo: 'Recorrências', provisoria: true },
 ];
 
 describe('rotas (SPECS/03 §8.1)', () => {
@@ -20,6 +23,8 @@ describe('rotas (SPECS/03 §8.1)', () => {
     TestBed.configureTestingModule({
       providers: [
         provideRouter(routes),
+        provideHttpClient(),
+        provideHttpClientTesting(),
         provideNativeDateAdapter(),
         { provide: MAT_DATE_LOCALE, useValue: 'pt-BR' },
       ],
@@ -44,9 +49,9 @@ describe('rotas (SPECS/03 §8.1)', () => {
 
       expect(TestBed.inject(Router).url).toBe(pagina.url);
       expect(tituloDaPagina()).toBe(pagina.titulo);
-      expect(harness.routeNativeElement?.textContent).toContain(
-        'Esta tela ainda está em construção.',
-      );
+      expect(
+        harness.routeNativeElement?.textContent?.includes('Esta tela ainda está em construção.'),
+      ).toBe(pagina.provisoria);
     }
 
     const paginas = routes.filter((rota) => rota.path && rota.path !== '**');

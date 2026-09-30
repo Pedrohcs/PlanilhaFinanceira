@@ -3,7 +3,6 @@ import { ChangeDetectionStrategy, Component, inject, Signal } from '@angular/cor
 import { toSignal } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { MatListModule } from '@angular/material/list';
 import { MatSidenav, MatSidenavModule } from '@angular/material/sidenav';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
@@ -49,7 +48,6 @@ export const ITENS_DE_NAVEGACAO: readonly ItemDeNavegacao[] = [
     MatButtonModule,
     MatIconModule,
     MatSidenavModule,
-    MatListModule,
     BannerConexao,
   ],
   templateUrl: './app.html',

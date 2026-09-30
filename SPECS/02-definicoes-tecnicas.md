@@ -3,7 +3,7 @@
 | Campo | Valor |
 |---|---|
 | Documento | `SPECS/02-definicoes-tecnicas.md` |
-| Versão | 1.8 |
+| Versão | 1.9 |
 | Atualizado em | 2026-09-30 |
 | Status | Aprovado para início |
 | Responde | **Com o quê** o sistema é construído: linguagens, bibliotecas, versões, integração com Google, convenções |
@@ -246,6 +246,8 @@ Definição de pronto de qualquer tarefa: testes do nível correspondente passan
 
 Padrões da suíte do backend (`backend/pyproject.toml`, definidos em T-002): `addopts = "-m 'not integracao'"` — um `pytest` simples **nunca** toca a planilha real, mesmo com `SPREADSHEET_ID_TESTE` definida (para rodar, `pytest -m integracao`, que sobrescreve o padrão); além disso o `conftest` **pula** os testes `integracao` quando a variável não existe, e `filterwarnings` transforma marcador não declarado em falha.
 
+Padrões da suíte do frontend (T-011/T-014): specs que abrem diálogo, menu ou datepicker do Material usam `provideMaterialParaTestes()` (`frontend/src/testing/material.ts`) — o jsdom não dispara fim de animação CSS e dá tamanho zero a todo elemento. Dados de exemplo compartilhados ficam em `frontend/src/testing/` (ex.: `umaCategoria`).
+
 ---
 
 ## 9. Registro de decisões técnicas (ADR resumido)
@@ -296,3 +298,4 @@ Novas decisões: acrescente uma linha com o próximo ID. Decisões substituídas
 | 2026-09-29 | 1.6 | §5.6: 403 desambiguado — nova exceção `ApiSheetsDesabilitada` para Sheets API desativada no projeto (decidido em F-02). |
 | 2026-09-29 | 1.7 | §5.6: `SchemaPlanilhaInvalido` para cabeçalho divergente e `versao_schema` à frente do app (decidido em F-03). |
 | 2026-09-30 | 1.8 | §5.4: inserções com `INSERT_ROWS`, para um append nunca sobrescrever linhas abaixo de uma linha em branco (T-009). |
+| 2026-09-30 | 1.9 | §8: padrões da suíte do frontend (`src/testing/`, `provideMaterialParaTestes`) (T-014). |

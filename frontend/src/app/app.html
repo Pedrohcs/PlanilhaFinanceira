@@ -31,24 +31,24 @@
     [mode]="navegacaoFixa() ? 'side' : 'over'"
     [opened]="navegacaoFixa()"
   >
-    <mat-nav-list aria-label="Navegação principal">
+    <!-- Links simples, sem mat-nav-list: a lista do Material arrasta @angular/forms
+         para o pacote inicial (T-014). -->
+    <nav class="lista-navegacao" aria-label="Navegação principal">
       @for (item of itensDeNavegacao; track item.rota) {
         <a
-          mat-list-item
+          class="item-navegacao"
           [routerLink]="item.rota"
           [queryParams]="item.comMes ? { mes: mesSelecionado.mes() } : null"
           routerLinkActive="item-ativo"
           [routerLinkActiveOptions]="comparacaoDoAtivo"
-          #ativo="routerLinkActive"
           ariaCurrentWhenActive="page"
-          [activated]="ativo.isActive"
           (click)="aoEscolherItem(menu)"
         >
-          <mat-icon matListItemIcon>{{ item.icone }}</mat-icon>
-          <span matListItemTitle>{{ item.rotulo }}</span>
+          <mat-icon aria-hidden="true">{{ item.icone }}</mat-icon>
+          <span class="rotulo-navegacao">{{ item.rotulo }}</span>
         </a>
       }
-    </mat-nav-list>
+    </nav>
   </mat-sidenav>
 
   <mat-sidenav-content>

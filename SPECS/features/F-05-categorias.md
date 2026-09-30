@@ -4,7 +4,7 @@
 |---|---|
 | Feature | F-05 |
 | Marco | M1 |
-| Status | Aprovada |
+| Status | Concluída |
 | Requisitos | REQ-11 (CA-11.1 a CA-11.4) |
 | Regras | RN-12; RN-15 (já semeada em F-03); base de RN-04 para F-06 |
 | Depende de | F-03 (**Concluída**), F-04 (**Concluída**) |
@@ -119,8 +119,8 @@ O tipo (GASTO/RECEITA) é escolhido na criação e **não muda** depois: o `PUT`
 
 - [x] **CA-11.1** Dado um nome já existente no mesmo tipo (ignorando maiúsculas/acentos), quando o usuário tenta criar/renomear, então o sistema recusa com mensagem clara.
 - [~] **CA-11.2** Dado uma categoria renomeada, então todos os lançamentos dela exibem o novo nome, inclusive os antigos. *(F-05 garante que renomear não altera `id` nem toca a aba `Lancamentos` — verificado em T-013; a exibição é verificada em F-07.)*
-- [~] **CA-11.3** Dado uma categoria com lançamentos ou recorrências, quando o usuário tenta excluir, então o sistema recusa e sugere desativar. *(T-013: recusa 409 com a sugestão na mensagem, e `em_uso` na listagem; a tela que oferece desativar é T-014.)*
-- [~] **CA-11.4** Dado uma categoria desativada, então ela não aparece para novos lançamentos, mas continua nos relatórios e na listagem. *(T-013: listagem padrão sem inativas e `incluir_inativas`; a tela é T-014; relatórios em F-07/F-09.)*
+- [x] **CA-11.3** Dado uma categoria com lançamentos ou recorrências, quando o usuário tenta excluir, então o sistema recusa e sugere desativar. *(T-013: recusa 409 com a sugestão na mensagem e `em_uso` na listagem; T-014: "Excluir" em categoria em uso oferece desativar sem enviar `DELETE`.)*
+- [~] **CA-11.4** Dado uma categoria desativada, então ela não aparece para novos lançamentos, mas continua nos relatórios e na listagem. *(T-013: listagem padrão sem inativas; T-014: página mostra as inativas com selo e `CategoriasStore.ativasPorTipo` as exclui — os formulários de F-06 o usam; relatórios e listagem de lançamentos em F-07/F-09.)*
 
 **Refinados — backend (T-013)**
 
@@ -143,14 +143,14 @@ O tipo (GASTO/RECEITA) é escolhido na criação e **não muda** depois: o `PUT`
 
 **Refinados — frontend (T-014)**
 
-- [ ] **CA-F05.14** Dado a página `/categorias`, quando abre, então mostra as seções Gastos e Receitas com as categorias de cada tipo, cor, nome e selo "Inativa" nas inativas.
-- [ ] **CA-F05.15** Dado "Nova categoria" na seção Receitas, quando o usuário salva um nome válido, então a categoria aparece na seção Receitas, um aviso confirma e o diálogo fecha.
-- [ ] **CA-F05.16** Dado um nome duplicado no diálogo, quando o usuário salva, então o diálogo continua aberto com os dados e o campo nome mostra a mensagem do backend (CA-11.1).
-- [ ] **CA-F05.17** Dado "Desativar" numa categoria, então ela passa a mostrar "Inativa" e a opção vira "Reativar"; e `CategoriasStore.ativasPorTipo` deixa de incluí-la (CA-11.4).
-- [ ] **CA-F05.18** Dado "Excluir" numa categoria com `em_uso`, então nenhum `DELETE` é enviado: abre o diálogo que oferece desativar e, confirmado, a categoria fica "Inativa" (CA-11.3). Numa sem uso, a confirmação mostra o nome e, confirmada, a categoria some.
-- [ ] **CA-F05.19** Dado qualquer escrita bem-sucedida, então `CategoriasStore` recarrega e `DadosStore.versao` aumenta 1.
-- [ ] **CA-F05.20** Dado a janela de 360 px, então a página não rola na horizontal e todas as ações de cada item são alcançáveis (RNF-07).
-- [ ] **CA-F05.24** Dado "Nova categoria" em GASTO com as 11 cores padrão de gasto em uso, então o diálogo mostra as 24 cores da paleta e pré-seleciona a primeira não usada por nenhuma categoria de gasto; e ao editar uma categoria com cor fora da paleta, essa cor aparece selecionada como opção extra (Q2).
+- [x] **CA-F05.14** Dado a página `/categorias`, quando abre, então mostra as seções Gastos e Receitas com as categorias de cada tipo, cor, nome e selo "Inativa" nas inativas.
+- [x] **CA-F05.15** Dado "Nova categoria" na seção Receitas, quando o usuário salva um nome válido, então a categoria aparece na seção Receitas, um aviso confirma e o diálogo fecha.
+- [x] **CA-F05.16** Dado um nome duplicado no diálogo, quando o usuário salva, então o diálogo continua aberto com os dados e o campo nome mostra a mensagem do backend (CA-11.1).
+- [x] **CA-F05.17** Dado "Desativar" numa categoria, então ela passa a mostrar "Inativa" e a opção vira "Reativar"; e `CategoriasStore.ativasPorTipo` deixa de incluí-la (CA-11.4).
+- [x] **CA-F05.18** Dado "Excluir" numa categoria com `em_uso`, então nenhum `DELETE` é enviado: abre o diálogo que oferece desativar e, confirmado, a categoria fica "Inativa" (CA-11.3). Numa sem uso, a confirmação mostra o nome e, confirmada, a categoria some.
+- [x] **CA-F05.19** Dado qualquer escrita bem-sucedida, então `CategoriasStore` recarrega e `DadosStore.versao` aumenta 1.
+- [~] **CA-F05.20** Dado a janela de 360 px, então a página não rola na horizontal e todas as ações de cada item são alcançáveis (RNF-07). *(T-014: ações sempre num menu ⋮ e textos com quebra; conferência visual pendente, junto com a de F-04.)*
+- [x] **CA-F05.24** Dado "Nova categoria" em GASTO com as 11 cores padrão de gasto em uso, então o diálogo mostra as 24 cores da paleta e pré-seleciona a primeira não usada por nenhuma categoria de gasto; e ao editar uma categoria com cor fora da paleta, essa cor aparece selecionada como opção extra (Q2).
 
 ---
 
@@ -288,6 +288,11 @@ Ordem: T-013 → T-014 (`05` §4; T-014 também depende de T-011, já concluída
 | Ordem: ativas antes, alfabética sem acento/caixa; GASTO antes de RECEITA (Q3). | Previsível e igual em todas as telas; inativas no fim não atrapalham quem escolhe. | Não |
 | `em_uso` na listagem; "Excluir" em categoria em uso oferece desativar sem chamar o `DELETE` (Q4-B). | O usuário recebe a sugestão de CA-11.3 antes de errar, sem precisar desligar o aviso global do interceptor; o 409 fica como proteção. `03` → 1.14. | Não |
 | Última categoria ativa de um tipo pode ser desativada/excluída (Q5). | Bloquear obrigaria a criar outra antes de reorganizar; F-06 orienta quando não houver nenhuma ativa. | Não |
+| Ações de cada categoria sempre num menu ⋮, em qualquer largura (T-014). | Um padrão só, que garante os 360 px (RNF-07) sem layout alternativo. | Não |
+| "Excluir" de uma categoria **em uso e já inativa** aparece desabilitado como "Excluir (em uso)" (T-014). | Oferecer "Desativar" não faria sentido; o usuário vê por que não pode excluir. | Não |
+| O diálogo de categoria salva por conta própria (T-014). | Só assim ele continua aberto com os dados e marca o campo quando o backend recusa (409/422). | Não |
+| `CategoriasStore` guarda a `versao` carregada e só recarrega quando ela muda (T-014). | O efeito que observa `DadosStore.versao` roda pela 1ª vez depois de a página já ter pedido a carga; sem a guarda, haveria duas requisições iguais. | Não |
+| Navegação lateral do shell sem `mat-nav-list` (T-014, revisão de F-04). | A lista do Material levava `@angular/forms` inteiro ao pacote inicial; sem ela, 456 kB (limite de aviso 500 kB). Decisão do usuário. | Não |
 
 ---
 
@@ -312,3 +317,4 @@ Ordem: T-013 → T-014 (`05` §4; T-014 também depende de T-011, já concluída
 | 2026-09-30 | Criação (`/especificar-feature F-05`). Status `Rascunho` — 5 questões em aberto. |
 | 2026-09-30 | Q1–Q5 respondidas → status **Aprovada**. Paleta de 24 cores definida; `em_uso` no contrato; CA-F05.18 fechado; CA-F05.21 a .24 e bordas 7a, 22 e 23 acrescentados. `03` → 1.14. |
 | 2026-09-30 | T-013 concluída: CA-11.1 e CA-F05.1 a .13, .21 a .23 verificados por teste; CA-11.2, .3 e .4 com a parte do backend verificada (o resto é T-014/F-07). Três decisões em §10. `03` → 1.15. |
+| 2026-09-30 | T-014 concluída → **feature Concluída**. CA-11.3 e CA-F05.14 a .19 e .24 verificados por teste; CA-11.2/.4 com a parte de F-05 feita (o resto é F-07/F-09); CA-F05.20 com conferência visual pendente. Cinco decisões em §10, incluindo a troca do `mat-nav-list` do shell (revisão registrada em F-04). `02` → 1.9, `03` → 1.16. |
