@@ -1,0 +1,35 @@
+// Shell: barra fixa no topo e, abaixo dela, navegação + páginas ocupando o resto.
+:host {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+}
+
+.barra {
+  flex: 0 0 auto;
+  gap: 8px;
+}
+
+.titulo {
+  white-space: nowrap;
+}
+
+.espaco {
+  flex: 1 1 auto;
+}
+
+.registrar {
+  flex: 0 0 auto;
+}
+
+.corpo {
+  flex: 1 1 auto;
+}
+
+.navegacao {
+  width: 240px;
+}
+
+.conteudo {
+  padding: 16px;
+}

@@ -3,7 +3,7 @@
 | Campo | Valor |
 |---|---|
 | Documento | `SPECS/03-arquitetura.md` |
-| Versão | 1.10 |
+| Versão | 1.11 |
 | Atualizado em | 2026-09-30 |
 | Status | Aprovado para início |
 | Responde | **Como** o sistema se organiza: componentes, pastas, camadas, modelo de dados na planilha, contrato da API e fluxos |
@@ -102,8 +102,9 @@ PlanilhaFinanceira/
         │   └── utils/         # mes.ts (YYYY-MM), formatação
         ├── shared/
         │   ├── components/    # seletor-mes, confirmacao-dialog, estado-vazio, carregando
-        │   └── grafico/       # grafico.directive.ts + grafico.config.ts (Chart.js, ADR-11)
-        └── features/
+        │   └── grafico/       # grafico.directive.ts + grafico.config.ts (Chart.js, ADR-11;
+        │                      # tokens FABRICA_GRAFICO e CORES_DO_TEMA para testes)
+        └── features/          # uma pasta por tela; página em <nome>/<nome>.page.ts (classe <Nome>Page)
             ├── resumo/        # dashboard do mês (cards + gráficos)
             ├── lancamentos/   # listagem + lancamento-form.dialog
             ├── historico/
@@ -425,7 +426,7 @@ Falha no inicializador **não impede** o app de abrir.
 | `/categorias` | Gestão de categorias | REQ-11 |
 | `/recorrencias` | Gestão de recorrências | REQ-09 |
 
-O **shell** (`app.ts`, classe `App`) tem barra superior com os botões **"Registrar gasto"** (primário) e "Registrar receita", navegação lateral e banner de erro de conexão.
+O **shell** (`app.ts`, classe `App`) tem barra superior com os botões **"Registrar gasto"** (primário) e "Registrar receita", navegação lateral e banner de erro de conexão. Layout por largura (F-04 Q1): navegação fixa em ≥ 960 px, sobreposta pelo ☰ abaixo disso; em < 600 px a barra perde o título e os botões viram "+ Gasto"/"+ Receita". Título da aba: `"<Página> · Planilha Financeira"`. Rota desconhecida → `/resumo`.
 
 ### 8.2 Estado
 
@@ -468,4 +469,5 @@ Quando o **backend não responde** (status 0, ou 502/504 sem o envelope de §6.2
 | 2026-09-30 | 1.8 | §8.4: código local `BACKEND_INDISPONIVEL` para backend fora do ar, no mesmo banner dos 503 (F-04, Q3). |
 | 2026-09-30 | 1.9 | §4.5: `bootstrap` roda a cada conexão estabelecida (inclusive pela nova tentativa do health) e ignora colunas extras no fim. §4.4: seed padrão sai do `categoria_service` (é do `bootstrap`). §3: `tests/planilha_falsa.py` — T-008. |
 | 2026-09-30 | 1.10 | §3 e §4.3: estrutura real de `repositories/` (`Repositorio[T]`, `planilha/aba.py`), `ConexaoPlanilha.executar`, `NaoEncontrado` em `atualizar`/`remover` e remoção tudo-ou-nada (T-009). |
+| 2026-09-30 | 1.11 | §3: páginas em `features/<nome>/<nome>.page.ts` e tokens de `shared/grafico/`. §8.1: layout por largura, título da aba e rota desconhecida (T-010, F-04). |
 | 2026-09-29 | 1.1 | Frontend em Angular 22 (zoneless); pasta `shared/grafico/` com diretiva Chart.js própria (§3, §8.2.1). |

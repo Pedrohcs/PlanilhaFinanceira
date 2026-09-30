@@ -148,7 +148,7 @@ Implementa exatamente `02` §4:
 
 **Herdados de `01`**
 
-- [ ] **CA-01.1** *(parcial — só a visibilidade)* Dado qualquer tela aberta, quando o usuário procura a ação, então "Registrar gasto" está visível. A abertura do formulário com a data de hoje é verificada em F-06 (T-016).
+- [x] **CA-01.1** *(parcial — só a visibilidade)* Dado qualquer tela aberta, quando o usuário procura a ação, então "Registrar gasto" está visível. A abertura do formulário com a data de hoje é verificada em F-06 (T-016).
 - [ ] **CA-04.1** Dado o aplicativo recém-aberto, quando o usuário entra no resumo ou na listagem, então o mês corrente é exibido.
 - [ ] **CA-04.2** Dado um mês selecionado, quando o usuário troca entre resumo e listagem, então o mesmo mês permanece selecionado.
 - [ ] **CA-16.1** *(lado do frontend)* Dado que a planilha não foi compartilhada com o sistema, quando o app abre, então o banner mostra a mensagem do backend indicando que é preciso compartilhá-la, com o `client_email`.
@@ -156,19 +156,19 @@ Implementa exatamente `02` §4:
 
 **Refinados — shell e gráficos (T-010)**
 
-- [ ] **CA-F04.1** Dado a URL `/`, quando o app abre, então a rota ativa é `/resumo`.
-- [ ] **CA-F04.2** Dado cada uma das 5 rotas de `03` §8.1, quando é acessada, então a página correspondente abre com seu título, e o componente dela é carregado sob demanda (`loadComponent`, fora do bundle inicial).
-- [ ] **CA-F04.3** Dado qualquer uma das 5 rotas, quando a tela é renderizada, então a barra superior mostra "Registrar gasto" (botão primário) e "Registrar receita".
-- [ ] **CA-F04.4** Dado a navegação lateral, quando é renderizada, então tem os 5 itens de §3.1 na ordem da tabela, e só o da rota atual tem `aria-current="page"`.
-- [ ] **CA-F04.5** Dado cada rota, quando ela está ativa, então o título da aba do navegador é `"<Página> · Planilha Financeira"`.
-- [ ] **CA-F04.6** Dado uma rota desconhecida (ex.: `/xyz`), quando é acessada, então a rota ativa passa a ser `/resumo` (Q2).
-- [ ] **CA-F04.7** Dado uma janela de 360 px de largura, quando qualquer rota é exibida, então não há rolagem horizontal, a navegação abre pelo ☰, e "+ Gasto"/"+ Receita" estão visíveis com `aria-label` completo; com ≥ 960 px a navegação fica fixa e o ☰ some (RNF-07, Q1).
-- [ ] **CA-F04.8** Dado um `<canvas>` com a `GraficoDirective`, quando o componente termina de renderizar, então **um** gráfico é criado com o `tipo`, os `dados` e as `opcoes` recebidos.
-- [ ] **CA-F04.9** Dado um gráfico criado, quando `dados` ou `opcoes` mudam, então a **mesma** instância é atualizada (`update()`), sem recriar; quando `tipo` muda, a instância anterior é destruída e outra é criada.
-- [ ] **CA-F04.10** Dado um gráfico criado, quando o componente é destruído, então `destroy()` é chamado; e se o componente for destruído antes da primeira renderização, nenhum gráfico é criado.
-- [ ] **CA-F04.11** Dado `grafico.config.ts`, quando carregado, então estão registrados os controllers de rosca, barra e linha, `Tooltip` e `Legend`, e **não** estão registrados controllers não usados (ex.: `radar`, `pie`, `polarArea`).
-- [ ] **CA-F04.12** Dado o valor 1234.56, quando formatado pelo `formatarReais` usado em tooltips e eixos, então o texto é `R$ 1.234,56` (RNF-03).
-- [ ] **CA-F04.30** Dado um gráfico criado, quando o sistema troca entre claro e escuro, então as cores de texto e de grade passam às do tema novo, lidas das variáveis Material, na **mesma** instância; e o ouvinte da troca é removido quando a diretiva é destruída (Q6).
+- [x] **CA-F04.1** Dado a URL `/`, quando o app abre, então a rota ativa é `/resumo`.
+- [x] **CA-F04.2** Dado cada uma das 5 rotas de `03` §8.1, quando é acessada, então a página correspondente abre com seu título, e o componente dela é carregado sob demanda (`loadComponent`, fora do bundle inicial).
+- [x] **CA-F04.3** Dado qualquer uma das 5 rotas, quando a tela é renderizada, então a barra superior mostra "Registrar gasto" (botão primário) e "Registrar receita".
+- [x] **CA-F04.4** Dado a navegação lateral, quando é renderizada, então tem os 5 itens de §3.1 na ordem da tabela, e só o da rota atual tem `aria-current="page"`.
+- [x] **CA-F04.5** Dado cada rota, quando ela está ativa, então o título da aba do navegador é `"<Página> · Planilha Financeira"`.
+- [x] **CA-F04.6** Dado uma rota desconhecida (ex.: `/xyz`), quando é acessada, então a rota ativa passa a ser `/resumo` (Q2).
+- [~] **CA-F04.7** Dado uma janela de 360 px de largura, quando qualquer rota é exibida, então não há rolagem horizontal, a navegação abre pelo ☰, e "+ Gasto"/"+ Receita" estão visíveis com `aria-label` completo; com ≥ 960 px a navegação fica fixa e o ☰ some (RNF-07, Q1). *(T-010: comportamento por largura verificado por teste, com os limites; "sem rolagem horizontal" em 360 px depende da conferência visual no navegador — pendente.)*
+- [x] **CA-F04.8** Dado um `<canvas>` com a `GraficoDirective`, quando o componente termina de renderizar, então **um** gráfico é criado com o `tipo`, os `dados` e as `opcoes` recebidos.
+- [x] **CA-F04.9** Dado um gráfico criado, quando `dados` ou `opcoes` mudam, então a **mesma** instância é atualizada (`update()`), sem recriar; quando `tipo` muda, a instância anterior é destruída e outra é criada.
+- [x] **CA-F04.10** Dado um gráfico criado, quando o componente é destruído, então `destroy()` é chamado; e se o componente for destruído antes da primeira renderização, nenhum gráfico é criado.
+- [x] **CA-F04.11** Dado `grafico.config.ts`, quando carregado, então estão registrados os controllers de rosca, barra e linha, `Tooltip` e `Legend`, e **não** estão registrados controllers não usados (ex.: `radar`, `pie`, `polarArea`).
+- [x] **CA-F04.12** Dado o valor 1234.56, quando formatado pelo `formatarReais` usado em tooltips e eixos, então o texto é `R$ 1.234,56` (RNF-03).
+- [~] **CA-F04.30** Dado um gráfico criado, quando o sistema troca entre claro e escuro, então as cores de texto e de grade passam às do tema novo, lidas das variáveis Material, na **mesma** instância; e o ouvinte da troca é removido quando a diretiva é destruída (Q6). *(T-010: mesma instância, releitura e remoção do ouvinte verificadas por teste com dublês; a resolução real das cores `light-dark()` pelo navegador depende da conferência visual — pendente, e só fica observável quando uma página usar gráfico, em T-023.)*
 
 **Refinados — core e componentes (T-011)**
 
@@ -348,6 +348,9 @@ Ordem obrigatória: T-010 → T-011 → T-012 (`05` §4; T-012 também depende d
 | Foco inicial em "Cancelar" no `confirmacao-dialog`. | Evita exclusão acidental com Enter. | Não |
 | 422 não abre snackbar. | `03` §8.4 entrega a validação ao formulário; snackbar duplicaria a mensagem. | Não |
 | Botões de registro visíveis e **sem ação** até T-016. | É o escopo de T-010 em `05`; não se inventa comportamento provisório. | Não |
+| Cores do tema lidas por uma "sonda": um elemento invisível recebe `color: var(--mat-sys-…)` e a cor computada é lida; a leitura fica atrás do token `CORES_DO_TEMA` (T-010). | Com `color-scheme: light dark`, o Material 22 define as variáveis como `light-dark(claro, escuro)`, texto que o Chart.js não entende; a cor computada já vem resolvida para o tema atual. O jsdom não resolve variáveis CSS, daí o token. | Não |
+| Ícones com a fonte **Material Symbols** como padrão do `MatIconRegistry` (`app.config.ts`, T-010). | O `index.html` gerado pelo `ng add` carrega Material Symbols, mas o `<mat-icon>` procura "Material Icons" por padrão e mostraria o nome do ícone em texto. | Não |
+| Opções da página mescladas sobre os padrões com `merge` de `chart.js/helpers` (T-010). | Mescla profunda já existente no Chart.js: a página muda só o que quer (ex.: legenda) e mantém tooltip e eixos em reais. Não é dependência nova. | Não |
 | Layout: navegação fixa em ≥ 960 px e sobreposta abaixo disso; em < 600 px sem título e com "+ Gasto"/"+ Receita" (Q1). | Mantém a ação principal sempre visível em 360 px sem quebrar a barra; os rótulos completos continuam acessíveis por `aria-label`. | Não |
 | Rota desconhecida → `/resumo` (Q2). | App pessoal sem links externos. | Não |
 | Código local `BACKEND_INDISPONIVEL` no mesmo banner (Q3). | Com o backend desligado, não há resposta da API que traga código; um banner único evita dois lugares de aviso. `03` → 1.8 (§8.4). | Não |
@@ -378,3 +381,4 @@ Ordem obrigatória: T-010 → T-011 → T-012 (`05` §4; T-012 também depende d
 |---|---|
 | 2026-09-30 | Criação (`/especificar-feature F-04`). Status `Rascunho` — 7 questões em aberto. |
 | 2026-09-30 | Q1–Q7 respondidas → status **Aprovada**. Comportamentos incorporados em §3; CA-F04.6, .7, .17, .23, .27 e .29 fechados; CA-F04.30 (tema) e .31 (datepicker) acrescentados; bordas 11a, 21 e 22. `03` → 1.8. |
+| 2026-09-30 | T-010 concluída: CA-01.1 (parcial), CA-F04.1 a .6 e .8 a .12 verificados por teste; CA-F04.7 e .30 com a parte automatizável verificada e a conferência visual pendente. Três decisões de implementação em §10. `03` → 1.11. |
