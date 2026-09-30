@@ -22,14 +22,14 @@
 
 | Marco | Features | Tarefas | Não iniciada | Iniciada | Concluída | Progresso |
 |---|---|---|---|---|---|---|
-| M0 · Fundação | F-01..F-04 | 12 | 2 | 0 | 10 | 83% |
+| M0 · Fundação | F-01..F-04 | 12 | 1 | 0 | 11 | 92% |
 | M1 · Registro e consulta | F-05..F-08 | 8 | 8 | 0 | 0 | 0% |
 | M2 · Visão financeira | F-09..F-11 | 5 | 5 | 0 | 0 | 0% |
 | M3 · Automação | F-12..F-13 | 5 | 5 | 0 | 0 | 0% |
 | M4 · Acabamento | F-14..F-15 | 5 | 5 | 0 | 0 | 0% |
-| **Total** | **15** | **35** | **25** | **0** | **10** | **29%** |
+| **Total** | **15** | **35** | **24** | **0** | **11** | **31%** |
 
-**F-01, F-02 e F-03 concluídas.** Próxima tarefa disponível: **T-011** (FE, F-04 — plano do usuário: fechar F-04 antes de especificar F-05). Também desbloqueada: T-013 (BE, F-05, sem spec). Pendente com o usuário, sem bloquear: rodar `pytest -m integracao` na planilha de teste e seguir o README com a planilha real (CA-F02.13, CA-15.1/15.2).
+**F-01, F-02 e F-03 concluídas.** Próxima tarefa disponível: **T-012** (FE, última de F-04 — plano do usuário: fechar F-04 antes de especificar F-05). Também desbloqueada: T-013 (BE, F-05, sem spec). Pendente com o usuário, sem bloquear: rodar `pytest -m integracao` na planilha de teste e seguir o README com a planilha real (CA-F02.13, CA-15.1/15.2).
 
 ---
 
@@ -106,7 +106,7 @@ Camadas: **BE** = backend · **FE** = frontend · **DOC** = documentação/infra
 | T-008 | `infra/schema_planilha.py` (abas/colunas de `03` §5) e `infra/bootstrap.py` idempotente: cria abas e cabeçalhos, valida cabeçalhos, grava `versao_schema`, seed de categorias RN-15. Chamado no lifespan. Testes com planilha falsa. | F-03 | BE | T-005, T-007 | Concluída | 2026-09-30 | 2026-09-30 | `schema_planilha.py` (fonte única das 4 abas) e `bootstrap.py` em duas fases (valida tudo → escreve só o que falta; seed RN-15 em uma escrita). Roda a cada conexão estabelecida, injetado em `ConexaoPlanilha` (`03` §4.5). `SchemaPlanilhaInvalido` → 503 + linha no README. `tests/planilha_falsa.py` exige RAW/UNFORMATTED e argumentos nomeados. 44 testes novos (527 no total); `ruff` limpo. CA-F03.9..15, .24, .25; CA-15.1/15.2 com planilha falsa. |
 | T-009 | `infra/cache.py` (TTL + invalidação), `repositories/base.py` (Protocols), `repositories/planilha/` (leitura UNFORMATTED, validação de linhas → `linhas_ignoradas`, `append_rows` RAW em lote, atualizar/remover localizando por `id`), `repositories/memoria/`. Testes unitários + 1 teste `@integracao`. | F-03 | BE | T-008 | Concluída | 2026-09-30 | 2026-09-30 | `infra/cache.py` (TTL + geração por aba contra corrida leitura×escrita), `repositories/base.py` (`Repositorio[T]` + 3 Protocols), `planilha/aba.py` genérico (leitura única UNFORMATTED → validação pelo modelo, `linhas_ignoradas` + WARNING; `append_rows` RAW + `INSERT_ROWS`; atualizar/remover relendo a aba, remoção em um `batch_update` tudo-ou-nada), `memoria/` equivalente (teste dedicado nas 3 entidades), `ConexaoPlanilha.executar`. 58 testes novos (585 no total) + 1 `@integracao` pronto; `ruff` limpo. CA-16.3, CA-F03.16..23. |
 | T-010 | Shell: `app.ts` (classe `App`) com barra superior (botões "Registrar gasto"/"Registrar receita" ainda sem ação), navegação lateral, rotas lazy das 5 páginas (placeholders), `GraficoDirective` + `grafico.config.ts` em `shared/grafico/` (Chart.js direto, `02` §4) com teste unitário. | F-04 | FE | T-003 | Concluída | 2026-09-30 | 2026-09-30 | Shell (`app.ts`) com barra, navegação lateral e layout por largura via `BreakpointObserver` (Q1); 5 páginas provisórias lazy com título de aba; `/` e rota desconhecida → `/resumo`; `GraficoDirective` + `grafico.config.ts` (registro enxuto, pt-BR, reais, cores do tema e troca claro/escuro). Página de boas-vindas do CLI removida. 16 testes novos (20 no total); build 437 kB inicial, 5 chunks lazy, sem avisos. CA-F04.1..6, .8..12 (+ .7 e .30 com conferência visual pendente). |
-| T-011 | Core: `core/models` base (`ErroApi`, enums), `erro.interceptor.ts`, `ConexaoStore` + banner de erro, `MesSelecionadoStore` sincronizado com `?mes=`, `DadosStore`, `utils/mes.ts`, componentes `seletor-mes`, `confirmacao-dialog`, `estado-vazio`, `carregando`. Testes unitários. | F-04 | FE | T-010 | Não iniciada | | | |
+| T-011 | Core: `core/models` base (`ErroApi`, enums), `erro.interceptor.ts`, `ConexaoStore` + banner de erro, `MesSelecionadoStore` sincronizado com `?mes=`, `DadosStore`, `utils/mes.ts`, componentes `seletor-mes`, `confirmacao-dialog`, `estado-vazio`, `carregando`. Testes unitários. | F-04 | FE | T-010 | Concluída | 2026-09-30 | 2026-09-30 | `core/`: `ErroApi`/`RespostaHealth`/enums, `HealthApi`, `erro.interceptor` (503 e backend fora → banner; 422 → formulário; demais → aviso), `ConexaoStore`, `MesSelecionadoStore` (lê/corrige `?mes=` com `replaceUrl`), `DadosStore`, `utils/mes.ts`, `avisos` (snackbar sob demanda). `shared/components/`: seletor de mês com datepicker ano→mês, `confirmacao-dialog`, `estado-vazio`, `carregando`, `banner-conexao` (no shell). Links de Resumo/Lançamentos levam `?mes=`. 38 testes novos (58 no total); build 463 kB inicial, sem avisos. CA-04.1, CA-04.2, CA-F04.13..22, .31. |
 | T-012 | `provideAppInitializer` chamando `GET /api/health`; banner com mensagem e "Tentar novamente" em falha (sem bloquear o app). | F-04 | FE | T-011, T-005 | Não iniciada | | | |
 
 ### M1 · Registro e consulta
@@ -158,6 +158,9 @@ Camadas: **BE** = backend · **FE** = frontend · **DOC** = documentação/infra
 
 | Data | Tarefa/Feature | Mudança | Observação |
 |---|---|---|---|
+| 2026-09-30 | T-011 | `Iniciada` → `Concluída` | Erros, estado e componentes comuns. `03` → 1.12 (`core/avisos`, stores, banner; snackbar sob demanda em §8.4). F-04 §9 ajustado (banner já em T-011) e quatro decisões em §10. |
+| 2026-09-30 | T-011 | Sugestão anotada | Nos testes, o Material precisa de `MATERIAL_ANIMATIONS` com `animationsDisabled` (o jsdom não dispara fim de animação CSS) e, para foco em diálogos, de um `InteractivityChecker` que trate elementos como visíveis. Se mais specs precisarem (T-014, T-016, T-020), vale um helper comum em `src/testing/`. A conferência visual pendente de T-010 passa a incluir o seletor de mês (posição do calendário sob o botão). |
+| 2026-09-30 | T-011 | `Não iniciada` → `Iniciada` | Dependência T-010 `Concluída`. |
 | 2026-09-30 | T-010 | `Iniciada` → `Concluída` | Shell, rotas e gráficos. `03` → 1.11 (páginas `<nome>.page.ts`, layout e título em §8.1). Três decisões de implementação em F-04 §10 (sonda de cores do tema, fonte Material Symbols, `merge` do Chart.js). |
 | 2026-09-30 | T-010 | PENDÊNCIA de verificação | Conferência visual com `npm start`: janelas de 360, 600 e 960 px sem rolagem horizontal, nos temas claro e escuro (CA-F04.7). A troca de tema nos gráficos (CA-F04.30) só fica observável quando uma página usar gráfico (T-023). |
 | 2026-09-30 | T-010 | Sugestão anotada | O pacote inicial passou de 248 kB para 437 kB (Material: toolbar, sidenav, list, button, icon) — abaixo do aviso de 500 kB do `angular.json`. Acompanhar em T-031, junto com a auto-hospedagem das fontes. |

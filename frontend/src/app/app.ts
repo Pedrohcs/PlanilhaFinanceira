@@ -8,6 +8,8 @@ import { MatSidenav, MatSidenavModule } from '@angular/material/sidenav';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { map } from 'rxjs';
+import { MesSelecionadoStore } from './core/state/mes-selecionado.store';
+import { BannerConexao } from './shared/components/banner-conexao/banner-conexao';
 
 /** A partir desta largura, a navegação lateral fica fixa e aberta (F-04 Q1). */
 export const LARGURA_NAVEGACAO_FIXA = 960;
@@ -18,21 +20,23 @@ export interface ItemDeNavegacao {
   rotulo: string;
   rota: string;
   icone: string;
+  /** Tela que mostra um mês: o link leva o `?mes=` selecionado (CA-04.2). */
+  comMes: boolean;
 }
 
 /** Ordem e ícones de F-04 §3.1. */
 export const ITENS_DE_NAVEGACAO: readonly ItemDeNavegacao[] = [
-  { rotulo: 'Resumo', rota: '/resumo', icone: 'dashboard' },
-  { rotulo: 'Lançamentos', rota: '/lancamentos', icone: 'receipt_long' },
-  { rotulo: 'Histórico', rota: '/historico', icone: 'bar_chart' },
-  { rotulo: 'Categorias', rota: '/categorias', icone: 'sell' },
-  { rotulo: 'Recorrências', rota: '/recorrencias', icone: 'event_repeat' },
+  { rotulo: 'Resumo', rota: '/resumo', icone: 'dashboard', comMes: true },
+  { rotulo: 'Lançamentos', rota: '/lancamentos', icone: 'receipt_long', comMes: true },
+  { rotulo: 'Histórico', rota: '/historico', icone: 'bar_chart', comMes: false },
+  { rotulo: 'Categorias', rota: '/categorias', icone: 'sell', comMes: false },
+  { rotulo: 'Recorrências', rota: '/recorrencias', icone: 'event_repeat', comMes: false },
 ];
 
 /**
  * Shell do app (SPECS/03 §8.1): barra superior com as ações de registro,
- * navegação lateral e a área das páginas. Os botões de registro ganham ação
- * em T-016; o banner de conexão entra em T-011/T-012.
+ * navegação lateral, banner de conexão e a área das páginas. Os botões de
+ * registro ganham ação em T-016; o "Tentar novamente" do banner, em T-012.
  */
 @Component({
   selector: 'app-root',
@@ -46,12 +50,21 @@ export const ITENS_DE_NAVEGACAO: readonly ItemDeNavegacao[] = [
     MatIconModule,
     MatSidenavModule,
     MatListModule,
+    BannerConexao,
   ],
   templateUrl: './app.html',
   styleUrl: './app.scss',
 })
 export class App {
   private readonly breakpoints = inject(BreakpointObserver);
+  protected readonly mesSelecionado = inject(MesSelecionadoStore);
+  /** O item ativo depende só do caminho: `/resumo` e `/resumo?mes=…` são a mesma tela. */
+  protected readonly comparacaoDoAtivo = {
+    paths: 'subset',
+    queryParams: 'ignored',
+    matrixParams: 'ignored',
+    fragment: 'ignored',
+  } as const;
 
   protected readonly itensDeNavegacao = ITENS_DE_NAVEGACAO;
   protected readonly navegacaoFixa = this.aPartirDe(LARGURA_NAVEGACAO_FIXA);

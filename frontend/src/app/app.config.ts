@@ -1,5 +1,5 @@
 import { registerLocaleData } from '@angular/common';
-import { provideHttpClient, withFetch } from '@angular/common/http';
+import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
 import localePt from '@angular/common/locales/pt';
 import {
   ApplicationConfig,
@@ -10,9 +10,11 @@ import {
   provideEnvironmentInitializer,
   provideZonelessChangeDetection,
 } from '@angular/core';
+import { MAT_DATE_LOCALE, provideNativeDateAdapter } from '@angular/material/core';
 import { MatIconRegistry } from '@angular/material/icon';
 import { provideRouter } from '@angular/router';
 import { routes } from './app.routes';
+import { erroInterceptor } from './core/interceptors/erro.interceptor';
 
 // Dados de pt-BR para CurrencyPipe, DatePipe e DecimalPipe (RNF-03).
 registerLocaleData(localePt);
@@ -24,9 +26,12 @@ export const appConfig: ApplicationConfig = {
     // para que a garantia fique visível no código (SPECS/02 §4).
     provideZonelessChangeDetection(),
     provideRouter(routes),
-    provideHttpClient(withFetch()),
+    provideHttpClient(withFetch(), withInterceptors([erroInterceptor])),
     { provide: LOCALE_ID, useValue: 'pt-BR' },
     { provide: DEFAULT_CURRENCY_CODE, useValue: 'BRL' },
+    // Datepicker (seletor de mês, F-04 Q7; formulários em F-06), em pt-BR.
+    provideNativeDateAdapter(),
+    { provide: MAT_DATE_LOCALE, useValue: 'pt-BR' },
     // O `index.html` carrega a fonte Material Symbols; sem isto o `<mat-icon>`
     // procuraria a antiga "Material Icons" e mostraria o nome do ícone em texto.
     provideEnvironmentInitializer(() =>

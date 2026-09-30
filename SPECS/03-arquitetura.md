@@ -3,7 +3,7 @@
 | Campo | Valor |
 |---|---|
 | Documento | `SPECS/03-arquitetura.md` |
-| Versão | 1.11 |
+| Versão | 1.12 |
 | Atualizado em | 2026-09-30 |
 | Status | Aprovado para início |
 | Responde | **Como** o sistema se organiza: componentes, pastas, camadas, modelo de dados na planilha, contrato da API e fluxos |
@@ -97,11 +97,13 @@ PlanilhaFinanceira/
         ├── core/
         │   ├── models/        # interfaces espelhando o JSON da API
         │   ├── api/           # um serviço HTTP por recurso
-        │   ├── state/         # mes-selecionado.store.ts, categorias.store.ts, dados.store.ts
+        │   ├── state/         # mes-selecionado, conexao, dados (+ categorias em T-014) .store.ts
         │   ├── interceptors/  # erro.interceptor.ts
+        │   ├── avisos/        # avisos.ts: snackbar carregado sob demanda
         │   └── utils/         # mes.ts (YYYY-MM), formatação
         ├── shared/
-        │   ├── components/    # seletor-mes, confirmacao-dialog, estado-vazio, carregando
+        │   ├── components/    # seletor-mes, confirmacao-dialog, estado-vazio, carregando,
+        │   │                  # banner-conexao
         │   └── grafico/       # grafico.directive.ts + grafico.config.ts (Chart.js, ADR-11;
         │                      # tokens FABRICA_GRAFICO e CORES_DO_TEMA para testes)
         └── features/          # uma pasta por tela; página em <nome>/<nome>.page.ts (classe <Nome>Page)
@@ -449,7 +451,7 @@ Um único componente `lancamento-form.dialog` atende: novo gasto, nova receita, 
 
 ### 8.4 Tratamento de erros
 
-`erro.interceptor.ts` converte respostas no formato §6.2 em `ErroApi` tipado; erros 503 atualizam o `ConexaoStore`; demais exibem snackbar com `mensagem`. Erros de validação (422) são entregues ao formulário para marcar campos (`detalhes[].campo`).
+`erro.interceptor.ts` converte respostas no formato §6.2 em `ErroApi` tipado; erros 503 atualizam o `ConexaoStore`; demais exibem snackbar com `mensagem` (via `core/avisos`, que carrega o `MatSnackBar` sob demanda para o overlay do CDK ficar fora do pacote inicial). Erros de validação (422) são entregues ao formulário para marcar campos (`detalhes[].campo`).
 
 Quando o **backend não responde** (status 0, ou 502/504 sem o envelope de §6.2 — o que o proxy do `ng serve` devolve com o backend desligado), o interceptor cria um `ErroApi` local com `codigo: "BACKEND_INDISPONIVEL"` e a mensagem "O servidor do aplicativo não está respondendo. Verifique se o backend está rodando e tente novamente.", tratado como os 503: vai para o `ConexaoStore` e para o banner. Esse código **só existe no frontend** e não faz parte do contrato da API (§6.2). Decidido em F-04 (Q3).
 
@@ -470,4 +472,5 @@ Quando o **backend não responde** (status 0, ou 502/504 sem o envelope de §6.2
 | 2026-09-30 | 1.9 | §4.5: `bootstrap` roda a cada conexão estabelecida (inclusive pela nova tentativa do health) e ignora colunas extras no fim. §4.4: seed padrão sai do `categoria_service` (é do `bootstrap`). §3: `tests/planilha_falsa.py` — T-008. |
 | 2026-09-30 | 1.10 | §3 e §4.3: estrutura real de `repositories/` (`Repositorio[T]`, `planilha/aba.py`), `ConexaoPlanilha.executar`, `NaoEncontrado` em `atualizar`/`remover` e remoção tudo-ou-nada (T-009). |
 | 2026-09-30 | 1.11 | §3: páginas em `features/<nome>/<nome>.page.ts` e tokens de `shared/grafico/`. §8.1: layout por largura, título da aba e rota desconhecida (T-010, F-04). |
+| 2026-09-30 | 1.12 | §3: `core/avisos/`, stores reais de `core/state/`, `banner-conexao`. §8.4: snackbar sob demanda (T-011, F-04). |
 | 2026-09-29 | 1.1 | Frontend em Angular 22 (zoneless); pasta `shared/grafico/` com diretiva Chart.js própria (§3, §8.2.1). |

@@ -1,5 +1,6 @@
 import { BreakpointObserver, BreakpointState } from '@angular/cdk/layout';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { MAT_DATE_LOCALE, provideNativeDateAdapter } from '@angular/material/core';
 import { MatSidenav } from '@angular/material/sidenav';
 import { By } from '@angular/platform-browser';
 import { provideRouter, Router } from '@angular/router';
@@ -68,7 +69,12 @@ describe('App (shell)', () => {
     breakpoints = new BreakpointsFalsos();
     TestBed.configureTestingModule({
       imports: [App],
-      providers: [provideRouter(routes), { provide: BreakpointObserver, useValue: breakpoints }],
+      providers: [
+        provideRouter(routes),
+        provideNativeDateAdapter(),
+        { provide: MAT_DATE_LOCALE, useValue: 'pt-BR' },
+        { provide: BreakpointObserver, useValue: breakpoints },
+      ],
     });
   });
 
@@ -108,7 +114,7 @@ describe('App (shell)', () => {
       'sell',
       'event_repeat',
     ]);
-    expect(links.map((link) => link.getAttribute('href'))).toEqual([
+    expect(links.map((link) => link.getAttribute('href')?.split('?')[0])).toEqual([
       '/resumo',
       '/lancamentos',
       '/historico',
@@ -116,7 +122,38 @@ describe('App (shell)', () => {
       '/recorrencias',
     ]);
     const atuais = links.filter((link) => link.getAttribute('aria-current') === 'page');
-    expect(atuais.map((link) => link.getAttribute('href'))).toEqual(['/lancamentos']);
+    expect(atuais.map((link) => link.getAttribute('href')?.split('?')[0])).toEqual([
+      '/lancamentos',
+    ]);
+  });
+
+  it('item_ativo_ignora_o_mes_na_url__CA_F04_4', async () => {
+    await criar(1280);
+    await navegar('/resumo'); // app recém-aberto: sem ?mes=, link com ?mes=
+
+    const atuais = linksDaNavegacao().filter((l) => l.getAttribute('aria-current') === 'page');
+    expect(atuais.map((link) => link.textContent)).toHaveLength(1);
+    expect(atuais[0].getAttribute('href')?.startsWith('/resumo?mes=')).toBe(true);
+  });
+
+  it('mes_mantido_entre_resumo_e_lancamentos__CA_04_2', async () => {
+    await criar(1280);
+    await navegar('/resumo?mes=2026-05');
+    const router = TestBed.inject(Router);
+
+    // Borda 8: o link de Lançamentos leva o mês selecionado.
+    expect(linksDaNavegacao()[1].getAttribute('href')).toBe('/lancamentos?mes=2026-05');
+    linksDaNavegacao()[1].click();
+    await fixture.whenStable();
+    expect(router.url).toBe('/lancamentos?mes=2026-05');
+
+    // Borda 9: passando por uma tela sem mês, o Resumo volta no mesmo mês.
+    expect(linksDaNavegacao()[3].getAttribute('href')).toBe('/categorias');
+    linksDaNavegacao()[3].click();
+    await fixture.whenStable();
+    linksDaNavegacao()[0].click();
+    await fixture.whenStable();
+    expect(router.url).toBe('/resumo?mes=2026-05');
   });
 
   it('layout_por_largura__CA_F04_7', async () => {
@@ -167,6 +204,6 @@ describe('App (shell)', () => {
     await fixture.whenStable();
 
     expect(menu().opened).toBe(true);
-    expect(TestBed.inject(Router).url).toBe('/lancamentos');
+    expect(TestBed.inject(Router).url.split('?')[0]).toBe('/lancamentos');
   });
 });

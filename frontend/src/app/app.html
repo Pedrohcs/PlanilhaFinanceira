@@ -36,7 +36,9 @@
         <a
           mat-list-item
           [routerLink]="item.rota"
+          [queryParams]="item.comMes ? { mes: mesSelecionado.mes() } : null"
           routerLinkActive="item-ativo"
+          [routerLinkActiveOptions]="comparacaoDoAtivo"
           #ativo="routerLinkActive"
           ariaCurrentWhenActive="page"
           [activated]="ativo.isActive"
@@ -50,6 +52,7 @@
   </mat-sidenav>
 
   <mat-sidenav-content>
+    <app-banner-conexao />
     <main class="conteudo">
       <router-outlet />
     </main>

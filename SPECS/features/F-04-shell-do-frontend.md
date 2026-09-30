@@ -149,8 +149,8 @@ Implementa exatamente `02` §4:
 **Herdados de `01`**
 
 - [x] **CA-01.1** *(parcial — só a visibilidade)* Dado qualquer tela aberta, quando o usuário procura a ação, então "Registrar gasto" está visível. A abertura do formulário com a data de hoje é verificada em F-06 (T-016).
-- [ ] **CA-04.1** Dado o aplicativo recém-aberto, quando o usuário entra no resumo ou na listagem, então o mês corrente é exibido.
-- [ ] **CA-04.2** Dado um mês selecionado, quando o usuário troca entre resumo e listagem, então o mesmo mês permanece selecionado.
+- [x] **CA-04.1** Dado o aplicativo recém-aberto, quando o usuário entra no resumo ou na listagem, então o mês corrente é exibido.
+- [x] **CA-04.2** Dado um mês selecionado, quando o usuário troca entre resumo e listagem, então o mesmo mês permanece selecionado.
 - [ ] **CA-16.1** *(lado do frontend)* Dado que a planilha não foi compartilhada com o sistema, quando o app abre, então o banner mostra a mensagem do backend indicando que é preciso compartilhá-la, com o `client_email`.
 - [ ] **CA-16.2** *(lado do frontend)* Dado uma falha temporária, quando o usuário clica "Tentar novamente" e a planilha volta a responder, então o banner some sem reiniciar o aplicativo.
 
@@ -172,17 +172,17 @@ Implementa exatamente `02` §4:
 
 **Refinados — core e componentes (T-011)**
 
-- [ ] **CA-F04.13** Dado uma resposta de erro no formato de `03` §6.2, quando passa pelo interceptor, então quem chamou recebe um `ErroApi` com `status`, `codigo`, `mensagem` e `detalhes` iguais aos do corpo.
-- [ ] **CA-F04.14** Dado uma resposta 503, quando passa pelo interceptor, então o `ConexaoStore` vai para `'falha'` com a mensagem, e nenhum snackbar é aberto.
-- [ ] **CA-F04.15** Dado uma resposta 422, quando passa pelo interceptor, então nenhum snackbar é aberto e o erro chega a quem chamou com os `detalhes`.
-- [ ] **CA-F04.16** Dado uma resposta 404, 409 ou 500, quando passa pelo interceptor, então um snackbar mostra a `mensagem` do backend.
-- [ ] **CA-F04.17** Dado que o backend não responde (erro de rede ou 502/504 sem o envelope), quando uma chamada falha, então quem chamou recebe um `ErroApi` com `codigo` `BACKEND_INDISPONIVEL`, o `ConexaoStore` vai para `'falha'` com a mensagem de §3.3.4, e nenhum snackbar é aberto (Q3).
-- [ ] **CA-F04.18** Dado a URL `/lancamentos?mes=2026-13` (ou `?mes=abc`), quando a tela abre, então o mês selecionado é o corrente e a URL passa a ter o mês corrente, sem nova entrada no histórico.
-- [ ] **CA-F04.19** Dado o seletor em "dezembro de 2026", quando o usuário clica "Próximo mês", então passa a "janeiro de 2027" e a URL tem `?mes=2027-01`; "Mês anterior" a partir de "janeiro de 2027" volta a "dezembro de 2026".
-- [ ] **CA-F04.20** Dado um mês, quando exibido pelo seletor, então aparece por extenso em pt-BR: `2026-09` → "setembro de 2026" (RNF-03).
-- [ ] **CA-F04.31** Dado o seletor em "setembro de 2026", quando o usuário clica no nome do mês e escolhe março de 2025 no datepicker, então o datepicker fecha sem mostrar dias, o seletor passa a "março de 2025" e a URL tem `?mes=2025-03` (REQ-04, Q7).
-- [ ] **CA-F04.21** Dado o `confirmacao-dialog` aberto, quando o usuário confirma, então fecha com `true`; quando cancela, aperta Esc ou clica fora, fecha com `false`; e ao abrir o foco está em "Cancelar".
-- [ ] **CA-F04.22** Dado `DadosStore.incrementar()`, quando chamado, então `versao` aumenta 1.
+- [x] **CA-F04.13** Dado uma resposta de erro no formato de `03` §6.2, quando passa pelo interceptor, então quem chamou recebe um `ErroApi` com `status`, `codigo`, `mensagem` e `detalhes` iguais aos do corpo.
+- [x] **CA-F04.14** Dado uma resposta 503, quando passa pelo interceptor, então o `ConexaoStore` vai para `'falha'` com a mensagem, e nenhum snackbar é aberto.
+- [x] **CA-F04.15** Dado uma resposta 422, quando passa pelo interceptor, então nenhum snackbar é aberto e o erro chega a quem chamou com os `detalhes`.
+- [x] **CA-F04.16** Dado uma resposta 404, 409 ou 500, quando passa pelo interceptor, então um snackbar mostra a `mensagem` do backend.
+- [x] **CA-F04.17** Dado que o backend não responde (erro de rede ou 502/504 sem o envelope), quando uma chamada falha, então quem chamou recebe um `ErroApi` com `codigo` `BACKEND_INDISPONIVEL`, o `ConexaoStore` vai para `'falha'` com a mensagem de §3.3.4, e nenhum snackbar é aberto (Q3).
+- [x] **CA-F04.18** Dado a URL `/lancamentos?mes=2026-13` (ou `?mes=abc`), quando a tela abre, então o mês selecionado é o corrente e a URL passa a ter o mês corrente, sem nova entrada no histórico.
+- [x] **CA-F04.19** Dado o seletor em "dezembro de 2026", quando o usuário clica "Próximo mês", então passa a "janeiro de 2027" e a URL tem `?mes=2027-01`; "Mês anterior" a partir de "janeiro de 2027" volta a "dezembro de 2026".
+- [x] **CA-F04.20** Dado um mês, quando exibido pelo seletor, então aparece por extenso em pt-BR: `2026-09` → "setembro de 2026" (RNF-03).
+- [x] **CA-F04.31** Dado o seletor em "setembro de 2026", quando o usuário clica no nome do mês e escolhe março de 2025 no datepicker, então o datepicker fecha sem mostrar dias, o seletor passa a "março de 2025" e a URL tem `?mes=2025-03` (REQ-04, Q7).
+- [x] **CA-F04.21** Dado o `confirmacao-dialog` aberto, quando o usuário confirma, então fecha com `true`; quando cancela, aperta Esc ou clica fora, fecha com `false`; e ao abrir o foco está em "Cancelar".
+- [x] **CA-F04.22** Dado `DadosStore.incrementar()`, quando chamado, então `versao` aumenta 1.
 
 **Refinados — abertura e reconexão (T-012)**
 
@@ -330,8 +330,8 @@ Unitários com Vitest (`npm test`), `provideHttpClientTesting` + `HttpTestingCon
 | Tarefa | Escopo nesta feature | Arquivos principais |
 |---|---|---|
 | **T-010** (FE) | Shell (barra superior, navegação lateral, layout responsivo de Q1), rotas lazy com títulos e redirecionamento de rota desconhecida, 5 placeholders, `GraficoDirective` + `grafico.config.ts` + `FABRICA_GRAFICO`, cores do tema e troca claro/escuro (Q6). Substitui a página de boas-vindas do CLI. | `frontend/src/app/{app.ts,app.html,app.scss,app.routes.ts,app.spec.ts,app.routes.spec.ts}`, `frontend/src/app/features/{resumo,lancamentos,historico,categorias,recorrencias}/<nome>.page.ts`, `frontend/src/app/shared/grafico/{grafico.directive.ts,grafico.config.ts,*.spec.ts}` |
-| **T-011** (FE) | `core/models` (`ErroApi`, `RespostaHealth`, enums), `core/api/health.api.ts`, `erro.interceptor.ts`, `ConexaoStore`, `MesSelecionadoStore`, `DadosStore`, `utils/mes.ts`, componentes `seletor-mes` (com datepicker de mês, Q7), `confirmacao-dialog`, `estado-vazio`, `carregando`, `banner-conexao`; código local `BACKEND_INDISPONIVEL` (Q3); seletor nos placeholders de Resumo e Lançamentos; `?mes=` nos links do menu. | `frontend/src/app/core/{models,api,interceptors,state,utils}/…`, `frontend/src/app/shared/components/{seletor-mes,confirmacao-dialog,estado-vazio,carregando,banner-conexao}/…`, `app.config.ts` (interceptor, `provideNativeDateAdapter`, `MAT_DATE_LOCALE`) |
-| **T-012** (FE) | `provideAppInitializer` com o health, sem esperar a resposta (Q4); banner ligado ao `ConexaoStore`; "Tentar novamente" com snackbar e recarga (Q5). | `frontend/src/app/app.config.ts`, `core/state/conexao.store.ts`, `shared/components/banner-conexao/…`, specs |
+| **T-011** (FE) | `core/models` (`ErroApi`, `RespostaHealth`, enums), `core/api/health.api.ts`, `erro.interceptor.ts`, `ConexaoStore`, `MesSelecionadoStore`, `DadosStore`, `utils/mes.ts`, componentes `seletor-mes` (com datepicker de mês, Q7), `confirmacao-dialog`, `estado-vazio`, `carregando`, `banner-conexao` já exibido no shell a partir do `ConexaoStore`, só com a mensagem (CA-F04.14 e .17 dependem dele); código local `BACKEND_INDISPONIVEL` (Q3); seletor nos placeholders de Resumo e Lançamentos; `?mes=` nos links do menu. | `frontend/src/app/core/{models,api,interceptors,state,utils}/…`, `frontend/src/app/shared/components/{seletor-mes,confirmacao-dialog,estado-vazio,carregando,banner-conexao}/…`, `app.config.ts` (interceptor, `provideNativeDateAdapter`, `MAT_DATE_LOCALE`) |
+| **T-012** (FE) | `provideAppInitializer` com o health, sem esperar a resposta (Q4); `ConexaoStore.verificar()`; botão "Tentar novamente" no banner, com snackbar e recarga (Q5). | `frontend/src/app/app.config.ts`, `core/state/conexao.store.ts`, `shared/components/banner-conexao/…`, specs |
 
 Ordem obrigatória: T-010 → T-011 → T-012 (`05` §4; T-012 também depende de T-005, já concluída).
 
@@ -357,6 +357,10 @@ Ordem obrigatória: T-010 → T-011 → T-012 (`05` §4; T-012 também depende d
 | Inicializador não espera o health (Q4). | Sem internet, a tentativa única do backend pode levar segundos; a tela nunca fica em branco. | Não |
 | Reconexão: banner some + snackbar + `DadosStore.incrementar()`; só o health tira o banner (Q5). | Confirmação visível e dados atualizados; regra de saída do banner única e previsível. | Não |
 | Gráficos leem as variáveis do tema Material e reagem à troca de `prefers-color-scheme` (Q6). | Legíveis nos dois temas (F-01 Q2) sem cor fixa duplicada no código. | Não |
+| Snackbar carregado sob demanda por `core/avisos/avisos.ts` (T-011). | Injetar o `MatSnackBar` no interceptor levava o overlay do CDK (~70 kB) ao pacote inicial, que passou de 500 kB (limite de aviso do `angular.json`); sob demanda ele fica em 463 kB. T-012 usa o mesmo serviço para "Conexão restabelecida". | Não |
+| Item ativo do menu compara só o caminho (`routerLinkActiveOptions` com query ignorada) (T-011). | Com a comparação padrão, `/resumo?mes=…` no link não ficaria ativo com a URL `/resumo` (app recém-aberto) e o `aria-current` sumiria (CA-F04.4). | Não |
+| Datepicker ancorado num `<input>` invisível sob o botão do mês (T-011). | O `mat-datepicker` exige um input associado para abrir e para marcar o mês atual; invisível, fora do Tab e com `aria-hidden`, ele só posiciona o calendário. | Não |
+| `confirmar(dialog, dados)` devolve `Observable<boolean>` (T-011). | Esc e clique fora fecham o diálogo do Material sem valor; a função converte isso em `false` (CA-F04.21). | Não |
 | Escolha de mês pelo `mat-datepicker` em visão multi-year → mês (Q7). | Componente oficial, acessível e em pt-BR; o adaptador de datas já seria necessário em F-06. | Não |
 
 ---
@@ -382,3 +386,5 @@ Ordem obrigatória: T-010 → T-011 → T-012 (`05` §4; T-012 também depende d
 | 2026-09-30 | Criação (`/especificar-feature F-04`). Status `Rascunho` — 7 questões em aberto. |
 | 2026-09-30 | Q1–Q7 respondidas → status **Aprovada**. Comportamentos incorporados em §3; CA-F04.6, .7, .17, .23, .27 e .29 fechados; CA-F04.30 (tema) e .31 (datepicker) acrescentados; bordas 11a, 21 e 22. `03` → 1.8. |
 | 2026-09-30 | T-010 concluída: CA-01.1 (parcial), CA-F04.1 a .6 e .8 a .12 verificados por teste; CA-F04.7 e .30 com a parte automatizável verificada e a conferência visual pendente. Três decisões de implementação em §10. `03` → 1.11. |
+| 2026-09-30 | §9 ajustado ao planejar T-011: o banner passa a ser exibido já em T-011 (só a mensagem), porque CA-F04.14/.17 dependem dele; T-012 fica com `verificar()`, o botão "Tentar novamente" e a verificação na abertura. |
+| 2026-09-30 | T-011 concluída: CA-04.1, CA-04.2, CA-F04.13 a .22 e .31 verificados por teste. Quatro decisões de implementação em §10 (snackbar sob demanda, item ativo sem query, input do datepicker, `confirmar`). `03` → 1.12. |
