@@ -3,7 +3,7 @@
 | Campo | Valor |
 |---|---|
 | Documento | `SPECS/03-arquitetura.md` |
-| Versão | 1.8 |
+| Versão | 1.9 |
 | Atualizado em | 2026-09-30 |
 | Status | Aprovado para início |
 | Responde | **Como** o sistema se organiza: componentes, pastas, camadas, modelo de dados na planilha, contrato da API e fluxos |
@@ -87,6 +87,7 @@ PlanilhaFinanceira/
 │   │       └── cache.py           # cache por aba com TTL
 │   └── tests/
 │       ├── conftest.py
+│       ├── planilha_falsa.py      # dublê do gspread (RAW/UNFORMATTED obrigatórios), T-008
 │       ├── unit/  api/  integracao/
 └── frontend/
     ├── proxy.conf.json
@@ -160,7 +161,7 @@ class LancamentoRepository(Protocol):
 
 | Service | Responsabilidades | Regras |
 |---|---|---|
-| `categoria_service` | CRUD, geração de slug, unicidade, bloqueio de exclusão em uso, seed padrão | RN-12, RN-15 |
+| `categoria_service` | CRUD, geração de slug, unicidade, bloqueio de exclusão em uso (o seed das categorias padrão de RN-15 é do `bootstrap`, §4.5) | RN-12 |
 | `lancamento_service` | criar/editar/excluir, validar categoria ativa e do mesmo tipo, forma de pagamento, listar por mês com filtros e totais | RN-01..06, RN-13 |
 | `parcelamento_service` | dividir valor, calcular datas, criar lote, excluir parcelamento | RN-07, RN-08 |
 | `recorrencia_service` | CRUD, mudança de status, sincronização idempotente por marca d'água `ultimo_mes_gerado` | RN-09..11 |
@@ -182,7 +183,9 @@ Ao **reativar** uma recorrência pausada: `ultimo_mes_gerado = max(ultimo_mes_ge
 
 1. Carregar `Settings`; validar existência do arquivo de credenciais.
 2. Conectar e abrir a planilha por ID. Falha **não derruba** o servidor: o erro é guardado e `GET /api/health` o reporta (REQ-16); demais endpoints respondem 503.
-3. `bootstrap`: para cada aba do schema, criar se não existir e escrever cabeçalho; se existir, validar cabeçalho (colunas faltando no fim são acrescentadas; divergência de ordem → erro claro). Aba `Categorias` vazia → seed RN-15. Idempotente (CA-15.2).
+3. `bootstrap`: para cada aba do schema, criar se não existir e escrever cabeçalho; se existir, validar cabeçalho (colunas faltando no fim são acrescentadas; colunas extras depois da última do schema são ignoradas; divergência de nome ou ordem → `SchemaPlanilhaInvalido`, sem alterar nada). Aba `Categorias` vazia → seed RN-15. Idempotente (CA-15.2).
+
+O `bootstrap` roda **toda vez que uma conexão é estabelecida** — no passo 2 ou, se ele falhou, na nova tentativa feita pelo `GET /api/health` — e a conexão só conta como estabelecida se o `bootstrap` também passar. Assim, um app aberto sem internet prepara as abas quando a conexão volta, e uma estrutura corrigida à mão é revalidada no "Tentar novamente", sem reiniciar.
 
 ---
 
@@ -462,4 +465,5 @@ Quando o **backend não responde** (status 0, ou 502/504 sem o envelope de §6.2
 | 2026-09-29 | 1.6 | §6.2: código `SCHEMA_PLANILHA_INVALIDO` (decidido em F-03). |
 | 2026-09-30 | 1.7 | §3: funções reais de `domain/datas.py`. §4.2: explicitado que módulos de `domain` importam uns aos outros (T-007). |
 | 2026-09-30 | 1.8 | §8.4: código local `BACKEND_INDISPONIVEL` para backend fora do ar, no mesmo banner dos 503 (F-04, Q3). |
+| 2026-09-30 | 1.9 | §4.5: `bootstrap` roda a cada conexão estabelecida (inclusive pela nova tentativa do health) e ignora colunas extras no fim. §4.4: seed padrão sai do `categoria_service` (é do `bootstrap`). §3: `tests/planilha_falsa.py` — T-008. |
 | 2026-09-29 | 1.1 | Frontend em Angular 22 (zoneless); pasta `shared/grafico/` com diretiva Chart.js própria (§3, §8.2.1). |

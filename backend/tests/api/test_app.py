@@ -1,8 +1,12 @@
 """Testes da aplicação vazia (CA-F01.5)."""
 
+import pytest
 from fastapi.testclient import TestClient
 
-from app.main import TITULO
+from app.infra import sheets_client
+from app.infra.sheets_client import PlanilhaAberta
+from app.main import TITULO, criar_app
+from tests.planilha_falsa import PlanilhaFalsa
 
 
 def test_openapi_responde__CA_F01_5(cliente: TestClient) -> None:
@@ -33,3 +37,20 @@ def test_app_sobe_com_planilha_inacessivel__CA_F02_10(cliente: TestClient) -> No
     saude = cliente.get("/api/health")
     assert saude.status_code == 200
     assert saude.json()["planilha"]["ok"] is False
+
+
+def test_lifespan_prepara_planilha_nova__CA_15_1(monkeypatch: pytest.MonkeyPatch) -> None:
+    """A aplicação real liga o `bootstrap` à conexão: subir já cria as abas (T-008)."""
+    documento = PlanilhaFalsa()
+    monkeypatch.setattr(
+        sheets_client,
+        "abrir_planilha",
+        lambda *_a, **_k: PlanilhaAberta(titulo="Planilha", documento=documento),
+    )
+
+    with TestClient(criar_app()) as cliente:
+        saude = cliente.get("/api/health").json()
+
+    assert saude["status"] == "ok"
+    assert documento.nomes_das_abas() == ["Lancamentos", "Categorias", "Recorrencias", "Config"]
+    assert len(documento.linhas("Categorias")) == 1 + 15

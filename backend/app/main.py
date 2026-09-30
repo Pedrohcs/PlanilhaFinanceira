@@ -14,6 +14,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.erros import registrar_handlers
 from app.api.routers import health
 from app.config import Settings, obter_settings
+from app.infra.bootstrap import preparar_planilha
 from app.infra.sheets_client import ConexaoPlanilha
 
 TITULO = "Planilha Financeira"
@@ -40,14 +41,15 @@ def criar_app(settings: Settings | None = None, conexao: ConexaoPlanilha | None 
     configurar_logs()
     config = settings or obter_settings()
     conexao_planilha = conexao or ConexaoPlanilha(
-        config.google_credentials_path, config.spreadsheet_id
+        config.google_credentials_path, config.spreadsheet_id, preparar=preparar_planilha
     )
 
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         """Tenta conectar **uma vez**; falha não derruba o servidor (§4.5).
 
-        O `bootstrap` das abas entra aqui em T-008.
+        Conectar inclui o `bootstrap` das abas (`preparar_planilha`), que volta
+        a rodar se a conexão só for estabelecida depois, pelo health.
         """
         app.state.conexao = conexao_planilha
         conexao_planilha.conectar()

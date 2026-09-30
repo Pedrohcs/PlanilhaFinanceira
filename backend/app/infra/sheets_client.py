@@ -200,6 +200,10 @@ class ConexaoPlanilha:
     erro em vez de propagá-lo é o que deixa o servidor no ar com a planilha
     inacessível (`SPECS/03` §4.5) e o que permite ao `GET /api/health` tentar
     de novo sem reiniciar (CA-16.2).
+
+    `preparar` roda logo depois de abrir, a cada conexão estabelecida — é o
+    `bootstrap` das abas, injetado por `main.py`. A conexão só conta como
+    estabelecida se ele também passar (`SPECS/03` §4.5).
     """
 
     def __init__(
@@ -208,10 +212,12 @@ class ConexaoPlanilha:
         spreadsheet_id: str,
         *,
         tentativas: int = 1,
+        preparar: Callable[[gspread.Spreadsheet], None] | None = None,
     ) -> None:
         self._caminho_credenciais = caminho_credenciais
         self._spreadsheet_id = spreadsheet_id
         self._tentativas = tentativas
+        self._preparar = preparar
         self._planilha: PlanilhaAberta | None = None
         self._erro: ErroPlanilha | None = None
 
@@ -228,7 +234,7 @@ class ConexaoPlanilha:
         return self._planilha is not None
 
     def conectar(self) -> PlanilhaAberta | None:
-        """Tenta abrir a planilha, sem propagar falha.
+        """Tenta abrir e preparar a planilha, sem propagar falha.
 
         Reaproveita a conexão já estabelecida (cotas — `SPECS/02` §5.5). Em
         caso de falha, guarda a exceção de domínio e devolve `None`.
@@ -236,17 +242,34 @@ class ConexaoPlanilha:
         if self._planilha is not None:
             return self._planilha
         try:
-            self._planilha = abrir_planilha(
+            planilha = abrir_planilha(
                 self._caminho_credenciais,
                 self._spreadsheet_id,
                 tentativas=self._tentativas,
             )
+            self._preparar_planilha(planilha)
+            self._planilha = planilha
             self._erro = None
         except ErroPlanilha as erro:
             self._planilha = None
             self._erro = erro
             logger.warning("Planilha inacessível: %s", erro.mensagem)
         return self._planilha
+
+    def _preparar_planilha(self, planilha: PlanilhaAberta) -> None:
+        """Roda `preparar` com a mesma política de tentativas da abertura.
+
+        Retentar é seguro porque o `bootstrap` é idempotente.
+        """
+        preparar = self._preparar
+        if preparar is None:
+            return
+        executar_com_retry(
+            lambda: preparar(planilha.documento),
+            client_email=obter_client_email(self._caminho_credenciais),
+            tentativas=self._tentativas,
+        )
+        logger.info("Planilha preparada: %s", planilha.titulo)
 
     def exigir_planilha(self) -> PlanilhaAberta:
         """Devolve a planilha aberta ou levanta o erro que impediu a conexão.

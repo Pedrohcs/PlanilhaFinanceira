@@ -22,14 +22,14 @@
 
 | Marco | Features | Tarefas | Não iniciada | Iniciada | Concluída | Progresso |
 |---|---|---|---|---|---|---|
-| M0 · Fundação | F-01..F-04 | 12 | 5 | 0 | 7 | 58% |
+| M0 · Fundação | F-01..F-04 | 12 | 4 | 0 | 8 | 67% |
 | M1 · Registro e consulta | F-05..F-08 | 8 | 8 | 0 | 0 | 0% |
 | M2 · Visão financeira | F-09..F-11 | 5 | 5 | 0 | 0 | 0% |
 | M3 · Automação | F-12..F-13 | 5 | 5 | 0 | 0 | 0% |
 | M4 · Acabamento | F-14..F-15 | 5 | 5 | 0 | 0 | 0% |
-| **Total** | **15** | **35** | **28** | **0** | **7** | **20%** |
+| **Total** | **15** | **35** | **27** | **0** | **8** | **23%** |
 
-**F-01 e F-02 concluídas; F-03 iniciada.** Próxima tarefa disponível: **T-008** (BE, F-03, caminho crítico) — antes dela, fazer a verificação pendente de CA-F02.13 com a planilha real (Log de 2026-09-29). Também desbloqueada: T-010 (FE, F-04).
+**F-01 e F-02 concluídas; F-03 iniciada.** Próxima tarefa disponível: **T-009** (BE, última de F-03, caminho crítico). Também desbloqueada: T-010 (FE, F-04, spec aprovada). Pendente com o usuário, sem bloquear: conferência na planilha real (CA-F02.13, CA-15.1/15.2).
 
 ---
 
@@ -103,7 +103,7 @@ Camadas: **BE** = backend · **FE** = frontend · **DOC** = documentação/infra
 | T-005 | `api/erros.py` (handlers no formato `03` §6.2, incluindo erros do Pydantic → `VALIDACAO`), `api/deps.py`, lifespan que conecta sem derrubar o servidor (uma tentativa), `GET /api/health` que reconecta sob demanda. Testes de API. | F-02 | BE | T-004 | Concluída | 2026-09-29 | 2026-09-29 | Handlers de `03` §6.2 (inclusive erros do framework), `api/deps.py`, `ConexaoPlanilha`, lifespan tolerante e `GET /api/health` sempre 200 com nova tentativa. Logging INFO de `02` §3. 17 testes novos (46 no total); `ruff` limpo; fumaça com uvicorn real. CA-16.1, CA-16.2, CA-F02.5..10 e .12. |
 | T-006 | `README.md` na raiz: pré-requisitos, preparação única da planilha (compartilhar com `client_email`, obter ID), configuração do `.env`, como rodar. | F-02 | DOC | T-004 | Concluída | 2026-09-29 | 2026-09-29 | `README.md` com pré-requisitos, preparação única da planilha (inclusive descobrir o `client_email` pelo próprio `/api/health`), `.env`, execução, testes, tabela dos 5 erros e seção de segurança. 6 testes guardam a documentação (52 no total). CA-F02.13 — falta só a leitura do usuário. |
 | T-007 | Domínio base: `enums.py`, `dinheiro.py` (tipo `Dinheiro`, divisão em parcelas RN-07), `datas.py` (`somar_meses`, `ajustar_dia`, iteração de meses `YYYY-MM`), `modelos.py`. Testes cobrindo RN-07 e fim de mês/ano bissexto. | F-03 | BE | T-002 | Concluída | 2026-09-30 | 2026-09-30 | `enums`, `dinheiro` (tipo `Dinheiro`, `valor_da_planilha`, `dividir_em_parcelas` em centavos inteiros), `datas` (inclui `data_da_parcela` a partir da compra) e `modelos` (linha válida de `03` §5, com regras entre campos, e `ListagemComAvisos[T]`); `NaoEncontrado` e `ErroValidacao` em `erros.py`. 431 testes novos (483 no total, maioria parametrização N=2..48); `ruff` limpo. CA-F03.1 a .8. |
-| T-008 | `infra/schema_planilha.py` (abas/colunas de `03` §5) e `infra/bootstrap.py` idempotente: cria abas e cabeçalhos, valida cabeçalhos, grava `versao_schema`, seed de categorias RN-15. Chamado no lifespan. Testes com planilha falsa. | F-03 | BE | T-005, T-007 | Não iniciada | | | |
+| T-008 | `infra/schema_planilha.py` (abas/colunas de `03` §5) e `infra/bootstrap.py` idempotente: cria abas e cabeçalhos, valida cabeçalhos, grava `versao_schema`, seed de categorias RN-15. Chamado no lifespan. Testes com planilha falsa. | F-03 | BE | T-005, T-007 | Concluída | 2026-09-30 | 2026-09-30 | `schema_planilha.py` (fonte única das 4 abas) e `bootstrap.py` em duas fases (valida tudo → escreve só o que falta; seed RN-15 em uma escrita). Roda a cada conexão estabelecida, injetado em `ConexaoPlanilha` (`03` §4.5). `SchemaPlanilhaInvalido` → 503 + linha no README. `tests/planilha_falsa.py` exige RAW/UNFORMATTED e argumentos nomeados. 44 testes novos (527 no total); `ruff` limpo. CA-F03.9..15, .24, .25; CA-15.1/15.2 com planilha falsa. |
 | T-009 | `infra/cache.py` (TTL + invalidação), `repositories/base.py` (Protocols), `repositories/planilha/` (leitura UNFORMATTED, validação de linhas → `linhas_ignoradas`, `append_rows` RAW em lote, atualizar/remover localizando por `id`), `repositories/memoria/`. Testes unitários + 1 teste `@integracao`. | F-03 | BE | T-008 | Não iniciada | | | |
 | T-010 | Shell: `app.ts` (classe `App`) com barra superior (botões "Registrar gasto"/"Registrar receita" ainda sem ação), navegação lateral, rotas lazy das 5 páginas (placeholders), `GraficoDirective` + `grafico.config.ts` em `shared/grafico/` (Chart.js direto, `02` §4) com teste unitário. | F-04 | FE | T-003 | Não iniciada | | | |
 | T-011 | Core: `core/models` base (`ErroApi`, enums), `erro.interceptor.ts`, `ConexaoStore` + banner de erro, `MesSelecionadoStore` sincronizado com `?mes=`, `DadosStore`, `utils/mes.ts`, componentes `seletor-mes`, `confirmacao-dialog`, `estado-vazio`, `carregando`. Testes unitários. | F-04 | FE | T-010 | Não iniciada | | | |
@@ -158,6 +158,9 @@ Camadas: **BE** = backend · **FE** = frontend · **DOC** = documentação/infra
 
 | Data | Tarefa/Feature | Mudança | Observação |
 |---|---|---|---|
+| 2026-09-30 | T-008 | `Iniciada` → `Concluída` | Bootstrap idempotente ligado à conexão. `03` → 1.9 (§4.5 bootstrap a cada conexão e colunas extras; §4.4 sem seed no serviço; `planilha_falsa.py` em §3). F-03 §3.4 e §10 refinados. `README.md` §5 ganhou a linha de `SCHEMA_PLANILHA_INVALIDO` (a guarda de T-006 cobrou) e o teste da guarda passou a ignorar o ponto final ao comparar mensagens. |
+| 2026-09-30 | T-008 | Sugestões anotadas | (1) **T-009**: reaproveitar `tests/planilha_falsa.py`, acrescentando só o que faltar (ex.: `delete_rows`/`batch_clear`), mantendo a exigência de RAW/UNFORMATTED. (2) Planilha nova do Google vem com uma aba padrão ("Página1"/"Sheet1"); o bootstrap a deixa intacta (borda 8). Avaliar em **T-031** se vale citar no README ou removê-la quando estiver vazia — hoje seria comportamento fora da spec. |
+| 2026-09-30 | T-008 | `Não iniciada` → `Iniciada` | Dependências T-005 e T-007 `Concluída`. A pendência de CA-F02.13 (planilha real) **não** bloqueia: os testes usam planilha falsa; só a conferência manual final depende dela. |
 | 2026-09-30 | F-04 | Spec da feature criada e **aprovada** | `features/F-04-shell-do-frontend.md`: Q1–Q7 respondidas (todas na opção recomendada). `03` → 1.8 (§8.4, código local `BACKEND_INDISPONIVEL`). Nenhum status de tarefa alterado. |
 | 2026-09-30 | T-007 | `Iniciada` → `Concluída` | Domínio base de F-03. `03` → 1.7 (funções de `datas.py`; `domain` importa o próprio `domain`, e `test_camadas` passou a checar também bibliotecas externas). Decisões em F-03 §10. |
 | 2026-09-30 | T-007 | Sugestões anotadas | (1) **T-009**: antes de `model_validate`, tirar espaços das células, trocar `""` por `None` e passar `valor` por `valor_da_planilha` — o modelo recusa `42.500000000000004` (mais de 2 casas); daí em diante a validação de linha é só `ValidationError` → ignorada. (2) **Serviços (T-013 em diante)**: `model_copy(update=...)` do Pydantic **não valida**; para editar, usar `Modelo.model_validate({**item.model_dump(), ...})`. |

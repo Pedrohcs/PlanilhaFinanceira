@@ -29,8 +29,10 @@ def test_readme_documenta_cada_erro_de_planilha__CA_F02_13(
     """Cada código e cada mensagem da tabela de `SPECS/02` §5.6 no README."""
     assert erro.codigo in readme, f"{erro.codigo} não está documentado"
 
-    # A mensagem de permissão traz o e-mail da conta de serviço, que varia.
-    trecho = erro.mensagem.split("<")[0].split(" com ")[0].strip()
+    # Partes variáveis ficam de fora: o e-mail da conta de serviço na mensagem
+    # de permissão e o `: <aba>, <problema>` que substitui o ponto final da
+    # mensagem de estrutura.
+    trecho = erro.mensagem.split("<")[0].split(" com ")[0].strip().removesuffix(".")
     assert trecho in readme, f"a mensagem de {erro.codigo} não está no README"
 
 

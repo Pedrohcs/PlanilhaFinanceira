@@ -11,8 +11,11 @@ from app.domain.erros import (
     PlanilhaNaoEncontrada,
     SemPermissaoPlanilha,
 )
+from app.infra import sheets_client
+from app.infra.schema_planilha import ABA_LANCAMENTOS
 from app.infra.sheets_client import PlanilhaAberta
 from app.main import criar_app
+from tests.planilha_falsa import PlanilhaFalsa
 
 TITULO = "Planilha Financeira do Pedro"
 EMAIL_SERVICO = "robo-financeiro@projeto-falso.iam.gserviceaccount.com"
@@ -131,3 +134,27 @@ def test_health_nao_reautentica_quando_ja_conectado__CA_F02_8() -> None:
 
     # Uma tentativa na subida (lifespan) e nenhuma repetição: a conexão é reusada.
     assert conexao.tentativas == 1
+
+
+def test_schema_invalido_aparece_no_health__CA_F03_11(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Estrutura divergente: health degradado com a causa; corrigida, "Tentar novamente" passa."""
+    documento = PlanilhaFalsa({"Lancamentos": [["id", "data", "tipo", "descricao", "obs"]]})
+    monkeypatch.setattr(
+        sheets_client,
+        "abrir_planilha",
+        lambda *_a, **_k: PlanilhaAberta(titulo=TITULO, documento=documento),
+    )
+
+    with TestClient(criar_app()) as cliente:
+        degradado = cliente.get("/api/health").json()
+        documento.worksheet("Lancamentos").valores[0] = list(ABA_LANCAMENTOS.colunas[:5])
+        recuperado = cliente.get("/api/health").json()
+
+    assert degradado["status"] == "degradado"
+    assert degradado["planilha"]["erro"] == {
+        "codigo": "SCHEMA_PLANILHA_INVALIDO",
+        "mensagem": "A estrutura da planilha não corresponde ao esperado: "
+        "Lancamentos, coluna E deveria ser 'valor', mas está 'obs'.",
+    }
+    assert recuperado["status"] == "ok"
+    assert documento.linhas("Lancamentos")[0] == list(ABA_LANCAMENTOS.colunas)

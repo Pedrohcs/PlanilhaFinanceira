@@ -91,13 +91,15 @@ Dar ao projeto o vocabulário e a memória: os tipos de domínio que todas as re
 
 ### 3.4 Bootstrap idempotente (T-008)
 
-Executado no lifespan, depois de a planilha abrir (`03` §4.5). Para cada aba do schema:
+Executado **a cada conexão estabelecida** — no lifespan, depois de a planilha abrir, ou na nova tentativa do `GET /api/health` se a abertura tinha falhado (`03` §4.5). A conexão só conta como estabelecida se o bootstrap passar; `SchemaPlanilhaInvalido` fica guardado como erro da conexão e aparece no health. Primeiro **valida tudo** (só leitura); só depois, se nada divergir, escreve. Para cada aba do schema:
 
 1. **Não existe** → cria a aba e escreve a linha 1 de cabeçalho.
 2. **Existe e o cabeçalho confere** → nada a fazer.
-3. **Existe e faltam colunas no fim** → acrescenta só as que faltam, preservando os dados.
+3. **Existe e faltam colunas no fim** → acrescenta só as que faltam, preservando os dados (alargando a grade se for preciso).
+3a. **Existe com colunas extras depois da última do schema** (ex.: `notas` depois de `atualizado_em`) → aceitas e ignoradas, com log `INFO`. O app não lê nem escreve nelas.
+3b. Nomes do cabeçalho são comparados sem os espaços em volta; maiúsculas e minúsculas contam.
 4. **Existe com divergência de ordem ou nome no meio** → `SchemaPlanilhaInvalido` (503 `SCHEMA_PLANILHA_INVALIDO`), com a aba e o problema na mensagem. **Nada é alterado** na planilha (Q4).
-5. Aba `Config` sem `versao_schema` → grava `1`. Com valor **maior** que 1 (planilha de um app mais novo) ou não numérico → `SchemaPlanilhaInvalido`, também sem alterar nada. Valor **menor** que o atual seria migração — não existe versão anterior, então o caso ainda não ocorre (Q4).
+5. Aba `Config` sem `versao_schema` → grava `1`. Aceita `1`, `1.0` ou `"1"` (o Sheets pode devolver a célula como número ou texto). Com valor **maior** que 1 (planilha de um app mais novo), **menor que 1** ou não numérico → `SchemaPlanilhaInvalido`, também sem alterar nada. Valor **menor** que o atual seria migração — não existe versão anterior, então o caso ainda não ocorre (Q4).
 6. Aba `Categorias` **vazia** (só cabeçalho) → seed das 15 categorias de RN-15 (CA-15.1). Com qualquer linha → não mexe (CA-15.2).
 7. Reexecutar o bootstrap na mesma planilha não duplica nem sobrescreve nada (CA-15.2).
 
@@ -152,8 +154,8 @@ Mesmos Protocols, guardando os itens em listas. É o que os testes de serviço d
 
 **Herdados de `01`**
 
-- [ ] **CA-15.1** Dado uma planilha nova e vazia, quando o sistema inicia, então as 4 abas existem com o cabeçalho correto e as 15 categorias padrão de RN-15 estão lá.
-- [ ] **CA-15.2** Dado uma planilha já preparada, quando o sistema inicia de novo, então nada é duplicado nem sobrescrito: mesma quantidade de abas, de colunas e de linhas.
+- [~] **CA-15.1** Dado uma planilha nova e vazia, quando o sistema inicia, então as 4 abas existem com o cabeçalho correto e as 15 categorias padrão de RN-15 estão lá. *(T-008: verificado com planilha falsa, inclusive subindo a aplicação inteira; a conferência na planilha real fica para o teste `@integracao` de T-009 e para CA-F02.13.)*
+- [~] **CA-15.2** Dado uma planilha já preparada, quando o sistema inicia de novo, então nada é duplicado nem sobrescrito: mesma quantidade de abas, de colunas e de linhas. *(T-008: verificado com planilha falsa, inclusive subindo a aplicação inteira; a conferência na planilha real fica para o teste `@integracao` de T-009 e para CA-F02.13.)*
 - [ ] **CA-16.3** Dado uma linha inválida na aba (editada à mão), quando a listagem é lida, então a linha é ignorada nos resultados, `linhas_ignoradas` reflete a contagem, um `WARNING` cita aba e linha, e as linhas válidas voltam normalmente.
 
 **Refinados — domínio (T-007)**
@@ -169,15 +171,15 @@ Mesmos Protocols, guardando os itens em listas. É o que os testes de serviço d
 
 **Refinados — bootstrap (T-008)**
 
-- [ ] **CA-F03.9** Dado uma planilha sem nenhuma das abas, quando o bootstrap roda, então cria as 4 abas com os cabeçalhos **exatamente** nos nomes e na ordem de `03` §5.
-- [ ] **CA-F03.10** Dado uma aba a que faltam colunas **no final**, quando o bootstrap roda, então acrescenta só as que faltam e nenhum dado de linha é perdido.
-- [ ] **CA-F03.11** Dado uma aba com coluna renomeada ou fora de ordem, quando o bootstrap roda, então **nada é alterado** e o erro nomeia a aba e a divergência.
-- [ ] **CA-F03.12** Dado a aba `Categorias` vazia, quando o bootstrap roda, então insere as 15 categorias de RN-15 em **uma única** chamada de escrita, com `id` no formato de slug, tipo correto e `ativa = true`.
-- [ ] **CA-F03.13** Dado a aba `Categorias` com pelo menos uma linha, quando o bootstrap roda, então nenhuma categoria é inserida (CA-15.2), mesmo que o usuário tenha apagado algumas das padrão.
-- [ ] **CA-F03.14** Dado o bootstrap executado duas vezes seguidas, quando se comparam abas, colunas e linhas antes e depois da segunda, então são idênticas (CA-15.2).
-- [ ] **CA-F03.24** Dado `versao_schema` maior que 1 ou não numérico, quando o bootstrap roda, então levanta `SchemaPlanilhaInvalido` e **nenhuma** célula é escrita (Q4).
-- [ ] **CA-F03.25** Dado as 15 categorias semeadas, quando as cores são lidas, então cada uma tem a cor da tabela de §3.4, no formato `#RRGGBB`, e não há cor repetida (Q2).
-- [ ] **CA-F03.15** Dado a aba `Config`, quando o bootstrap termina, então existe a chave `versao_schema` com o valor `1`.
+- [x] **CA-F03.9** Dado uma planilha sem nenhuma das abas, quando o bootstrap roda, então cria as 4 abas com os cabeçalhos **exatamente** nos nomes e na ordem de `03` §5.
+- [x] **CA-F03.10** Dado uma aba a que faltam colunas **no final**, quando o bootstrap roda, então acrescenta só as que faltam e nenhum dado de linha é perdido.
+- [x] **CA-F03.11** Dado uma aba com coluna renomeada ou fora de ordem, quando o bootstrap roda, então **nada é alterado** e o erro nomeia a aba e a divergência.
+- [x] **CA-F03.12** Dado a aba `Categorias` vazia, quando o bootstrap roda, então insere as 15 categorias de RN-15 em **uma única** chamada de escrita, com `id` no formato de slug, tipo correto e `ativa = true`.
+- [x] **CA-F03.13** Dado a aba `Categorias` com pelo menos uma linha, quando o bootstrap roda, então nenhuma categoria é inserida (CA-15.2), mesmo que o usuário tenha apagado algumas das padrão.
+- [x] **CA-F03.14** Dado o bootstrap executado duas vezes seguidas, quando se comparam abas, colunas e linhas antes e depois da segunda, então são idênticas (CA-15.2).
+- [x] **CA-F03.24** Dado `versao_schema` maior que 1 ou não numérico, quando o bootstrap roda, então levanta `SchemaPlanilhaInvalido` e **nenhuma** célula é escrita (Q4).
+- [x] **CA-F03.25** Dado as 15 categorias semeadas, quando as cores são lidas, então cada uma tem a cor da tabela de §3.4, no formato `#RRGGBB`, e não há cor repetida (Q2).
+- [x] **CA-F03.15** Dado a aba `Config`, quando o bootstrap termina, então existe a chave `versao_schema` com o valor `1`.
 
 **Refinados — repositórios e cache (T-009)**
 
@@ -313,6 +315,11 @@ Ordem obrigatória: T-007 → T-008 → T-009 (`05` §4; T-008 também depende d
 | `ErroValidacao` (código `VALIDACAO`) no domínio (T-007). | §3.1.5 pede 422 `VALIDACAO` para divisão recusada; sem uma exceção de domínio com esse código, um `ValueError` viraria 500. O mapa `VALIDACAO → 422` já existia em `api/erros.py`. | Não |
 | Os modelos de domínio garantem a **linha válida** de `03` §5, inclusive as regras entre campos: `forma_pagamento` obrigatória se GASTO (`Lancamento` e `Recorrencia`) e o trio `parcelamento_id`/`parcela_numero`/`parcela_total` todo preenchido ou todo vazio, com 1 ≤ k ≤ N ≤ 48 (T-007). | A validação de linhas de T-009 passa a ser "o modelo aceitou?", sem duplicar regra, e os dois repositórios só guardam dado válido (CA-F03.23). Regras que dependem de outros dados — categoria ativa e do mesmo tipo (RN-04) — e as mensagens amigáveis continuam nos serviços (F-05/F-06). | Não |
 | `data_da_parcela(compra, k)` fica em `domain/datas.py` (T-007). | Fixa num só lugar que a data parte da compra (§3.2.3); `parcelamento_service` (T-026) só a chama. | Não |
+| Bootstrap roda a cada conexão estabelecida, injetado em `ConexaoPlanilha` por `main.py` (T-008). | Com o app aberto sem internet, a conexão só nasce no "Tentar novamente" do health; rodar só no lifespan deixaria as abas sem criar até reiniciar. A injeção evita import circular entre `sheets_client` e `bootstrap`. `03` → 1.9. | Não |
+| Validação inteira antes de qualquer escrita (T-008). | CA-F03.11 e .24 exigem planilha intocada quando algo diverge — inclusive quando a divergência está numa aba posterior a outra que precisaria ser criada. | Não |
+| Colunas extras depois da última do schema são aceitas e ignoradas (T-008, decisão do usuário). | Mesmo espírito da 5ª aba do usuário (borda 8): o que o app não conhece, ele não toca. Uma futura coluna nova do schema nessa posição seria detectada como divergência. | Não |
+| `versao_schema` < 1 é inválido (T-008). | Não existe versão anterior à 1; tratar como migração seria inventar comportamento. | Não |
+| Seed de RN-15 fica no `bootstrap`, não no `categoria_service` (T-008). | `infra` não pode chamar `services` (`03` §4.2); `03` §4.4 citava o seed no serviço, em contradição com §4.5. `03` → 1.9. | Não |
 | P-03 **confirmada**; resto de centavos na 1ª parcela (Q1). | Resposta do usuário; `01` → 1.1 com a premissa marcada. RN-07 não mudou. | Não |
 | Paleta de 15 cores proposta por mim (Q2). | RN-15 não define cores e `03` §5.2 exige `#RRGGBB`. Tons distinguíveis, legíveis em tema claro e escuro, receitas em verdes; `#E57373` para Alimentação por coerência com `03` §6.3. Trocáveis em T-014. | Não |
 | Total mínimo `N × R$ 0,01` para parcelar (Q3). | Parcela de R$ 0,00 violaria RN-01; recusar é explícito, reduzir o número de parcelas seria silencioso. | Não |
@@ -338,3 +345,4 @@ Ordem obrigatória: T-007 → T-008 → T-009 (`05` §4; T-008 também depende d
 | 2026-09-29 | Criação (`/especificar-feature F-03`). Status `Rascunho` — 4 questões em aberto. |
 | 2026-09-29 | Q1–Q4 respondidas → status **Aprovada**. Paleta das 15 categorias, total mínimo por parcela e `SchemaPlanilhaInvalido` incorporados; CA-F03.24 e .25 acrescentados. `01` → 1.1, `02` → 1.7, `03` → 1.6. |
 | 2026-09-30 | T-007 concluída: CA-F03.1 a .8 verificados por teste. `ErroValidacao` acrescentado ao escopo de T-007 (§9) e três decisões registradas em §10 (validação entre campos nos modelos, `ErroValidacao`, `data_da_parcela`). |
+| 2026-09-30 | T-008 concluída: CA-F03.9 a .15, .24 e .25 verificados por teste; CA-15.1/15.2 com planilha falsa (real pendente). §3.4 refinado — bootstrap a cada conexão estabelecida, validação inteira antes de escrever, colunas extras no fim aceitas (decisão do usuário), `versao_schema` < 1 inválido — e cinco decisões em §10. `03` → 1.9. |

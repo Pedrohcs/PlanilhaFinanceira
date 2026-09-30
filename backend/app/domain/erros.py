@@ -57,6 +57,18 @@ class PlanilhaIndisponivel(ErroPlanilha):
     mensagem = "Google Sheets indisponível no momento. Tente novamente."
 
 
+class SchemaPlanilhaInvalido(ErroPlanilha):
+    """Cabeçalho divergente ou `versao_schema` que o app não sabe ler (`SPECS/02` §5.6)."""
+
+    codigo = "SCHEMA_PLANILHA_INVALIDO"
+    mensagem = "A estrutura da planilha não corresponde ao esperado."
+
+    @classmethod
+    def para(cls, aba: str, problema: str) -> "SchemaPlanilhaInvalido":
+        """Mensagem nomeando a aba e o que está errado, para o usuário corrigir."""
+        return cls(f"A estrutura da planilha não corresponde ao esperado: {aba}, {problema}.")
+
+
 class ErroValidacao(ErroDominio):
     """Entrada que viola uma regra de negócio (ex.: RN-07), vista como 422."""
 
