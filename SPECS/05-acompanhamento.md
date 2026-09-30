@@ -29,7 +29,7 @@
 | M4 · Acabamento | F-14..F-15 | 5 | 5 | 0 | 0 | 0% |
 | **Total** | **15** | **35** | **19** | **0** | **16** | **46%** |
 
-**M0 concluído (F-01 a F-04); F-05 e F-06 concluídas.** Próximo passo: `/especificar-feature F-07` (Listagem mensal, caminho crítico) — depois T-017 (BE) e T-018 (FE). Pendentes com o usuário, sem bloquear: seguir o README com a planilha real (CA-F02.13), rodar `pytest -m integracao` (CA-15.1/15.2) e a conferência visual (CA-F04.7, CA-F04.30, CA-F05.20, F-06 borda 16).
+**M0 concluído (F-01 a F-04); F-05 e F-06 concluídas.** Próxima tarefa disponível: **T-017** (BE, F-07, caminho crítico; spec aprovada) — depois T-018 (FE). Pendentes com o usuário, sem bloquear: seguir o README com a planilha real (CA-F02.13), rodar `pytest -m integracao` (CA-15.1/15.2) e a conferência visual (CA-F04.7, CA-F04.30, CA-F05.20, F-06 borda 16).
 
 ---
 
@@ -43,7 +43,7 @@
 | F-04 | Shell do frontend | M0 | Concluída | [`F-04-shell-do-frontend.md`](features/F-04-shell-do-frontend.md) (Concluída) |
 | F-05 | Categorias | M1 | Concluída | [`F-05-categorias.md`](features/F-05-categorias.md) (Concluída) |
 | F-06 | Registrar lançamento | M1 | Concluída | [`F-06-registrar-lancamento.md`](features/F-06-registrar-lancamento.md) (Concluída) |
-| F-07 | Listagem mensal | M1 | Não iniciada | — |
+| F-07 | Listagem mensal | M1 | Não iniciada | [`F-07-listagem-mensal.md`](features/F-07-listagem-mensal.md) (Aprovada) |
 | F-08 | Editar e excluir lançamentos | M1 | Não iniciada | — |
 | F-09 | Resumo mensal | M2 | Não iniciada | — |
 | F-10 | Gráficos do mês | M2 | Não iniciada | — |
@@ -157,6 +157,7 @@ Camadas: **BE** = backend · **FE** = frontend · **DOC** = documentação/infra
 
 | Data | Tarefa/Feature | Mudança | Observação |
 |---|---|---|---|
+| 2026-09-30 | F-07 | Spec da feature criada e **aprovada** | `features/F-07-listagem-mensal.md`: Q1–Q3 respondidas (todas na opção recomendada). `03` → 1.20 (§8.1, filtros na URL). Nenhum status de tarefa alterado. |
 | 2026-09-30 | T-016 / F-06 | `Iniciada` → `Concluída` | Diálogo de registro. **F-06 concluída** (§2 e §3 atualizados). `03` → 1.19 (arquivos novos em §3). Revisão registrada em F-05 (aviso duplicado corrigido). |
 | 2026-09-30 | T-016 | Sugestão anotada | Pacote inicial em 472 kB (aviso em 500): o `app.config` importa o adaptador de data de `@angular/material/core`, que reexporta o `MatOption` — com o `mat-select` do diálogo, o esbuild o compartilha com o pacote inicial (~16 kB). Se a margem apertar, mover `provideNativeDateAdapter`/`AdaptadorDeDataPtBr` para os `providers` das rotas e do diálogo. Avaliar em T-031. |
 | 2026-09-30 | T-016 | `Não iniciada` → `Iniciada` | Dependências T-015 e T-014 `Concluída`. Última tarefa de F-06. |

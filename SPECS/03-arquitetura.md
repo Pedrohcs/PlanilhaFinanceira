@@ -3,7 +3,7 @@
 | Campo | Valor |
 |---|---|
 | Documento | `SPECS/03-arquitetura.md` |
-| Versão | 1.19 |
+| Versão | 1.20 |
 | Atualizado em | 2026-09-30 |
 | Status | Aprovado para início |
 | Responde | **Como** o sistema se organiza: componentes, pastas, camadas, modelo de dados na planilha, contrato da API e fluxos |
@@ -436,7 +436,7 @@ Falha no inicializador **não impede** o app de abrir: o `provideAppInitializer`
 |---|---|---|
 | `/` | redireciona para `/resumo` | |
 | `/resumo?mes=YYYY-MM` | Resumo do mês: cards de totais + gráficos | REQ-12, REQ-13 |
-| `/lancamentos?mes=YYYY-MM` | Listagem com filtros, editar/excluir | REQ-03..06, REQ-08 |
+| `/lancamentos?mes=YYYY-MM&tipo=&categoria_id=&forma_pagamento=` | Listagem com filtros (opcionais, na URL com `replaceUrl`), editar/excluir | REQ-03..06, REQ-08 |
 | `/historico?inicio=&fim=` | Histórico | REQ-14 |
 | `/categorias` | Gestão de categorias | REQ-11 |
 | `/recorrencias` | Gestão de recorrências | REQ-09 |
@@ -493,4 +493,5 @@ Quando o **backend não responde** (status 0, ou 502/504 sem o envelope de §6.2
 | 2026-09-30 | 1.17 | §8.4: marcador `TRATAMENTO_LOCAL` para formulários que mostram o 409 no campo (F-06, Q3). |
 | 2026-09-30 | 1.18 | §3: `lancamento_service.py`. §6.2: 422 de regra de negócio também traz o campo em `detalhes` (T-015). |
 | 2026-09-30 | 1.19 | §3: `lancamentos.api`, `formas-pagamento.api`/`.store`, `utils/valor.ts`, `utils/adaptador-de-data.ts`, `abrir-lancamento.ts` (T-016). |
+| 2026-09-30 | 1.20 | §8.1: filtros da listagem na URL (F-07, Q1). |
 | 2026-09-29 | 1.1 | Frontend em Angular 22 (zoneless); pasta `shared/grafico/` com diretiva Chart.js própria (§3, §8.2.1). |
