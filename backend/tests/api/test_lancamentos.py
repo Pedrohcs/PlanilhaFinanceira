@@ -417,3 +417,140 @@ def test_post_e_get_ponta_a_ponta__CA_01_5(monkeypatch: pytest.MonkeyPatch) -> N
     assert antes["itens"] == []
     assert [item["descricao"] for item in depois["itens"]] == ["Almoço"]
     assert depois["totais"]["gastos"] == 42.5
+
+
+# PUT e DELETE /api/lancamentos/{id} (F-08) -------------------------------------
+
+
+def linhas_de(documento: PlanilhaFalsa) -> list[list[Any]]:
+    return [list(valores) for valores in documento.worksheet(ABA_LANCAMENTOS.nome).valores[1:]]
+
+
+def test_put_so_a_linha_do_id_apos_reordenacao__CA_05_2(monkeypatch: pytest.MonkeyPatch) -> None:
+    """CA-F08.2, borda 1: o usuário reordenou a planilha depois da última leitura."""
+    cliente, documento = cliente_com_planilha(
+        monkeypatch,
+        linha("a", "2026-09-10"),
+        linha("b", "2026-09-11"),
+        linha("c", "2026-09-12"),
+    )
+
+    with cliente:
+        cliente.get("/api/lancamentos?mes=2026-09")  # cache com a ordem antiga
+        aba = documento.worksheet(ABA_LANCAMENTOS.nome)
+        aba.valores[1], aba.valores[3] = aba.valores[3], aba.valores[1]  # c, b, a
+        antes = {linha_[0]: linha_ for linha_ in linhas_de(documento)}
+
+        resposta = cliente.put(
+            "/api/lancamentos/a",
+            json=entrada(categoria_id="alimentacao", descricao="Corrigido", valor=50.0),
+        )
+
+    assert resposta.status_code == 200
+    depois = {linha_[0]: linha_ for linha_ in linhas_de(documento)}
+    assert [linha_[0] for linha_ in linhas_de(documento)] == ["c", "b", "a"]  # posições mantidas
+    assert depois["b"] == antes["b"]
+    assert depois["c"] == antes["c"]
+    assert (depois["a"][3], depois["a"][4]) == ("Corrigido", 50.0)
+    assert depois["a"][12] == antes["a"][12]  # criado_em preservado
+    assert depois["a"][13] != antes["a"][13]  # atualizado_em novo
+
+
+def test_put_muda_de_mes__CA_05_3(cliente_memoria: TestClient) -> None:
+    """CA-F08.6, borda 6: sai de setembro, entra em outubro; os totais acompanham."""
+    criado = cliente_memoria.post(
+        "/api/lancamentos", json=entrada(data="2026-09-30", valor=80.0)
+    ).json()
+
+    resposta = cliente_memoria.put(
+        f"/api/lancamentos/{criado['id']}", json=entrada(data="2026-10-02", valor=80.0)
+    )
+    setembro = cliente_memoria.get("/api/lancamentos?mes=2026-09").json()
+    outubro = cliente_memoria.get("/api/lancamentos?mes=2026-10").json()
+
+    assert resposta.status_code == 200
+    assert resposta.json()["data"] == "2026-10-02"
+    assert setembro["itens"] == [] and setembro["totais"]["gastos"] == 0.0
+    assert [item["id"] for item in outubro["itens"]] == [criado["id"]]
+    assert outubro["totais"]["gastos"] == 80.0
+
+
+def test_delete_so_a_linha_e_totais__CA_06_2(monkeypatch: pytest.MonkeyPatch) -> None:
+    """CA-F08.7: remove só a linha do `id`, mesmo após reordenação; totais recalculados."""
+    cliente, documento = cliente_com_planilha(
+        monkeypatch,
+        linha("a", "2026-09-10", 10.0),
+        linha("b", "2026-09-11", 20.0),
+        linha("c", "2026-09-12", 30.0),
+    )
+
+    with cliente:
+        cliente.get("/api/lancamentos?mes=2026-09")
+        aba = documento.worksheet(ABA_LANCAMENTOS.nome)
+        aba.valores[1], aba.valores[3] = aba.valores[3], aba.valores[1]  # c, b, a
+        antes = {linha_[0]: linha_ for linha_ in linhas_de(documento)}
+
+        resposta = cliente.delete("/api/lancamentos/b")
+        lista = cliente.get("/api/lancamentos?mes=2026-09").json()
+
+    assert resposta.status_code == 204
+    assert linhas_de(documento) == [antes["c"], antes["a"]]
+    assert lista["totais"]["gastos"] == 40.0
+
+
+@pytest.mark.parametrize(("metodo", "corpo"), [("PUT", entrada()), ("DELETE", None)])
+def test_put_delete_404__CA_F08_3(
+    cliente_memoria: TestClient, metodo: str, corpo: dict[str, Any] | None
+) -> None:
+    resposta = cliente_memoria.request(metodo, "/api/lancamentos/nao-existe", json=corpo)
+
+    assert resposta.status_code == 404
+    assert resposta.json()["erro"] == {
+        "codigo": "NAO_ENCONTRADO",
+        "mensagem": "Lançamento não encontrado.",
+        "detalhes": [],
+    }
+
+
+@pytest.mark.parametrize(
+    ("alteracoes", "status_esperado", "codigo"),
+    [
+        ({"valor": 0}, 422, "VALIDACAO"),
+        ({"categoria_id": "salario"}, 409, "CATEGORIA_TIPO_INCOMPATIVEL"),
+        ({"categoria_id": "velha"}, 409, "CATEGORIA_INATIVA"),  # trocar para outra inativa
+        ({"forma_pagamento": None}, 422, "VALIDACAO"),
+    ],
+)
+def test_put_validacoes__CA_F08_4(
+    cliente_memoria: TestClient, alteracoes: dict[str, Any], status_esperado: int, codigo: str
+) -> None:
+    criado = cliente_memoria.post("/api/lancamentos", json=entrada()).json()
+
+    resposta = cliente_memoria.put(f"/api/lancamentos/{criado['id']}", json=entrada(**alteracoes))
+
+    assert resposta.status_code == status_esperado
+    assert resposta.json()["erro"]["codigo"] == codigo
+    lista = cliente_memoria.get("/api/lancamentos?mes=2026-09").json()
+    assert lista["itens"][0]["valor"] == 42.5  # nada mudou
+
+
+def test_put_delete_503__CA_F08_9(cliente: TestClient) -> None:
+    for resposta in (
+        cliente.put("/api/lancamentos/x", json=entrada()),
+        cliente.delete("/api/lancamentos/x"),
+    ):
+        assert resposta.status_code == 503
+        assert resposta.json()["erro"]["codigo"] == "CREDENCIAIS_INVALIDAS"
+
+
+def test_descricao_com_igual_editada__ADR_04(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Borda 13: continua texto na planilha (RAW)."""
+    cliente, documento = cliente_com_planilha(monkeypatch, linha("a", "2026-09-10"))
+
+    with cliente:
+        cliente.put(
+            "/api/lancamentos/a",
+            json=entrada(categoria_id="alimentacao", descricao="=SOMA(A1:A9)"),
+        )
+
+    assert linhas_de(documento)[0][3] == "=SOMA(A1:A9)"

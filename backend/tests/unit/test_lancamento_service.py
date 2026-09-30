@@ -7,7 +7,12 @@ from typing import Any
 import pytest
 
 from app.domain.enums import FormaPagamento, TipoLancamento
-from app.domain.erros import CategoriaInativa, CategoriaTipoIncompativel, ErroValidacao
+from app.domain.erros import (
+    CategoriaInativa,
+    CategoriaTipoIncompativel,
+    ErroValidacao,
+    NaoEncontrado,
+)
 from app.domain.modelos import Categoria, Lancamento
 from app.repositories.memoria import CategoriaRepositoryMemoria, LancamentoRepositoryMemoria
 from app.services.lancamento_service import LancamentoService
@@ -322,3 +327,175 @@ def test_listar_repassa_linhas_ignoradas__CA_16_3() -> None:
     cenario = Cenario()
 
     assert cenario.servico.listar("2026-09").linhas_ignoradas == 0
+
+
+# Editar e excluir (F-08 §3.1–§3.2) -----------------------------------------------
+
+DEPOIS = datetime(2026, 10, 1, 9, 0)
+
+
+def editar(cenario: Cenario, id_: str, **alteracoes: Any) -> Any:
+    dados: dict[str, Any] = {
+        "data": date(2026, 9, 29),
+        "tipo": GASTO,
+        "descricao": "Almoço",
+        "valor": Decimal("42.50"),
+        "categoria_id": "mercado",
+        "forma_pagamento": FormaPagamento.PIX,
+        "observacao": None,
+    }
+    dados.update(alteracoes)
+    return cenario.servico.editar(id_, **dados)
+
+
+def cenario_de_edicao(*lancamentos: Lancamento) -> Cenario:
+    cenario = cenario_com(*lancamentos)
+    cenario.servico = LancamentoService(
+        cenario.categorias, cenario.lancamentos, relogio=lambda: DEPOIS
+    )
+    return cenario
+
+
+def test_editar_todos_os_campos_preserva_os_demais__CA_05_1() -> None:
+    """CA-F08.1: tipo trocado inclusive; parcela, recorrência, id e criado_em preservados."""
+    original = Lancamento.model_validate(
+        {
+            **lanc("p3", date(2026, 9, 15), "333.34").model_dump(),
+            "parcelamento_id": "par",
+            "parcela_numero": 3,
+            "parcela_total": 10,
+            "recorrencia_id": "rec",
+        }
+    )
+    cenario = cenario_de_edicao(original)
+
+    editado = editar(
+        cenario,
+        "p3",
+        data=date(2026, 10, 2),
+        tipo=RECEITA,
+        descricao="Estorno",
+        valor=Decimal("10.00"),
+        categoria_id="salario",
+        forma_pagamento=None,
+        observacao="corrigido",
+    ).lancamento
+
+    assert (editado.data, editado.tipo, editado.descricao, editado.valor) == (
+        date(2026, 10, 2),
+        RECEITA,
+        "Estorno",
+        Decimal("10.00"),
+    )
+    assert (editado.categoria_id, editado.forma_pagamento, editado.observacao) == (
+        "salario",
+        None,
+        "corrigido",
+    )
+    assert (editado.id, editado.parcelamento_id, editado.parcela_numero, editado.parcela_total) == (
+        "p3",
+        "par",
+        3,
+        10,
+    )
+    assert editado.recorrencia_id == "rec"
+    assert editado.criado_em == original.criado_em
+    assert editado.atualizado_em == DEPOIS
+    assert cenario.lancamentos.obter("p3") == editado
+
+
+def test_editar_sem_mudar_nada_so_atualiza_o_horario() -> None:
+    """Borda 10."""
+    original = lanc("a", date(2026, 9, 29), "42.50")
+    cenario = cenario_de_edicao(original)
+
+    editado = editar(cenario, "a", descricao=original.descricao).lancamento
+
+    assert editado.model_dump(exclude={"atualizado_em"}) == original.model_dump(
+        exclude={"atualizado_em"}
+    )
+    assert editado.atualizado_em == DEPOIS
+
+
+@pytest.mark.parametrize(
+    ("alteracoes", "erro"),
+    [
+        ({"categoria_id": "salario"}, CategoriaTipoIncompativel),  # gasto com categoria de receita
+        ({"tipo": RECEITA, "forma_pagamento": None}, CategoriaTipoIncompativel),  # borda 4
+        ({"categoria_id": "nao-existe"}, ErroValidacao),
+        ({"forma_pagamento": None}, ErroValidacao),  # borda 5
+    ],
+)
+def test_editar_regras_de_categoria_e_forma__RN_04_RN_05(
+    alteracoes: dict[str, Any], erro: type[Exception]
+) -> None:
+    """CA-F08.4: a linha não muda."""
+    original = lanc("a", date(2026, 9, 29))
+    cenario = cenario_de_edicao(original)
+
+    with pytest.raises(erro):
+        editar(cenario, "a", **alteracoes)
+
+    assert cenario.lancamentos.obter("a") == original
+
+
+def test_editar_categoria_inativa__Q1() -> None:
+    """CA-F08.5: manter a atual inativa passa; trocar para outra inativa, não."""
+    cenario = cenario_de_edicao(
+        lanc("na-velha", date(2026, 9, 29), categoria_id="velha"),
+        lanc("no-mercado", date(2026, 9, 28), categoria_id="mercado"),
+    )
+
+    mantida = editar(cenario, "na-velha", categoria_id="velha", valor=Decimal("99.00"))
+    assert mantida.lancamento.valor == Decimal("99.00")
+    assert mantida.categoria_nome == "Velha"
+
+    with pytest.raises(CategoriaInativa):
+        editar(cenario, "no-mercado", categoria_id="velha")
+
+
+def test_editar_e_excluir_inexistente_404__CA_F08_3() -> None:
+    """404 vem antes das regras de categoria (uma categoria errada não mascara o 404)."""
+    cenario = cenario_de_edicao(lanc("a", date(2026, 9, 29)))
+
+    with pytest.raises(NaoEncontrado, match="^Lançamento não encontrado.$"):
+        editar(cenario, "nao-existe", categoria_id="tambem-nao-existe")
+    with pytest.raises(NaoEncontrado, match="^Lançamento não encontrado.$"):
+        cenario.servico.excluir("nao-existe")
+    assert ids(cenario.servico.listar("2026-09")) == ["a"]
+
+
+def test_excluir_parcela_so_ela__RN_08() -> None:
+    """CA-F08.8, borda 8: as outras parcelas continuam com "k/N"."""
+    parcelas = [
+        Lancamento.model_validate(
+            {
+                **lanc(f"p{k}", date(2026, 9, 15), "100.00").model_dump(),
+                "parcelamento_id": "par",
+                "parcela_numero": k,
+                "parcela_total": 3,
+            }
+        )
+        for k in (1, 2, 3)
+    ]
+    cenario = cenario_de_edicao(*parcelas)
+
+    cenario.servico.excluir("p2")
+
+    restantes = cenario.lancamentos.listar().itens
+    assert [(p.id, p.parcela_numero, p.parcela_total) for p in restantes] == [
+        ("p1", 1, 3),
+        ("p3", 3, 3),
+    ]
+
+
+def test_excluir_recorrente_nao_toca_recorrencia__RN_10() -> None:
+    """Borda 9: o serviço só remove o lançamento; a marca d'água da recorrência não muda."""
+    recorrente = Lancamento.model_validate(
+        {**lanc("r", date(2026, 9, 10)).model_dump(), "recorrencia_id": "rec"}
+    )
+    cenario = cenario_de_edicao(recorrente)
+
+    cenario.servico.excluir("r")
+
+    assert cenario.lancamentos.listar().itens == []

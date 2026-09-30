@@ -1,4 +1,4 @@
-"""Regras de lançamentos (REQ-01..03, RN-01..06, RN-13; F-06 §3.5, F-07 §3.1).
+"""Regras de lançamentos (REQ-01..06, RN-01..06, RN-13; F-06 §3.5, F-07 §3.1, F-08 §3.1).
 
 Os formatos de campo (valor com 2 casas, descrição de 1 a 100…) são
 garantidos na entrada da API e no modelo de domínio; aqui ficam as regras que
@@ -15,12 +15,18 @@ from uuid import uuid4
 from app.domain.datas import agora, mes_de
 from app.domain.dinheiro import CENTAVO
 from app.domain.enums import FormaPagamento, TipoLancamento
-from app.domain.erros import CategoriaInativa, CategoriaTipoIncompativel, ErroValidacao
+from app.domain.erros import (
+    CategoriaInativa,
+    CategoriaTipoIncompativel,
+    ErroValidacao,
+    NaoEncontrado,
+)
 from app.domain.modelos import Categoria, Lancamento
 from app.repositories.base import CategoriaRepository, LancamentoRepository
 
 MENSAGEM_CATEGORIA_INEXISTENTE = "Categoria não encontrada."
 MENSAGEM_FORMA_OBRIGATORIA = "Informe a forma de pagamento."
+MENSAGEM_LANCAMENTO_INEXISTENTE = "Lançamento não encontrado."
 # Lançamento cuja categoria foi apagada à mão na planilha (F-07 §3.1.6, RN-14).
 NOME_CATEGORIA_AUSENTE = "Categoria não encontrada"
 COR_CATEGORIA_AUSENTE = "#9E9E9E"
@@ -96,9 +102,7 @@ class LancamentoService:
         forma_pagamento: FormaPagamento | None,
         observacao: str | None,
     ) -> LancamentoComCategoria:
-        categoria = self._categoria_para(categoria_id, tipo)
-        if tipo is TipoLancamento.GASTO and forma_pagamento is None:
-            raise ErroValidacao.no_campo("forma_pagamento", MENSAGEM_FORMA_OBRIGATORIA)
+        categoria = self._validar(categoria_id, tipo, forma_pagamento)
 
         instante = self._relogio()
         lancamento = Lancamento(
@@ -115,6 +119,53 @@ class LancamentoService:
         )
         self._lancamentos.inserir([lancamento])
         return LancamentoComCategoria(lancamento, categoria.nome, categoria.cor)
+
+    def editar(
+        self,
+        id: str,
+        *,
+        data: date,
+        tipo: TipoLancamento,
+        descricao: str,
+        valor: Decimal,
+        categoria_id: str,
+        forma_pagamento: FormaPagamento | None,
+        observacao: str | None,
+    ) -> LancamentoComCategoria:
+        """Qualquer campo muda, inclusive o tipo (REQ-05); o resto é preservado (F-08 §3.1).
+
+        Só a linha do `id` é reescrita — localizada na hora, mesmo após
+        reordenação manual (CA-05.2).
+        """
+        atual = self._obter(id)  # 404 antes de qualquer regra de categoria
+        categoria = self._validar(
+            categoria_id, tipo, forma_pagamento, categoria_atual=atual.categoria_id
+        )
+        editado = Lancamento.model_validate(
+            {
+                **atual.model_dump(),  # id, parcela, recorrência e criado_em ficam
+                "data": data,
+                "tipo": tipo,
+                "descricao": descricao,
+                "valor": valor,
+                "categoria_id": categoria.id,
+                "forma_pagamento": forma_pagamento,
+                "observacao": observacao,
+                "atualizado_em": self._relogio(),
+            }
+        )
+        try:
+            self._lancamentos.atualizar(editado)
+        except NaoEncontrado as erro:  # sumiu da planilha entre a leitura e a escrita
+            raise NaoEncontrado(MENSAGEM_LANCAMENTO_INEXISTENTE) from erro
+        return LancamentoComCategoria(editado, categoria.nome, categoria.cor)
+
+    def excluir(self, id: str) -> None:
+        """Remove só a linha do `id` (REQ-06). Parcela: só ela (RN-08)."""
+        try:
+            self._lancamentos.remover([id])
+        except NaoEncontrado as erro:
+            raise NaoEncontrado(MENSAGEM_LANCAMENTO_INEXISTENTE) from erro
 
     def listar(
         self,
@@ -147,8 +198,26 @@ class LancamentoService:
             linhas_ignoradas=leitura.linhas_ignoradas,
         )
 
-    def _categoria_para(self, categoria_id: str, tipo: TipoLancamento) -> Categoria:
-        """A categoria existe, é do mesmo tipo e está ativa (RN-04)."""
+    def _obter(self, id: str) -> Lancamento:
+        try:
+            return self._lancamentos.obter(id)
+        except NaoEncontrado as erro:
+            # A mensagem do repositório cita o `id`, que nada diz ao usuário.
+            raise NaoEncontrado(MENSAGEM_LANCAMENTO_INEXISTENTE) from erro
+
+    def _validar(
+        self,
+        categoria_id: str,
+        tipo: TipoLancamento,
+        forma_pagamento: FormaPagamento | None,
+        *,
+        categoria_atual: str | None = None,
+    ) -> Categoria:
+        """Categoria existe, é do tipo e está ativa (RN-04); gasto exige forma (RN-05).
+
+        Na edição, a categoria **atual** do lançamento pode estar inativa: RN-04
+        vale para lançamentos novos (F-08 Q1).
+        """
         for categoria in self._categorias.listar().itens:
             if categoria.id == categoria_id:
                 break
@@ -156,8 +225,10 @@ class LancamentoService:
             raise ErroValidacao.no_campo("categoria_id", MENSAGEM_CATEGORIA_INEXISTENTE)
         if categoria.tipo != tipo:
             raise CategoriaTipoIncompativel.para(categoria.nome, categoria.tipo, tipo)
-        if not categoria.ativa:
+        if not categoria.ativa and categoria.id != categoria_atual:
             raise CategoriaInativa.para(categoria.nome)
+        if tipo is TipoLancamento.GASTO and forma_pagamento is None:
+            raise ErroValidacao.no_campo("forma_pagamento", MENSAGEM_FORMA_OBRIGATORIA)
         return categoria
 
 

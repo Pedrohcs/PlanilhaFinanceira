@@ -1,11 +1,8 @@
-"""`/api/lancamentos` — registro e listagem mensal (REQ-01..03; F-06, F-07).
-
-Editar e excluir entram em F-08.
-"""
+"""`/api/lancamentos` — registro, listagem, edição e exclusão (REQ-01..06; F-06..F-08)."""
 
 from typing import Annotated
 
-from fastapi import APIRouter, Query, status
+from fastapi import APIRouter, Query, Response, status
 
 from app.api.deps import LancamentoServiceDep
 from app.api.schemas import LancamentoEntrada, LancamentoSaida, ListaLancamentosSaida
@@ -32,3 +29,15 @@ def listar(
 @router.post("", status_code=status.HTTP_201_CREATED, response_model=LancamentoSaida)
 def criar(entrada: LancamentoEntrada, servico: LancamentoServiceDep) -> LancamentoSaida:
     return LancamentoSaida.de(servico.criar(**entrada.model_dump()))
+
+
+@router.put("/{id}", response_model=LancamentoSaida)
+def editar(id: str, entrada: LancamentoEntrada, servico: LancamentoServiceDep) -> LancamentoSaida:
+    """Qualquer campo (REQ-05); só a linha do `id` muda (CA-05.2)."""
+    return LancamentoSaida.de(servico.editar(id, **entrada.model_dump()))
+
+
+@router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
+def excluir(id: str, servico: LancamentoServiceDep) -> Response:
+    servico.excluir(id)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)

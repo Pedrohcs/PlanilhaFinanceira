@@ -42,6 +42,8 @@ def test_rotas_da_api_sao_as_do_contrato__CA_F02_8(cliente: TestClient) -> None:
         ("GET", "/api/formas-pagamento"),
         ("GET", "/api/lancamentos"),
         ("POST", "/api/lancamentos"),
+        ("PUT", "/api/lancamentos/{id}"),
+        ("DELETE", "/api/lancamentos/{id}"),
     }
 
 

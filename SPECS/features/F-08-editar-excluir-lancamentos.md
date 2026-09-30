@@ -86,22 +86,22 @@ Corrigir ou remover um lançamento direto da listagem, com a certeza de que só 
 **Herdados de `01`**
 
 - [ ] **CA-05.1** Dado um lançamento na listagem, quando o usuário escolhe editar, então o formulário abre com os dados atuais.
-- [ ] **CA-05.2** Dado uma edição válida confirmada, então a linha correspondente na planilha é atualizada (e nenhuma outra).
-- [ ] **CA-05.3** Dado que a data foi alterada para outro mês, então o lançamento passa a contar no novo mês.
+- [x] **CA-05.2** Dado uma edição válida confirmada, então a linha correspondente na planilha é atualizada (e nenhuma outra).
+- [x] **CA-05.3** Dado que a data foi alterada para outro mês, então o lançamento passa a contar no novo mês.
 - [ ] **CA-06.1** Dado um lançamento, quando o usuário escolhe excluir, então o sistema pede confirmação mostrando descrição e valor.
-- [ ] **CA-06.2** Dado a confirmação, então a linha é removida da planilha e os totais são recalculados.
+- [~] **CA-06.2** Dado a confirmação, então a linha é removida da planilha e os totais são recalculados. *(T-019: remoção da linha certa e totais recalculados na API; a tela é T-020.)*
 
 **Refinados — backend (T-019)**
 
-- [ ] **CA-F08.1** Dado um lançamento, quando `PUT` com todos os campos mudados (inclusive o tipo, com categoria e forma coerentes), então 200 com os valores novos; `id`, `criado_em`, parcela e recorrência preservados; `atualizado_em` novo.
-- [ ] **CA-F08.2** Dado que o usuário **reordenou** as linhas da planilha depois da última leitura, quando edita um lançamento, então só a linha daquele `id` muda — todas as outras continuam idênticas (CA-05.2).
-- [ ] **CA-F08.3** Dado `id` inexistente, então `PUT` e `DELETE` respondem 404 `NAO_ENCONTRADO` ("Lançamento não encontrado.") e nada muda.
-- [ ] **CA-F08.4** Dado edição inválida (valor 0, gasto sem forma, categoria de outro tipo, categoria inexistente), então 422/409 como no registro e a linha não muda.
-- [ ] **CA-F08.5** Dado um lançamento cuja categoria ficou inativa, quando editado mantendo a categoria, então 200; e quando a categoria é trocada por **outra** inativa, então 409 `CATEGORIA_INATIVA` (Q1).
-- [ ] **CA-F08.6** Dado a data mudada de 30/09 para 02/10, então a listagem de setembro não o traz mais e a de outubro traz, e os totais de ambos mudam (CA-05.3).
-- [ ] **CA-F08.7** Dado `DELETE` de um `id`, então só aquela linha some — inclusive após reordenação manual — e a listagem do mês recalcula os totais (CA-06.2).
-- [ ] **CA-F08.8** Dado a parcela 3/10 excluída, então as parcelas 1, 2 e 4..10 continuam, com "k/10" (RN-08).
-- [ ] **CA-F08.9** Dado a planilha inacessível, então `PUT`/`DELETE` → 503 com a causa e nada muda.
+- [x] **CA-F08.1** Dado um lançamento, quando `PUT` com todos os campos mudados (inclusive o tipo, com categoria e forma coerentes), então 200 com os valores novos; `id`, `criado_em`, parcela e recorrência preservados; `atualizado_em` novo.
+- [x] **CA-F08.2** Dado que o usuário **reordenou** as linhas da planilha depois da última leitura, quando edita um lançamento, então só a linha daquele `id` muda — todas as outras continuam idênticas (CA-05.2).
+- [x] **CA-F08.3** Dado `id` inexistente, então `PUT` e `DELETE` respondem 404 `NAO_ENCONTRADO` ("Lançamento não encontrado.") e nada muda.
+- [x] **CA-F08.4** Dado edição inválida (valor 0, gasto sem forma, categoria de outro tipo, categoria inexistente), então 422/409 como no registro e a linha não muda.
+- [x] **CA-F08.5** Dado um lançamento cuja categoria ficou inativa, quando editado mantendo a categoria, então 200; e quando a categoria é trocada por **outra** inativa, então 409 `CATEGORIA_INATIVA` (Q1).
+- [x] **CA-F08.6** Dado a data mudada de 30/09 para 02/10, então a listagem de setembro não o traz mais e a de outubro traz, e os totais de ambos mudam (CA-05.3).
+- [x] **CA-F08.7** Dado `DELETE` de um `id`, então só aquela linha some — inclusive após reordenação manual — e a listagem do mês recalcula os totais (CA-06.2).
+- [x] **CA-F08.8** Dado a parcela 3/10 excluída, então as parcelas 1, 2 e 4..10 continuam, com "k/10" (RN-08).
+- [x] **CA-F08.9** Dado a planilha inacessível, então `PUT`/`DELETE` → 503 com a causa e nada muda.
 
 **Refinados — frontend (T-020)**
 
@@ -211,6 +211,8 @@ Ordem: T-019 → T-020 (T-020 também depende de T-018, concluída).
 | Na edição, manter a categoria atual inativa é permitido; trocar exige ativa (Q1). | RN-04 restringe "novos lançamentos"; obrigar a trocar a categoria para corrigir, por exemplo, o valor seria reescrever o histórico. | Não |
 | Ações no menu ⋮ (Q2). | Mesmo padrão da página de categorias; uma coluna estreita e alcançável em 360 px. | Não |
 | Aviso diz o mês novo quando a edição muda o mês (Q3). | Explica por que o lançamento sumiu da lista aberta. | Não |
+| O serviço troca a mensagem do `NaoEncontrado` do repositório ("Registro <id> não encontrado.") por "Lançamento não encontrado." (T-019). | O `id` não diz nada ao usuário; vale também quando a linha some entre a leitura e a escrita (borda 2). | Não |
+| Validação de categoria e forma compartilhada entre criar e editar (`_validar`), com a exceção da categoria atual inativa só na edição (T-019). | Uma regra só para RN-04/RN-05; a exceção de Q1 fica explícita num parâmetro. | Não |
 
 ---
 
@@ -230,3 +232,4 @@ Ordem: T-019 → T-020 (T-020 também depende de T-018, concluída).
 |---|---|
 | 2026-09-30 | Criação (`/especificar-feature F-08`). Status `Rascunho` — 3 questões em aberto. |
 | 2026-09-30 | Q1–Q3 respondidas → status **Aprovada**. CA-F08.5, .15 e .16 fechados; CA-F08.17 acrescentado; borda 14. |
+| 2026-09-30 | T-019 concluída: CA-05.2, CA-05.3 e CA-F08.1 a .9 verificados por teste (inclui planilha reordenada à mão antes do `PUT` e do `DELETE`); CA-06.2 com a parte da API. Duas decisões em §10. |
