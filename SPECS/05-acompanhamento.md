@@ -29,7 +29,7 @@
 | M4 · Acabamento | F-14..F-15 | 5 | 5 | 0 | 0 | 0% |
 | **Total** | **15** | **35** | **21** | **0** | **14** | **40%** |
 
-**M0 concluído (F-01 a F-04).** **F-05 concluída.** Próximo passo: `/especificar-feature F-06` (Registrar lançamento, caminho crítico) — depois T-015 (BE) e T-016 (FE). Pendentes com o usuário, sem bloquear: seguir o README com a planilha real (CA-F02.13), rodar `pytest -m integracao` (CA-15.1/15.2) e a conferência visual do shell (CA-F04.7, CA-F04.30).
+**M0 concluído (F-01 a F-04).** **F-05 concluída.** Próxima tarefa disponível: **T-015** (BE, F-06, caminho crítico; spec aprovada) — depois T-016 (FE). Pendentes com o usuário, sem bloquear: seguir o README com a planilha real (CA-F02.13), rodar `pytest -m integracao` (CA-15.1/15.2) e a conferência visual do shell (CA-F04.7, CA-F04.30).
 
 ---
 
@@ -42,7 +42,7 @@
 | F-03 | Esquema e repositórios da planilha | M0 | Concluída | [`F-03-esquema-e-repositorios.md`](features/F-03-esquema-e-repositorios.md) (Concluída) |
 | F-04 | Shell do frontend | M0 | Concluída | [`F-04-shell-do-frontend.md`](features/F-04-shell-do-frontend.md) (Concluída) |
 | F-05 | Categorias | M1 | Concluída | [`F-05-categorias.md`](features/F-05-categorias.md) (Concluída) |
-| F-06 | Registrar lançamento | M1 | Não iniciada | — |
+| F-06 | Registrar lançamento | M1 | Não iniciada | [`F-06-registrar-lancamento.md`](features/F-06-registrar-lancamento.md) (Aprovada) |
 | F-07 | Listagem mensal | M1 | Não iniciada | — |
 | F-08 | Editar e excluir lançamentos | M1 | Não iniciada | — |
 | F-09 | Resumo mensal | M2 | Não iniciada | — |
@@ -115,7 +115,7 @@ Camadas: **BE** = backend · **FE** = frontend · **DOC** = documentação/infra
 | T-013 | `categoria_service` (slug, unicidade sem acento/caixa, bloqueio de exclusão em uso, desativação) + router `/api/categorias` (GET/POST/PUT/DELETE). Testes CA-11.1..11.4. | F-05 | BE | T-007, T-009 | Concluída | 2026-09-30 | 2026-09-30 | `categoria_service` (normalização, chave sem acento/caixa, slug com sufixo, ordem, `em_uso`, CRUD, bloqueio de uso em qualquer status de recorrência), `CategoriaDuplicada`/`CategoriaEmUso` → 409, schemas com limite de 40 só na entrada, router `/api/categorias`, `deps.Repositorios` + cache e repositórios únicos no lifespan. 57 testes novos (642 no total); `ruff` limpo; fumaça com uvicorn real. CA-11.1, CA-F05.1..13, .21..23 (+ parte BE de CA-11.2/.3/.4). |
 | T-014 | Página `/categorias`: lista por tipo, criar/renomear/cor/ativar-desativar/excluir via diálogo; `CategoriasStore`. | F-05 | FE | T-013, T-011 | Concluída | 2026-09-30 | 2026-09-30 | Página `/categorias` (seções Gastos/Receitas, selo Inativa, menu ⋮ com Editar, Desativar/Reativar, Excluir — em uso oferece desativar; aviso de re-seed na última), `categoria-form.dialog` (salva sozinho; 409/422 no campo; contador 40; paleta de 24 com pré-seleção e cor extra), `CategoriasApi`, `CategoriasStore` (carga única + recarga por `versao`), `paleta.ts`, `src/testing/`. Shell sem `mat-nav-list` (decisão do usuário; pacote 529→456 kB). 22 testes novos (91 no total); build sem avisos. CA-11.3, CA-F05.14..19, .24 (+ .20 visual pendente). |
 | T-015 | `lancamento_service.criar` (RN-01..06) + `POST /api/lancamentos` + `GET /api/formas-pagamento`. Testes CA-01.x, CA-02.x. | F-06 | BE | T-013 | Não iniciada | | | |
-| T-016 | `lancamento-form.dialog` (novo gasto/receita; form reativo tipado; data padrão hoje; só categorias ativas do tipo); ligar botões do shell; manter dados em erro (CA-01.4); `DadosStore.versao++` no sucesso. | F-06 | FE | T-015, T-014 | Não iniciada | | | |
+| T-016 | `lancamento-form.dialog` (novo gasto/receita; form reativo tipado; data padrão hoje; só categorias ativas do tipo); ligar botões do shell; manter dados em erro (CA-01.4); `DadosStore.versao++` no sucesso. Marcador `TRATAMENTO_LOCAL` no interceptor, aplicado também ao diálogo de categoria (F-06 Q3). | F-06 | FE | T-015, T-014 | Não iniciada | | | |
 | T-017 | `lancamento_service.listar(mes, filtros)` com totais e `linhas_ignoradas` + `GET /api/lancamentos`. Testes CA-03.x. | F-07 | BE | T-015 | Não iniciada | | | |
 | T-018 | Página `/lancamentos`: tabela (data, descrição, categoria, forma, valor, "k/N"/ícone de recorrência), filtros, totais do backend, seletor de mês, estado vazio. | F-07 | FE | T-017, T-016 | Não iniciada | | | |
 | T-019 | `lancamento_service.editar/excluir` + `PUT`/`DELETE /api/lancamentos/{id}` (404). Teste garantindo que só a linha certa muda após reordenação manual. | F-08 | BE | T-017 | Não iniciada | | | |
@@ -157,6 +157,7 @@ Camadas: **BE** = backend · **FE** = frontend · **DOC** = documentação/infra
 
 | Data | Tarefa/Feature | Mudança | Observação |
 |---|---|---|---|
+| 2026-09-30 | F-06 | Spec da feature criada e **aprovada** | `features/F-06-registrar-lancamento.md`: Q1–Q4 respondidas (todas na opção recomendada). Q3 amplia T-016: marcador `TRATAMENTO_LOCAL` no interceptor, aplicado também ao diálogo de categoria de F-05. `03` → 1.17 (§8.4). Nenhum status de tarefa alterado. |
 | 2026-09-30 | T-014 / F-05 | `Iniciada` → `Concluída` | Página de categorias. **F-05 concluída** (§2 e §3 atualizados). `02` → 1.9 (padrões da suíte do frontend), `03` → 1.16. Specs de T-011 passaram a usar `provideMaterialParaTestes()` (sugestão de T-011 implementada). |
 | 2026-09-30 | T-014 | Desvio aprovado | O diálogo de categoria (1º formulário reativo) fez o `mat-nav-list` do shell (T-010) levar `@angular/forms` inteiro ao pacote inicial: 529 kB, acima do aviso de 500 kB. Com aprovação do usuário, a navegação virou `<nav>` com links simples → 456 kB. Revisão registrada em F-04. |
 | 2026-09-30 | T-014 | Sugestão anotada | Acompanhar o pacote inicial a cada tarefa de frontend (hoje 456 kB): o shell deve continuar só com toolbar, sidenav, button e icon do Material. Diálogos e formulários ficam nas páginas lazy — inclusive o de lançamento (T-016), que abre pelo shell e deve ser importado sob demanda. |

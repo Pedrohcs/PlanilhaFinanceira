@@ -3,7 +3,7 @@
 | Campo | Valor |
 |---|---|
 | Documento | `SPECS/03-arquitetura.md` |
-| Versão | 1.16 |
+| Versão | 1.17 |
 | Atualizado em | 2026-09-30 |
 | Status | Aprovado para início |
 | Responde | **Como** o sistema se organiza: componentes, pastas, camadas, modelo de dados na planilha, contrato da API e fluxos |
@@ -459,7 +459,7 @@ Um único componente `lancamento-form.dialog` atende: novo gasto, nova receita, 
 
 ### 8.4 Tratamento de erros
 
-`erro.interceptor.ts` converte respostas no formato §6.2 em `ErroApi` tipado; erros 503 atualizam o `ConexaoStore`; demais exibem snackbar com `mensagem` (via `core/avisos`, que carrega o `MatSnackBar` sob demanda para o overlay do CDK ficar fora do pacote inicial). Erros de validação (422) são entregues ao formulário para marcar campos (`detalhes[].campo`).
+`erro.interceptor.ts` converte respostas no formato §6.2 em `ErroApi` tipado; erros 503 atualizam o `ConexaoStore`; demais exibem snackbar com `mensagem` (via `core/avisos`, que carrega o `MatSnackBar` sob demanda para o overlay do CDK ficar fora do pacote inicial). Erros de validação (422) são entregues ao formulário para marcar campos (`detalhes[].campo`). Chamadas feitas por formulários que mostram o erro no próprio campo levam o marcador `TRATAMENTO_LOCAL` (`HttpContext`): nelas, o interceptor **não** abre aviso para 409 — a mensagem aparece só no campo (F-06 Q3). 503 e backend fora do ar continuam indo para o banner.
 
 Quando o **backend não responde** (status 0, ou 502/504 sem o envelope de §6.2 — com o backend desligado, o proxy do `ng serve` devolve **502** em `text/plain`, conferido em T-012), o interceptor cria um `ErroApi` local com `codigo: "BACKEND_INDISPONIVEL"` e a mensagem "O servidor do aplicativo não está respondendo. Verifique se o backend está rodando e tente novamente.", tratado como os 503: vai para o `ConexaoStore` e para o banner. Esse código **só existe no frontend** e não faz parte do contrato da API (§6.2). Decidido em F-04 (Q3).
 
@@ -485,4 +485,5 @@ Quando o **backend não responde** (status 0, ou 502/504 sem o envelope de §6.2
 | 2026-09-30 | 1.14 | §6.3: esquema `Categoria` com `em_uso` calculado e a ordem da listagem (F-05, Q3/Q4). |
 | 2026-09-30 | 1.15 | §3: `services/categoria_service.py`, `deps.py` com `Repositorios`. §4.5: cache e repositórios únicos criados no lifespan (T-013). |
 | 2026-09-30 | 1.16 | §3: `categorias.api.ts`, `categorias.store.ts`, página e diálogo de categorias, `paleta.ts`; `frontend/src/testing/` (T-014). §8.1: navegação lateral com links simples, sem `mat-nav-list` (pacote inicial). |
+| 2026-09-30 | 1.17 | §8.4: marcador `TRATAMENTO_LOCAL` para formulários que mostram o 409 no campo (F-06, Q3). |
 | 2026-09-29 | 1.1 | Frontend em Angular 22 (zoneless); pasta `shared/grafico/` com diretiva Chart.js própria (§3, §8.2.1). |
