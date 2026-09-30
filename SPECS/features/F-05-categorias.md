@@ -117,29 +117,29 @@ O tipo (GASTO/RECEITA) é escolhido na criação e **não muda** depois: o `PUT`
 
 **Herdados de `01`**
 
-- [ ] **CA-11.1** Dado um nome já existente no mesmo tipo (ignorando maiúsculas/acentos), quando o usuário tenta criar/renomear, então o sistema recusa com mensagem clara.
-- [ ] **CA-11.2** Dado uma categoria renomeada, então todos os lançamentos dela exibem o novo nome, inclusive os antigos. *(F-05 garante que renomear não altera `id` nem toca a aba `Lancamentos`; a exibição é verificada em F-07.)*
-- [ ] **CA-11.3** Dado uma categoria com lançamentos ou recorrências, quando o usuário tenta excluir, então o sistema recusa e sugere desativar.
-- [ ] **CA-11.4** Dado uma categoria desativada, então ela não aparece para novos lançamentos, mas continua nos relatórios e na listagem.
+- [x] **CA-11.1** Dado um nome já existente no mesmo tipo (ignorando maiúsculas/acentos), quando o usuário tenta criar/renomear, então o sistema recusa com mensagem clara.
+- [~] **CA-11.2** Dado uma categoria renomeada, então todos os lançamentos dela exibem o novo nome, inclusive os antigos. *(F-05 garante que renomear não altera `id` nem toca a aba `Lancamentos` — verificado em T-013; a exibição é verificada em F-07.)*
+- [~] **CA-11.3** Dado uma categoria com lançamentos ou recorrências, quando o usuário tenta excluir, então o sistema recusa e sugere desativar. *(T-013: recusa 409 com a sugestão na mensagem, e `em_uso` na listagem; a tela que oferece desativar é T-014.)*
+- [~] **CA-11.4** Dado uma categoria desativada, então ela não aparece para novos lançamentos, mas continua nos relatórios e na listagem. *(T-013: listagem padrão sem inativas e `incluir_inativas`; a tela é T-014; relatórios em F-07/F-09.)*
 
 **Refinados — backend (T-013)**
 
-- [ ] **CA-F05.1** Dado "Mercado" em GASTO, quando se cria "mercado", "MERCADO" ou "Mércado" em GASTO, então 409 `CATEGORIA_DUPLICADA` com a mensagem de §3.1.6, e nada é gravado.
-- [ ] **CA-F05.2** Dado "Outros" em GASTO, quando se cria "Outros" em RECEITA, então 201, com `id` `outros-2`.
-- [ ] **CA-F05.3** Dado uma categoria, quando é renomeada para outra grafia do próprio nome ("mercado" → "Mercado"), então 200.
-- [ ] **CA-F05.4** Dado a criação de "Contas da Casa (fixas)", então o `id` é `contas-da-casa-fixas`; e dado um nome sem letras nem dígitos, então a base do `id` é `categoria`.
-- [ ] **CA-F05.5** Dado uma categoria renomeada, quando se compara a planilha antes e depois, então o `id` é o mesmo e a aba `Lancamentos` não recebeu nenhuma escrita (CA-11.2).
-- [ ] **CA-F05.6** Dado uma categoria usada por um lançamento, ou por uma recorrência (mesmo pausada ou encerrada), quando se tenta excluir, então 409 `CATEGORIA_EM_USO` com a mensagem de §3.6.2, e a categoria continua lá.
-- [ ] **CA-F05.7** Dado uma categoria sem uso, quando excluída, então 204 e ela some da aba `Categorias`.
-- [ ] **CA-F05.8** Dado categorias ativas e inativas, quando `GET /api/categorias` é chamado sem `incluir_inativas`, então só as ativas vêm; com `incluir_inativas=true`, todas; com `tipo=GASTO`, só as de gasto (CA-11.4).
-- [ ] **CA-F05.9** Dado `PUT` com `ativa: false` e depois `true`, então a categoria some e volta da listagem padrão, sem mudar nome, cor nem `id`.
-- [ ] **CA-F05.10** Dado `id` inexistente em `PUT` ou `DELETE`, então 404 `NAO_ENCONTRADO`.
-- [ ] **CA-F05.11** Dado cor fora de `#RRGGBB`, nome vazio (ou só espaços) ou `tipo` fora do enum, então 422 `VALIDACAO` com o campo em `detalhes`; e dado cor `#e57373`, então é gravada `#E57373`.
-- [ ] **CA-F05.12** Dado a planilha inacessível, quando qualquer endpoint de categorias é chamado, então 503 com o código da causa (`03` §4.5).
-- [ ] **CA-F05.13** Dado a resposta de qualquer endpoint, então a categoria sai no formato de §6 (`snake_case`, `tipo` em maiúsculas, `ativa` e `em_uso` booleanos).
-- [ ] **CA-F05.21** Dado categorias com e sem lançamentos ou recorrências (em qualquer status), quando `GET /api/categorias` é chamado, então `em_uso` é `true` exatamente nas que têm uso (Q4).
-- [ ] **CA-F05.22** Dado "saúde", "Alimentação" e "Mercado" ativas e "Assinaturas" inativa em GASTO, quando listadas, então a ordem é Alimentação, Mercado, saúde, Assinaturas; e sem filtro, GASTO antes de RECEITA (Q3).
-- [ ] **CA-F05.23** Dado o nome `"  Pet   Shop  "`, então é gravado `Pet Shop`; e dado um nome com 41 caracteres após a normalização, então 422 no campo `nome` (Q1).
+- [x] **CA-F05.1** Dado "Mercado" em GASTO, quando se cria "mercado", "MERCADO" ou "Mércado" em GASTO, então 409 `CATEGORIA_DUPLICADA` com a mensagem de §3.1.6, e nada é gravado.
+- [x] **CA-F05.2** Dado "Outros" em GASTO, quando se cria "Outros" em RECEITA, então 201, com `id` `outros-2`.
+- [x] **CA-F05.3** Dado uma categoria, quando é renomeada para outra grafia do próprio nome ("mercado" → "Mercado"), então 200.
+- [x] **CA-F05.4** Dado a criação de "Contas da Casa (fixas)", então o `id` é `contas-da-casa-fixas`; e dado um nome sem letras nem dígitos, então a base do `id` é `categoria`.
+- [x] **CA-F05.5** Dado uma categoria renomeada, quando se compara a planilha antes e depois, então o `id` é o mesmo e a aba `Lancamentos` não recebeu nenhuma escrita (CA-11.2).
+- [x] **CA-F05.6** Dado uma categoria usada por um lançamento, ou por uma recorrência (mesmo pausada ou encerrada), quando se tenta excluir, então 409 `CATEGORIA_EM_USO` com a mensagem de §3.6.2, e a categoria continua lá.
+- [x] **CA-F05.7** Dado uma categoria sem uso, quando excluída, então 204 e ela some da aba `Categorias`.
+- [x] **CA-F05.8** Dado categorias ativas e inativas, quando `GET /api/categorias` é chamado sem `incluir_inativas`, então só as ativas vêm; com `incluir_inativas=true`, todas; com `tipo=GASTO`, só as de gasto (CA-11.4).
+- [x] **CA-F05.9** Dado `PUT` com `ativa: false` e depois `true`, então a categoria some e volta da listagem padrão, sem mudar nome, cor nem `id`.
+- [x] **CA-F05.10** Dado `id` inexistente em `PUT` ou `DELETE`, então 404 `NAO_ENCONTRADO`.
+- [x] **CA-F05.11** Dado cor fora de `#RRGGBB`, nome vazio (ou só espaços) ou `tipo` fora do enum, então 422 `VALIDACAO` com o campo em `detalhes`; e dado cor `#e57373`, então é gravada `#E57373`.
+- [x] **CA-F05.12** Dado a planilha inacessível, quando qualquer endpoint de categorias é chamado, então 503 com o código da causa (`03` §4.5).
+- [x] **CA-F05.13** Dado a resposta de qualquer endpoint, então a categoria sai no formato de §6 (`snake_case`, `tipo` em maiúsculas, `ativa` e `em_uso` booleanos).
+- [x] **CA-F05.21** Dado categorias com e sem lançamentos ou recorrências (em qualquer status), quando `GET /api/categorias` é chamado, então `em_uso` é `true` exatamente nas que têm uso (Q4).
+- [x] **CA-F05.22** Dado "saúde", "Alimentação" e "Mercado" ativas e "Assinaturas" inativa em GASTO, quando listadas, então a ordem é Alimentação, Mercado, saúde, Assinaturas; e sem filtro, GASTO antes de RECEITA (Q3).
+- [x] **CA-F05.23** Dado o nome `"  Pet   Shop  "`, então é gravado `Pet Shop`; e dado um nome com 41 caracteres após a normalização, então 422 no campo `nome` (Q1).
 
 **Refinados — frontend (T-014)**
 
@@ -280,6 +280,9 @@ Ordem: T-013 → T-014 (`05` §4; T-014 também depende de T-011, já concluída
 | Excluir considera recorrências em **qualquer** status. | RN-12 diz "recorrências vinculadas", sem distinguir status; uma encerrada ainda guarda o `categoria_id`. | Não |
 | Linha inválida da planilha não conta como uso. | O repositório não a enxerga (CA-16.3); tratá-la exigiria ler a aba crua só para isso. | Não |
 | Composição (cache único + repositórios de planilha) entra em T-013. | É o primeiro endpoint de negócio (sugestão de T-009). | Não |
+| Repositórios e cache criados **uma vez**, no lifespan, e entregues por `api/deps.py` (T-013). | Criar por requisição rebuscaria a referência de cada aba (uma chamada de metadados por aba a cada requisição) e desperdiçaria o cache. `03` → 1.15. | Não |
+| Limite de 40 caracteres só no schema de **entrada** da API; o modelo de domínio aceita qualquer tamanho (T-013). | Um nome maior digitado à mão na planilha não pode virar "linha inválida" e sumir do app. | Não |
+| O teste de guarda de rotas (`tests/api/test_app.py`) passa a listar exatamente as rotas implementadas (T-013). | Antes exigia só `/api/health`; cada tarefa que criar endpoint atualiza a lista junto com `03` §6.1. | Não |
 | Nome: 1–40 caracteres, pontas aparadas e espaços internos reduzidos (Q1). | Nomes curtos cabem em legendas de gráfico e em 360 px; espaço duplicado costuma ser erro de digitação e atrapalharia a unicidade. | Não |
 | Paleta fixa de 24 cores na interface; API aceita qualquer `#RRGGBB` (Q2). | Garante contraste nos dois temas (F-01 Q2) e cores distinguíveis nos gráficos (CA-13.1); a planilha continua podendo ser editada à mão. | Não |
 | Ordem: ativas antes, alfabética sem acento/caixa; GASTO antes de RECEITA (Q3). | Previsível e igual em todas as telas; inativas no fim não atrapalham quem escolhe. | Não |
@@ -308,3 +311,4 @@ Ordem: T-013 → T-014 (`05` §4; T-014 também depende de T-011, já concluída
 |---|---|
 | 2026-09-30 | Criação (`/especificar-feature F-05`). Status `Rascunho` — 5 questões em aberto. |
 | 2026-09-30 | Q1–Q5 respondidas → status **Aprovada**. Paleta de 24 cores definida; `em_uso` no contrato; CA-F05.18 fechado; CA-F05.21 a .24 e bordas 7a, 22 e 23 acrescentados. `03` → 1.14. |
+| 2026-09-30 | T-013 concluída: CA-11.1 e CA-F05.1 a .13, .21 a .23 verificados por teste; CA-11.2, .3 e .4 com a parte do backend verificada (o resto é T-014/F-07). Três decisões em §10. `03` → 1.15. |

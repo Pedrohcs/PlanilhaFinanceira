@@ -1,14 +1,46 @@
 """Composição: é aqui (e em `main.py`) que a API conhece a infraestrutura.
 
-Os routers importam só o alias `ConexaoDep` — assim nenhum arquivo de router
+Os routers importam só os aliases `...Dep` — assim nenhum arquivo de router
 importa `app.infra` nem `gspread` (regra de camadas, `SPECS/03` §4.2).
 """
 
+from dataclasses import dataclass
 from typing import Annotated
 
 from fastapi import Depends, Request
 
+from app.infra.cache import CacheAbas
 from app.infra.sheets_client import ConexaoPlanilha
+from app.repositories.base import (
+    CategoriaRepository,
+    LancamentoRepository,
+    RecorrenciaRepository,
+)
+from app.repositories.planilha import (
+    CategoriaRepositoryPlanilha,
+    LancamentoRepositoryPlanilha,
+    RecorrenciaRepositoryPlanilha,
+)
+from app.services.categoria_service import CategoriaService
+
+
+@dataclass(frozen=True)
+class Repositorios:
+    """Os repositórios do app. Testes de API trocam por `repositories.memoria` (`02` §8)."""
+
+    categorias: CategoriaRepository
+    lancamentos: LancamentoRepository
+    recorrencias: RecorrenciaRepository
+
+
+def criar_repositorios_planilha(conexao: ConexaoPlanilha, cache: CacheAbas) -> Repositorios:
+    """Uma instância de cada, para o processo inteiro: preserva o cache e as
+    referências de aba (T-009) entre requisições."""
+    return Repositorios(
+        categorias=CategoriaRepositoryPlanilha(conexao, cache),
+        lancamentos=LancamentoRepositoryPlanilha(conexao, cache),
+        recorrencias=RecorrenciaRepositoryPlanilha(conexao, cache),
+    )
 
 
 def obter_conexao(request: Request) -> ConexaoPlanilha:
@@ -16,4 +48,18 @@ def obter_conexao(request: Request) -> ConexaoPlanilha:
     return request.app.state.conexao
 
 
+def obter_repositorios(request: Request) -> Repositorios:
+    """Repositórios criados no lifespan (`main.py`)."""
+    return request.app.state.repositorios
+
+
+def obter_categoria_service(
+    repositorios: Annotated[Repositorios, Depends(obter_repositorios)],
+) -> CategoriaService:
+    return CategoriaService(
+        repositorios.categorias, repositorios.lancamentos, repositorios.recorrencias
+    )
+
+
 ConexaoDep = Annotated[ConexaoPlanilha, Depends(obter_conexao)]
+CategoriaServiceDep = Annotated[CategoriaService, Depends(obter_categoria_service)]

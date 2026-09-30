@@ -3,7 +3,7 @@
 | Campo | Valor |
 |---|---|
 | Documento | `SPECS/03-arquitetura.md` |
-| Versão | 1.14 |
+| Versão | 1.15 |
 | Atualizado em | 2026-09-30 |
 | Status | Aprovado para início |
 | Responde | **Como** o sistema se organiza: componentes, pastas, camadas, modelo de dados na planilha, contrato da API e fluxos |
@@ -62,7 +62,7 @@ PlanilhaFinanceira/
 │   │   ├── main.py                # cria o app, CORS, handlers de erro, lifespan (bootstrap)
 │   │   ├── config.py              # Settings (pydantic-settings)
 │   │   ├── api/
-│   │   │   ├── deps.py            # injeção de repositórios/serviços (Depends)
+│   │   │   ├── deps.py            # `Repositorios` (planilha ou memória) e serviços (Depends)
 │   │   │   ├── erros.py           # exception handlers → formato padrão (§6.2)
 │   │   │   ├── schemas.py         # DTOs de entrada/saída da API
 │   │   │   └── routers/           # health, sistema, formas_pagamento, categorias,
@@ -74,7 +74,8 @@ PlanilhaFinanceira/
 │   │   │   ├── dinheiro.py        # tipo Dinheiro, divisão em parcelas
 │   │   │   └── datas.py           # ajustar_dia, somar_meses, data_da_parcela, mes_de,
 │   │   │                          # proximo_mes, mes_anterior, meses_entre, mes_corrente
-│   │   ├── services/              # categoria, lancamento, parcelamento, recorrencia, resumo
+│   │   ├── services/              # categoria_service.py (T-013); lancamento, parcelamento,
+│   │   │                          # recorrencia, resumo
 │   │   ├── repositories/
 │   │   │   ├── base.py            # Protocols dos repositórios (`Repositorio[T]` + 3 específicos)
 │   │   │   ├── memoria/           # implementações em memória (testes), mesmo comportamento
@@ -186,10 +187,11 @@ Ao **reativar** uma recorrência pausada: `ultimo_mes_gerado = max(ultimo_mes_ge
 ### 4.5 Inicialização (lifespan)
 
 1. Carregar `Settings`; validar existência do arquivo de credenciais.
-2. Conectar e abrir a planilha por ID. Falha **não derruba** o servidor: o erro é guardado e `GET /api/health` o reporta (REQ-16); demais endpoints respondem 503.
-3. `bootstrap`: para cada aba do schema, criar se não existir e escrever cabeçalho; se existir, validar cabeçalho (colunas faltando no fim são acrescentadas; colunas extras depois da última do schema são ignoradas; divergência de nome ou ordem → `SchemaPlanilhaInvalido`, sem alterar nada). Aba `Categorias` vazia → seed RN-15. Idempotente (CA-15.2).
+2. Criar **uma** `CacheAbas(CACHE_TTL_SEGUNDOS)` e **uma** instância de cada repositório de planilha para o processo inteiro (`app.state.repositorios`; os routers os recebem por `api/deps.py`, e os testes de API os trocam pelos de memória).
+3. Conectar e abrir a planilha por ID. Falha **não derruba** o servidor: o erro é guardado e `GET /api/health` o reporta (REQ-16); demais endpoints respondem 503.
+4. `bootstrap`: para cada aba do schema, criar se não existir e escrever cabeçalho; se existir, validar cabeçalho (colunas faltando no fim são acrescentadas; colunas extras depois da última do schema são ignoradas; divergência de nome ou ordem → `SchemaPlanilhaInvalido`, sem alterar nada). Aba `Categorias` vazia → seed RN-15. Idempotente (CA-15.2).
 
-O `bootstrap` roda **toda vez que uma conexão é estabelecida** — no passo 2 ou, se ele falhou, na nova tentativa feita pelo `GET /api/health` — e a conexão só conta como estabelecida se o `bootstrap` também passar. Assim, um app aberto sem internet prepara as abas quando a conexão volta, e uma estrutura corrigida à mão é revalidada no "Tentar novamente", sem reiniciar.
+O `bootstrap` roda **toda vez que uma conexão é estabelecida** — no passo 3 ou, se ele falhou, na nova tentativa feita pelo `GET /api/health` — e a conexão só conta como estabelecida se o `bootstrap` também passar. Assim, um app aberto sem internet prepara as abas quando a conexão volta, e uma estrutura corrigida à mão é revalidada no "Tentar novamente", sem reiniciar.
 
 ---
 
@@ -481,4 +483,5 @@ Quando o **backend não responde** (status 0, ou 502/504 sem o envelope de §6.2
 | 2026-09-30 | 1.12 | §3: `core/avisos/`, stores reais de `core/state/`, `banner-conexao`. §8.4: snackbar sob demanda (T-011, F-04). |
 | 2026-09-30 | 1.13 | §7.2: inicializador sem espera e comportamento do "Tentar novamente". §8.4: status real do proxy com o backend desligado (502), conferido em T-012. |
 | 2026-09-30 | 1.14 | §6.3: esquema `Categoria` com `em_uso` calculado e a ordem da listagem (F-05, Q3/Q4). |
+| 2026-09-30 | 1.15 | §3: `services/categoria_service.py`, `deps.py` com `Repositorios`. §4.5: cache e repositórios únicos criados no lifespan (T-013). |
 | 2026-09-29 | 1.1 | Frontend em Angular 22 (zoneless); pasta `shared/grafico/` com diretiva Chart.js própria (§3, §8.2.1). |

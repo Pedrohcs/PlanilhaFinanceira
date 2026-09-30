@@ -23,13 +23,13 @@
 | Marco | Features | Tarefas | Não iniciada | Iniciada | Concluída | Progresso |
 |---|---|---|---|---|---|---|
 | M0 · Fundação | F-01..F-04 | 12 | 0 | 0 | 12 | 100% |
-| M1 · Registro e consulta | F-05..F-08 | 8 | 8 | 0 | 0 | 0% |
+| M1 · Registro e consulta | F-05..F-08 | 8 | 7 | 0 | 1 | 13% |
 | M2 · Visão financeira | F-09..F-11 | 5 | 5 | 0 | 0 | 0% |
 | M3 · Automação | F-12..F-13 | 5 | 5 | 0 | 0 | 0% |
 | M4 · Acabamento | F-14..F-15 | 5 | 5 | 0 | 0 | 0% |
-| **Total** | **15** | **35** | **23** | **0** | **12** | **34%** |
+| **Total** | **15** | **35** | **22** | **0** | **13** | **37%** |
 
-**M0 concluído (F-01 a F-04).** Próxima tarefa disponível: **T-013** (BE, F-05, caminho crítico; spec aprovada) — depois T-014 (FE). Pendentes com o usuário, sem bloquear: seguir o README com a planilha real (CA-F02.13), rodar `pytest -m integracao` (CA-15.1/15.2) e a conferência visual do shell (CA-F04.7, CA-F04.30).
+**M0 concluído (F-01 a F-04).** Próxima tarefa disponível: **T-014** (FE, última de F-05). Também desbloqueada: T-015 (BE, F-06 — sem spec). Pendentes com o usuário, sem bloquear: seguir o README com a planilha real (CA-F02.13), rodar `pytest -m integracao` (CA-15.1/15.2) e a conferência visual do shell (CA-F04.7, CA-F04.30).
 
 ---
 
@@ -41,7 +41,7 @@
 | F-02 | Conexão com Google Sheets | M0 | Concluída | [`F-02-conexao-google-sheets.md`](features/F-02-conexao-google-sheets.md) (Aprovada) |
 | F-03 | Esquema e repositórios da planilha | M0 | Concluída | [`F-03-esquema-e-repositorios.md`](features/F-03-esquema-e-repositorios.md) (Concluída) |
 | F-04 | Shell do frontend | M0 | Concluída | [`F-04-shell-do-frontend.md`](features/F-04-shell-do-frontend.md) (Concluída) |
-| F-05 | Categorias | M1 | Não iniciada | [`F-05-categorias.md`](features/F-05-categorias.md) (Aprovada) |
+| F-05 | Categorias | M1 | Iniciada | [`F-05-categorias.md`](features/F-05-categorias.md) (Aprovada) |
 | F-06 | Registrar lançamento | M1 | Não iniciada | — |
 | F-07 | Listagem mensal | M1 | Não iniciada | — |
 | F-08 | Editar e excluir lançamentos | M1 | Não iniciada | — |
@@ -81,7 +81,8 @@ flowchart LR
     classDef naoIniciada fill:#eeeeee,stroke:#9e9e9e,color:#424242;
     classDef iniciada fill:#fff3cd,stroke:#f0ad4e,color:#5c4400;
     classDef concluida fill:#d4edda,stroke:#28a745,color:#155724;
-    class F05,F06,F07,F08,F09,F10,F11,F12,F13,F14,F15 naoIniciada;
+    class F06,F07,F08,F09,F10,F11,F12,F13,F14,F15 naoIniciada;
+    class F05 iniciada;
     class F01,F02,F03,F04 concluida;
 ```
 
@@ -112,7 +113,7 @@ Camadas: **BE** = backend · **FE** = frontend · **DOC** = documentação/infra
 
 | ID | Tarefa (escopo) | Feature | Camada | Depende de | Status | Início | Conclusão | Notas |
 |---|---|---|---|---|---|---|---|---|
-| T-013 | `categoria_service` (slug, unicidade sem acento/caixa, bloqueio de exclusão em uso, desativação) + router `/api/categorias` (GET/POST/PUT/DELETE). Testes CA-11.1..11.4. | F-05 | BE | T-007, T-009 | Não iniciada | | | |
+| T-013 | `categoria_service` (slug, unicidade sem acento/caixa, bloqueio de exclusão em uso, desativação) + router `/api/categorias` (GET/POST/PUT/DELETE). Testes CA-11.1..11.4. | F-05 | BE | T-007, T-009 | Concluída | 2026-09-30 | 2026-09-30 | `categoria_service` (normalização, chave sem acento/caixa, slug com sufixo, ordem, `em_uso`, CRUD, bloqueio de uso em qualquer status de recorrência), `CategoriaDuplicada`/`CategoriaEmUso` → 409, schemas com limite de 40 só na entrada, router `/api/categorias`, `deps.Repositorios` + cache e repositórios únicos no lifespan. 57 testes novos (642 no total); `ruff` limpo; fumaça com uvicorn real. CA-11.1, CA-F05.1..13, .21..23 (+ parte BE de CA-11.2/.3/.4). |
 | T-014 | Página `/categorias`: lista por tipo, criar/renomear/cor/ativar-desativar/excluir via diálogo; `CategoriasStore`. | F-05 | FE | T-013, T-011 | Não iniciada | | | |
 | T-015 | `lancamento_service.criar` (RN-01..06) + `POST /api/lancamentos` + `GET /api/formas-pagamento`. Testes CA-01.x, CA-02.x. | F-06 | BE | T-013 | Não iniciada | | | |
 | T-016 | `lancamento-form.dialog` (novo gasto/receita; form reativo tipado; data padrão hoje; só categorias ativas do tipo); ligar botões do shell; manter dados em erro (CA-01.4); `DadosStore.versao++` no sucesso. | F-06 | FE | T-015, T-014 | Não iniciada | | | |
@@ -157,6 +158,9 @@ Camadas: **BE** = backend · **FE** = frontend · **DOC** = documentação/infra
 
 | Data | Tarefa/Feature | Mudança | Observação |
 |---|---|---|---|
+| 2026-09-30 | T-013 | `Iniciada` → `Concluída` | Primeiro endpoint de negócio. `03` → 1.15 (`deps.Repositorios`, lifespan com cache e repositórios únicos). Teste de guarda de rotas atualizado para a lista exata do contrato; `test_camadas` ganhou a regra de `services`. |
+| 2026-09-30 | T-013 | Observação | Não existe `backend/.env` nesta máquina (o app recusa subir sem `SPREADSHEET_ID`, como decidido em F-01). Confirma que a conferência com a planilha real (CA-F02.13) ainda está pendente. |
+| 2026-09-30 | T-013 | `Não iniciada` → `Iniciada` | Dependências T-007 e T-009 `Concluída`; spec F-05 `Aprovada`. F-05 passa a `Iniciada` (§2) e o mapa (§3) foi atualizado. Abre o M1. |
 | 2026-09-30 | F-05 | Spec da feature criada e **aprovada** | `features/F-05-categorias.md`: Q1–Q5 respondidas (todas na opção recomendada); pendência cruzada anotada para F-13 (recorrência com categoria desativada). `03` → 1.14 (esquema `Categoria` com `em_uso`). Nenhum status de tarefa alterado. |
 | 2026-09-30 | M0 | **Marco concluído** | F-01 a F-04 concluídas (12/12 tarefas). Verificações que dependem do usuário e não bloqueiam M1: CA-F02.13 (README com a planilha real), CA-15.1/15.2 (`pytest -m integracao` na planilha de teste), CA-F04.7 e CA-F04.30 (conferência visual). |
 | 2026-09-30 | T-012 / F-04 | `Iniciada` → `Concluída` | Verificação na abertura e "Tentar novamente". **F-04 concluída** (§2 e §3 atualizados). `03` → 1.13 (§7.2; §8.4 com o 502 real do proxy). Conferência sem navegador: uvicorn com credencial inexistente e ID falso (nenhum acesso ao Google) + `ng serve` na porta 4299; ambos encerrados ao fim. |

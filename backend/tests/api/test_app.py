@@ -17,15 +17,28 @@ def test_openapi_responde__CA_F01_5(cliente: TestClient) -> None:
     assert resposta.json()["info"]["title"] == TITULO
 
 
-def test_health_e_a_unica_rota_da_api__CA_F02_8(cliente: TestClient) -> None:
-    """Guarda de fronteira: endpoints de negócio só entram em M1.
+def test_rotas_da_api_sao_as_do_contrato__CA_F02_8(cliente: TestClient) -> None:
+    """Guarda de fronteira: sob `/api` só existe o que `SPECS/03` §6.1 já implementou.
 
-    Em T-002 este teste exigia nenhuma rota sob `/api`; T-005 acrescentou
-    `/api/health`, e ele passa a garantir que nada além dela apareceu.
+    Em T-002 este teste exigia nenhuma rota sob `/api`; T-005 aceitou só
+    `/api/health`; T-013 acrescentou as de categorias. Cada tarefa que criar
+    endpoint atualiza esta lista junto com o contrato.
     """
-    caminhos = cliente.get("/openapi.json").json().get("paths", {})
+    esquema = cliente.get("/openapi.json").json().get("paths", {})
+    rotas = {
+        (metodo.upper(), caminho)
+        for caminho, operacoes in esquema.items()
+        if caminho.startswith("/api")
+        for metodo in operacoes
+    }
 
-    assert [caminho for caminho in caminhos if caminho.startswith("/api")] == ["/api/health"]
+    assert rotas == {
+        ("GET", "/api/health"),
+        ("GET", "/api/categorias"),
+        ("POST", "/api/categorias"),
+        ("PUT", "/api/categorias/{id}"),
+        ("DELETE", "/api/categorias/{id}"),
+    }
 
 
 def test_app_sobe_com_planilha_inacessivel__CA_F02_10(cliente: TestClient) -> None:

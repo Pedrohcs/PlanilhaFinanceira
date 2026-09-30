@@ -11,10 +11,12 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.api.deps import criar_repositorios_planilha
 from app.api.erros import registrar_handlers
-from app.api.routers import health
+from app.api.routers import categorias, health
 from app.config import Settings, obter_settings
 from app.infra.bootstrap import preparar_planilha
+from app.infra.cache import CacheAbas
 from app.infra.sheets_client import ConexaoPlanilha
 
 TITULO = "Planilha Financeira"
@@ -50,8 +52,13 @@ def criar_app(settings: Settings | None = None, conexao: ConexaoPlanilha | None 
 
         Conectar inclui o `bootstrap` das abas (`preparar_planilha`), que volta
         a rodar se a conexão só for estabelecida depois, pelo health.
+
+        Cache e repositórios são únicos no processo (`02` §5.5; T-009).
         """
         app.state.conexao = conexao_planilha
+        app.state.repositorios = criar_repositorios_planilha(
+            conexao_planilha, CacheAbas(config.cache_ttl_segundos)
+        )
         conexao_planilha.conectar()
         yield
 
@@ -65,6 +72,7 @@ def criar_app(settings: Settings | None = None, conexao: ConexaoPlanilha | None 
     )
     registrar_handlers(app)
     app.include_router(health.router, prefix=PREFIXO_API)
+    app.include_router(categorias.router, prefix=PREFIXO_API)
     return app
 
 

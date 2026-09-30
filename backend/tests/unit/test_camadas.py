@@ -80,3 +80,21 @@ def test_repositorios_respeitam_as_camadas__T_009() -> None:
             if mod.startswith(("app.services", "app.api", "app.config"))
         }
         assert not proibidos, f"planilha/{arquivo.name} importa {proibidos}"
+
+
+def test_services_dependem_so_de_domain_e_repositories_base__T_013() -> None:
+    """`SPECS/03` §4.2: serviços não conhecem HTTP, gspread nem a infraestrutura."""
+    arquivos = sorted((RAIZ_APP / "services").glob("*.py"))
+    assert any(arquivo.name != "__init__.py" for arquivo in arquivos), "nenhum serviço encontrado"
+
+    for arquivo in arquivos:
+        proibidos = {
+            mod
+            for mod in imports_de(arquivo)
+            if mod in ("fastapi", "gspread")
+            or mod.startswith(
+                ("fastapi.", "gspread.", "google.", "app.infra", "app.api", "app.config")
+            )
+            or (mod.startswith("app.repositories") and mod != "app.repositories.base")
+        }
+        assert not proibidos, f"{arquivo.name} importa {proibidos}"

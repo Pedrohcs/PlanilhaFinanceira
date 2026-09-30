@@ -81,3 +81,29 @@ class NaoEncontrado(ErroDominio):
 
     codigo = "NAO_ENCONTRADO"
     mensagem = "Registro não encontrado."
+
+
+class CategoriaDuplicada(ErroDominio):
+    """Nome já usado por outra categoria do mesmo tipo (RN-12)."""
+
+    codigo = "CATEGORIA_DUPLICADA"
+    mensagem = "Já existe uma categoria com esse nome."
+
+    @classmethod
+    def para(cls, nome: str, tipo: str) -> "CategoriaDuplicada":
+        rotulo = "de gasto" if tipo == "GASTO" else "de receita"
+        return cls(f'Já existe uma categoria {rotulo} chamada "{nome}".')
+
+
+class CategoriaEmUso(ErroDominio):
+    """Categoria com lançamentos ou recorrências: só pode ser desativada (RN-12)."""
+
+    codigo = "CATEGORIA_EM_USO"
+    mensagem = "A categoria está em uso e não pode ser excluída."
+
+    @classmethod
+    def para(cls, nome: str) -> "CategoriaEmUso":
+        return cls(
+            f'A categoria "{nome}" está em uso em lançamentos ou recorrências e não pode '
+            "ser excluída. Desative-a para que não apareça mais em novos lançamentos."
+        )
