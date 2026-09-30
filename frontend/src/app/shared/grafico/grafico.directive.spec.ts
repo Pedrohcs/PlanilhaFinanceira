@@ -65,7 +65,7 @@ describe('GraficoDirective', () => {
 
   beforeEach(() => {
     criados = [];
-    cores = { texto: 'rgb(0, 0, 0)', grade: 'rgb(200, 200, 200)' };
+    cores = { texto: 'rgb(0, 0, 0)', grade: 'rgb(200, 200, 200)', destaque: 'rgb(0, 0, 255)' };
     consulta = new ConsultaDeTemaFalsa();
     matchMediaOriginal = Object.getOwnPropertyDescriptor(window, 'matchMedia');
     Object.defineProperty(window, 'matchMedia', {
@@ -168,7 +168,11 @@ describe('GraficoDirective', () => {
     const [grafico] = criados;
     expect(grafico.options.color).toBe('rgb(0, 0, 0)');
 
-    cores = { texto: 'rgb(230, 230, 230)', grade: 'rgb(60, 60, 60)' };
+    cores = {
+      texto: 'rgb(230, 230, 230)',
+      grade: 'rgb(60, 60, 60)',
+      destaque: 'rgb(170, 199, 255)',
+    };
     consulta.trocar();
 
     expect(criados).toHaveLength(1); // mesma instância
@@ -176,6 +180,7 @@ describe('GraficoDirective', () => {
     expect(grafico.options.color).toBe('rgb(230, 230, 230)');
     const escalas = grafico.options.scales as Record<string, { grid: { color: string } }>;
     expect(escalas['x'].grid.color).toBe('rgb(60, 60, 60)');
+    expect(grafico.options.elements?.bar?.backgroundColor).toBe('rgb(170, 199, 255)'); // F-10
   });
 
   it('opcoes_da_pagina_sobrepoem_os_padroes', async () => {

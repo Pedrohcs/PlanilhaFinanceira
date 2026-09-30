@@ -27,6 +27,16 @@
       <div class="tabelas" [class.lado-a-lado]="ladoALado()">
         <section class="grupo por-categoria" aria-labelledby="titulo-categoria">
           <h2 id="titulo-categoria">Gastos por categoria</h2>
+          <div class="grafico">
+            <canvas
+              appGrafico
+              tipo="doughnut"
+              role="img"
+              aria-label="Gráfico de rosca dos gastos por categoria. Os valores estão na tabela abaixo."
+              [dados]="dadosRosca()"
+              [opcoes]="opcoesRosca"
+            ></canvas>
+          </div>
           <table>
             <thead>
               <tr>
@@ -52,6 +62,16 @@
 
         <section class="grupo por-forma" aria-labelledby="titulo-forma">
           <h2 id="titulo-forma">Gastos por forma de pagamento</h2>
+          <div class="grafico">
+            <canvas
+              appGrafico
+              tipo="bar"
+              role="img"
+              aria-label="Gráfico de barras dos gastos por forma de pagamento. Os valores estão na tabela abaixo."
+              [dados]="dadosBarras()"
+              [opcoes]="opcoesBarras"
+            ></canvas>
+          </div>
           <table>
             <thead>
               <tr>
@@ -72,6 +92,20 @@
           </table>
         </section>
       </div>
+
+      <section class="grupo acumulado" aria-labelledby="titulo-acumulado">
+        <h2 id="titulo-acumulado">Gasto acumulado no mês</h2>
+        <div class="grafico linha">
+          <canvas
+            appGrafico
+            tipo="line"
+            role="img"
+            [attr.aria-label]="rotuloDaLinha()"
+            [dados]="dadosLinha()"
+            [opcoes]="opcoesLinha"
+          ></canvas>
+        </div>
+      </section>
     }
   </div>
 }

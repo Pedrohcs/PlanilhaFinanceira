@@ -42,10 +42,12 @@ Chart.register(
 export type TipoGrafico = 'doughnut' | 'bar' | 'line';
 export type EixoIndice = 'x' | 'y';
 
-/** Cores de texto e de grade do tema atual, já resolvidas (ex.: `rgb(27, 27, 31)`). */
+/** Cores do tema atual, já resolvidas (ex.: `rgb(27, 27, 31)`). */
 export interface CoresDoTema {
   texto: string;
   grade: string;
+  /** Cor de destaque (`--mat-sys-primary`): barras e linhas sem cor própria (F-10). */
+  destaque: string;
 }
 
 /** O que a diretiva usa de um `Chart` — permite trocar por um dublê nos testes. */
@@ -106,6 +108,7 @@ export function lerCoresDoTema(documento: Document): CoresDoTema {
     return {
       texto: ler('--mat-sys-on-surface', '#1b1b1f'),
       grade: ler('--mat-sys-outline-variant', '#c4c6d0'),
+      destaque: ler('--mat-sys-primary', '#415f91'),
     };
   } finally {
     sonda.remove();
@@ -116,6 +119,9 @@ export function lerCoresDoTema(documento: Document): CoresDoTema {
  * Opções padrão pt-BR: locale, cores do tema e valores em reais no tooltip e
  * no eixo de valores. A rosca não tem eixos; em barra e linha, o eixo de
  * valores é o oposto de `eixoIndice` (barras horizontais usam `'y'`).
+ *
+ * Barra e linha sem cor própria usam a cor de destaque do tema, posta aqui (e
+ * não nos dados) para acompanhar a troca de tema como texto e grade (F-10 §3.3).
  */
 export function opcoesPadrao(
   tipo: TipoGrafico,
@@ -143,6 +149,11 @@ export function opcoesPadrao(
   });
   return {
     ...opcoes,
+    elements: {
+      bar: { backgroundColor: cores.destaque },
+      line: { borderColor: cores.destaque, backgroundColor: cores.destaque },
+      point: { backgroundColor: cores.destaque, borderColor: cores.destaque },
+    },
     scales: {
       [eixoIndice]: eixo(false),
       [eixoValores]: eixo(true),

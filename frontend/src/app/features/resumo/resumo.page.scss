@@ -1,4 +1,4 @@
-// Resumo do mês (F-09 §3.2). Tabelas lado a lado só em janela larga (≥ 960 px).
+// Resumo do mês (F-09 §3.2, F-10 §3.1). Seções lado a lado só em janela larga (≥ 960 px).
 :host {
   display: block;
 }
@@ -65,4 +65,19 @@ th {
   height: 10px;
   margin-right: 6px;
   border-radius: 50%;
+}
+
+// Gráficos acompanham a largura do contêiner, com altura fixa (F-10 §3.1.4).
+.grafico {
+  position: relative;
+  height: 240px;
+  margin-bottom: 8px;
+
+  &.linha {
+    height: 220px;
+  }
+}
+
+.acumulado {
+  margin-top: 24px;
 }

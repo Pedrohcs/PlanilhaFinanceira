@@ -1,7 +1,17 @@
 import { Chart } from 'chart.js';
-import { CoresDoTema, formatarReais, opcoesPadrao, TipoGrafico } from './grafico.config';
+import {
+  CoresDoTema,
+  formatarReais,
+  lerCoresDoTema,
+  opcoesPadrao,
+  TipoGrafico,
+} from './grafico.config';
 
-const CORES: CoresDoTema = { texto: 'rgb(1, 2, 3)', grade: 'rgb(4, 5, 6)' };
+const CORES: CoresDoTema = {
+  texto: 'rgb(1, 2, 3)',
+  grade: 'rgb(4, 5, 6)',
+  destaque: 'rgb(7, 8, 9)',
+};
 
 /** O `Intl` de pt-BR separa `R$` do número com espaço não-quebrável. */
 function semEspacoFixo(texto: string): string {
@@ -97,5 +107,21 @@ describe('grafico.config', () => {
 
     // Rosca não tem eixos: configurar `scales` nela criaria eixos indesejados.
     expect(opcoesPadrao('doughnut', CORES).scales).toBeUndefined();
+  });
+
+  it('cor_de_destaque_do_tema__CA_F10_7', () => {
+    for (const tipo of ['bar', 'line'] as const) {
+      const elementos = opcoesPadrao(tipo, CORES).elements;
+      expect(elementos?.bar?.backgroundColor).toBe(CORES.destaque);
+      expect(elementos?.line?.borderColor).toBe(CORES.destaque);
+      expect(elementos?.point?.backgroundColor).toBe(CORES.destaque);
+    }
+    // A rosca pinta cada arco com a cor da categoria, nos dados (CA-13.1).
+    expect(opcoesPadrao('doughnut', CORES).elements).toBeUndefined();
+
+    const lidas = lerCoresDoTema(document);
+    expect(Object.keys(lidas).sort()).toEqual(['destaque', 'grade', 'texto']);
+    expect(lidas.destaque).not.toBe('');
+    expect(document.body.children).toHaveLength(0); // a sonda foi removida
   });
 });

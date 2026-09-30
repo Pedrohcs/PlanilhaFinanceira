@@ -4,7 +4,7 @@
 |---|---|
 | Feature | F-10 |
 | Marco | M2 |
-| Status | Aprovada |
+| Status | Concluída |
 | Requisitos | REQ-13 (CA-13.1, CA-13.2) |
 | Regras | RN-16 (nada é somado no frontend) |
 | Depende de | F-09 (**Concluída**) |
@@ -81,20 +81,20 @@ Ver o mês de relance: a proporção dos gastos por categoria (nas cores de cada
 
 **Herdados de `01`**
 
-- [ ] **CA-13.1** Dado categorias com cores definidas, então os gráficos usam essas cores.
-- [ ] **CA-13.2** Dado um mês sem gastos, então os gráficos exibem estado vazio em vez de erro.
+- [x] **CA-13.1** Dado categorias com cores definidas, então os gráficos usam essas cores.
+- [x] **CA-13.2** Dado um mês sem gastos, então os gráficos exibem estado vazio em vez de erro.
 
 **Refinados (T-023)**
 
-- [ ] **CA-F10.1** Dado a resposta da API, então a rosca tem os rótulos, os valores e as cores de `por_categoria`, na mesma ordem, sem legenda (CA-13.1).
-- [ ] **CA-F10.2** Dado a resposta, então as barras são horizontais, com rótulos e valores de `por_forma_pagamento` na ordem da API e a cor de destaque do tema.
-- [ ] **CA-F10.3** Dado setembro (30 dias), então a linha tem 30 pontos com rótulos `1`…`30` e os valores de `gasto_acumulado_diario`; tooltip "Dia 15" / "Gasto acumulado: R$ …".
-- [ ] **CA-F10.4** Dado um mês sem lançamentos ou só com receitas, então nenhum `<canvas>` é criado e aparece o estado vazio de F-09 (CA-13.2).
-- [ ] **CA-F10.5** Dado a troca de mês ou `versao` incrementada, então os mesmos gráficos são atualizados com os dados novos (nenhum gráfico novo é criado).
-- [ ] **CA-F10.6** Dado os três gráficos, então cada `<canvas>` tem `role="img"` e o `aria-label` de §3.6.
-- [ ] **CA-F10.7** Dado o tema, então a cor de destaque vem de `--mat-sys-primary` resolvida pelo navegador (como texto e grade em F-04).
-- [ ] **CA-F10.8** Dado a abertura do app em outra rota, então o Chart.js **não** está no pacote inicial (só no pedaço do `/resumo`), e o pacote inicial não cresce além do orçamento de 500 kB.
-- [ ] **CA-F10.9** Dado a janela de 360 px e a de 1280 px, então os gráficos cabem sem rolagem horizontal (conferência visual) e as seções seguem o layout de F-09.
+- [x] **CA-F10.1** Dado a resposta da API, então a rosca tem os rótulos, os valores e as cores de `por_categoria`, na mesma ordem, sem legenda (CA-13.1).
+- [x] **CA-F10.2** Dado a resposta, então as barras são horizontais, com rótulos e valores de `por_forma_pagamento` na ordem da API e a cor de destaque do tema.
+- [x] **CA-F10.3** Dado setembro (30 dias), então a linha tem 30 pontos com rótulos `1`…`30` e os valores de `gasto_acumulado_diario`; tooltip "Dia 15" / "Gasto acumulado: R$ …".
+- [x] **CA-F10.4** Dado um mês sem lançamentos ou só com receitas, então nenhum `<canvas>` é criado e aparece o estado vazio de F-09 (CA-13.2).
+- [x] **CA-F10.5** Dado a troca de mês ou `versao` incrementada, então os mesmos gráficos são atualizados com os dados novos (nenhum gráfico novo é criado).
+- [x] **CA-F10.6** Dado os três gráficos, então cada `<canvas>` tem `role="img"` e o `aria-label` de §3.6.
+- [x] **CA-F10.7** Dado o tema, então a cor de destaque vem de `--mat-sys-primary` resolvida pelo navegador (como texto e grade em F-04).
+- [x] **CA-F10.8** Dado a abertura do app em outra rota, então o Chart.js **não** está no pacote inicial (só no pedaço do `/resumo`), e o pacote inicial não cresce além do orçamento de 500 kB.
+- [~] **CA-F10.9** Dado a janela de 360 px e a de 1280 px, então os gráficos cabem sem rolagem horizontal (conferência visual) e as seções seguem o layout de F-09. *(T-023: layout das seções verificado por teste em F-09; "sem rolagem horizontal" e claro/escuro ficam para a conferência visual do usuário.)*
 
 ---
 
@@ -149,7 +149,8 @@ Ver o mês de relance: a proporção dos gastos por categoria (nas cores de cada
 | `…` › `sem_gastos_sem_graficos__CA_13_2` | unitário FE | CA-13.2, CA-F10.4, bordas 4–5 |
 | `…` › `recarga_atualiza_os_mesmos_graficos__CA_F10_5` | unitário FE | CA-F10.5, borda 8 |
 | `…` › `graficos_acessiveis__CA_F10_6` | unitário FE | CA-F10.6 |
-| `npm run build` (nomes dos pedaços) | build | CA-F10.8 |
+| `npm run build` (nomes dos pedaços): Chart.js só no pedaço `resumo-page` (193 kB brutos), pacote inicial 476,21 kB | build | CA-F10.8 |
+| `shared/grafico/grafico.directive.spec.ts` › `acompanha_troca_de_tema__CA_F04_30` (agora também a cor de destaque) | unitário FE | CA-F10.7, borda 9 |
 | Conferência visual em 360 px e 1280 px, claro e escuro | manual | CA-F10.9, bordas 9–10 |
 
 ---
@@ -173,6 +174,7 @@ Ver o mês de relance: a proporção dos gastos por categoria (nas cores de cada
 | `aria-label` descritivo em cada `<canvas>`, apontando para a tabela. | O canvas não é lido por leitor de tela; os valores exatos estão nas tabelas (RNF-07). | Não |
 | Gráficos acima das tabelas, que continuam (Q1). | Visão rápida + valores exatos; a tabela é a legenda e a alternativa acessível. | Não |
 | Acumulado só do mês selecionado (Q2). | O que REQ-13 pede, sem chamada extra. | Não |
+| Cor de destaque posta em `options.elements` (bar/line/point) dos padrões, não nos `datasets` (T-023). | A diretiva refaz as opções na troca de tema; cor nos dados não acompanharia claro/escuro. | Não |
 
 ---
 
@@ -191,3 +193,4 @@ Ver o mês de relance: a proporção dos gastos por categoria (nas cores de cada
 |---|---|
 | 2026-09-30 | Criação (`/especificar-feature F-10`). Status `Rascunho` — 2 questões em aberto. |
 | 2026-09-30 | Q1–Q2 respondidas (ambas na opção recomendada) → status **Aprovada**. Duas decisões em §10. |
+| 2026-09-30 | T-023 concluída → feature **Concluída**. CA-13.1, CA-13.2 e CA-F10.1 a .8 verificados por teste/build; CA-F10.9 depende da conferência visual. Uma decisão em §10. |
