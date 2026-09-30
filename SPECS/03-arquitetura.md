@@ -3,7 +3,7 @@
 | Campo | Valor |
 |---|---|
 | Documento | `SPECS/03-arquitetura.md` |
-| Versão | 1.20 |
+| Versão | 1.21 |
 | Atualizado em | 2026-09-30 |
 | Status | Aprovado para início |
 | Responde | **Como** o sistema se organiza: componentes, pastas, camadas, modelo de dados na planilha, contrato da API e fluxos |
@@ -353,7 +353,9 @@ Erros do próprio framework também saem neste envelope: rota inexistente vira 4
   "parcelamento_id": null, "parcela_numero": null, "parcela_total": null,
   "recorrencia_id": null, "criado_em": "...", "atualizado_em": "..." }
 
-// ListaLancamentos
+// ListaLancamentos — itens do mês (RN-03) já filtrados; data desc, depois criado_em desc;
+// totais somam só os itens filtrados (CA-03.2); saldo pode ser negativo.
+// Categoria apagada à mão: categoria_nome "Categoria não encontrada", categoria_cor "#9E9E9E".
 { "mes": "2026-09", "itens": [Lancamento],
   "totais": { "gastos": 1234.56, "receitas": 5000.00, "saldo": 3765.44 },
   "linhas_ignoradas": 0 }
@@ -494,4 +496,5 @@ Quando o **backend não responde** (status 0, ou 502/504 sem o envelope de §6.2
 | 2026-09-30 | 1.18 | §3: `lancamento_service.py`. §6.2: 422 de regra de negócio também traz o campo em `detalhes` (T-015). |
 | 2026-09-30 | 1.19 | §3: `lancamentos.api`, `formas-pagamento.api`/`.store`, `utils/valor.ts`, `utils/adaptador-de-data.ts`, `abrir-lancamento.ts` (T-016). |
 | 2026-09-30 | 1.20 | §8.1: filtros da listagem na URL (F-07, Q1). |
+| 2026-09-30 | 1.21 | §6.3: ordem, totais filtrados, saldo negativo e categoria ausente em `ListaLancamentos` (T-017). |
 | 2026-09-29 | 1.1 | Frontend em Angular 22 (zoneless); pasta `shared/grafico/` com diretiva Chart.js própria (§3, §8.2.1). |

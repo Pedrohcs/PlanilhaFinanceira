@@ -18,6 +18,13 @@ Dinheiro = Annotated[
 ]
 """Valor monetário positivo com até 2 casas; sai no JSON como número."""
 
+Montante = Annotated[
+    Decimal,
+    Field(max_digits=14, decimal_places=2),
+    PlainSerializer(float, return_type=float, when_used="json"),
+]
+"""Total ou saldo (RN-13): 2 casas, **pode ser zero ou negativo**; sai como número."""
+
 CENTAVO = Decimal("0.01")
 PARCELAS_MIN = 2
 PARCELAS_MAX = 48

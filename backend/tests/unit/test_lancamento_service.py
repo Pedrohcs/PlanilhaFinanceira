@@ -8,7 +8,7 @@ import pytest
 
 from app.domain.enums import FormaPagamento, TipoLancamento
 from app.domain.erros import CategoriaInativa, CategoriaTipoIncompativel, ErroValidacao
-from app.domain.modelos import Categoria
+from app.domain.modelos import Categoria, Lancamento
 from app.repositories.memoria import CategoriaRepositoryMemoria, LancamentoRepositoryMemoria
 from app.services.lancamento_service import LancamentoService
 
@@ -59,7 +59,7 @@ def test_cria_gasto_valido__CA_01_2() -> None:
     assert criado.lancamento.criado_em == criado.lancamento.atualizado_em == AGORA
     assert criado.lancamento.parcelamento_id is None
     assert criado.lancamento.recorrencia_id is None
-    assert criado.categoria.nome == "Mercado"
+    assert (criado.categoria_nome, criado.categoria_cor) == ("Mercado", "#E57373")
     assert cenario.lancamentos.listar().itens == [criado.lancamento]
 
 
@@ -155,3 +155,170 @@ def test_datas_passadas_e_futuras__RN_02() -> None:
 
     assert antigo.lancamento.data == date(1999, 1, 1)
     assert futuro.lancamento.data == date(2030, 12, 31)
+
+
+# Listagem mensal (F-07 §3.1) -----------------------------------------------------
+
+
+def lanc(
+    id_: str,
+    data: date,
+    valor: str = "10.00",
+    *,
+    tipo: TipoLancamento = GASTO,
+    categoria_id: str = "mercado",
+    forma: FormaPagamento | None = FormaPagamento.PIX,
+    criado_em: datetime = AGORA,
+) -> Lancamento:
+    return Lancamento(
+        id=id_,
+        data=data,
+        tipo=tipo,
+        descricao=f"Lançamento {id_}",
+        valor=Decimal(valor),
+        categoria_id=categoria_id,
+        forma_pagamento=forma,
+        criado_em=criado_em,
+        atualizado_em=criado_em,
+    )
+
+
+def cenario_com(*lancamentos: Lancamento) -> Cenario:
+    cenario = Cenario()
+    cenario.lancamentos.inserir(list(lancamentos))
+    return cenario
+
+
+def ids(lista: Any) -> list[str]:
+    return [item.lancamento.id for item in lista.itens]
+
+
+def test_listar_filtra_pelo_mes__RN_03() -> None:
+    """CA-F07.1, bordas 1–2: as pontas do mês entram; os vizinhos, não."""
+    cenario = cenario_com(
+        lanc("ago", date(2026, 8, 31)),
+        lanc("set-1", date(2026, 9, 1)),
+        lanc("set-30", date(2026, 9, 30), forma=FormaPagamento.CREDITO),
+        lanc("out", date(2026, 10, 1)),
+        lanc("dez", date(2026, 12, 31)),
+        lanc("jan", date(2027, 1, 1)),
+    )
+
+    assert ids(cenario.servico.listar("2026-09")) == ["set-30", "set-1"]
+    assert ids(cenario.servico.listar("2026-12")) == ["dez"]
+    assert ids(cenario.servico.listar("2027-01")) == ["jan"]
+    assert ids(cenario.servico.listar("2026-11")) == []
+
+
+def test_ordem_data_e_criacao_decrescentes__REQ_03() -> None:
+    """CA-F07.2, borda 3."""
+    cenario = cenario_com(
+        lanc("antigo", date(2026, 9, 5)),
+        lanc("primeiro-do-dia", date(2026, 9, 20), criado_em=datetime(2026, 9, 20, 8, 0)),
+        lanc("ultimo-do-dia", date(2026, 9, 20), criado_em=datetime(2026, 9, 20, 21, 0)),
+        lanc("recente", date(2026, 9, 28)),
+    )
+
+    assert ids(cenario.servico.listar("2026-09")) == [
+        "recente",
+        "ultimo-do-dia",
+        "primeiro-do-dia",
+        "antigo",
+    ]
+
+
+@pytest.mark.parametrize(
+    ("filtros", "esperados", "gastos", "receitas"),
+    [
+        ({}, ["g-pix", "g-credito", "g-lazer", "r-sem-forma", "r-pix"], "60.00", "1500.00"),
+        ({"tipo": GASTO}, ["g-pix", "g-credito", "g-lazer"], "60.00", "0.00"),
+        ({"tipo": RECEITA}, ["r-sem-forma", "r-pix"], "0.00", "1500.00"),
+        ({"categoria_id": "lazer"}, ["g-lazer"], "30.00", "0.00"),
+        # Borda 4: receita sem forma não aparece com o filtro de forma ativo.
+        ({"forma_pagamento": FormaPagamento.PIX}, ["g-pix", "g-lazer", "r-pix"], "40.00", "500.00"),
+        (
+            {"tipo": GASTO, "forma_pagamento": FormaPagamento.PIX, "categoria_id": "mercado"},
+            ["g-pix"],
+            "10.00",
+            "0.00",
+        ),
+        ({"categoria_id": "nao-existe"}, [], "0.00", "0.00"),  # borda 5
+    ],
+)
+def test_filtros_combinados_e_totais__CA_03_2(
+    filtros: dict[str, Any], esperados: list[str], gastos: str, receitas: str
+) -> None:
+    """CA-03.2, CA-F07.3: totais somam só o que foi filtrado."""
+    cenario = cenario_com(
+        lanc("g-pix", date(2026, 9, 25), "10.00"),
+        lanc("g-credito", date(2026, 9, 24), "20.00", forma=FormaPagamento.CREDITO),
+        lanc("g-lazer", date(2026, 9, 23), "30.00", categoria_id="lazer"),
+        lanc("r-sem-forma", date(2026, 9, 22), "1000.00", tipo=RECEITA, categoria_id="salario",
+             forma=None),
+        lanc("r-pix", date(2026, 9, 21), "500.00", tipo=RECEITA, categoria_id="salario"),
+        lanc("outro-mes", date(2026, 8, 25), "999.00"),
+    )  # fmt: skip
+
+    lista = cenario.servico.listar("2026-09", **filtros)
+
+    assert ids(lista) == esperados
+    assert lista.totais.gastos == Decimal(gastos)
+    assert lista.totais.receitas == Decimal(receitas)
+    assert lista.totais.saldo == Decimal(receitas) - Decimal(gastos)
+
+
+def test_totais_exatos__RN_13_RN_16() -> None:
+    """CA-F07.4, bordas 10–12."""
+    pequenos = cenario_com(
+        lanc("a", date(2026, 9, 1), "0.10"),
+        lanc("b", date(2026, 9, 2), "0.20"),
+        lanc("r", date(2026, 9, 3), "1000.00", tipo=RECEITA, categoria_id="salario"),
+    )
+    totais = pequenos.servico.listar("2026-09").totais
+    assert (totais.gastos, totais.receitas, totais.saldo) == (
+        Decimal("0.30"),
+        Decimal("1000.00"),
+        Decimal("999.70"),
+    )
+
+    mil_centavos = cenario_com(*(lanc(f"c{n}", date(2026, 9, 5), "0.01") for n in range(1000)))
+    assert mil_centavos.servico.listar("2026-09").totais.gastos == Decimal("10.00")
+
+    negativo = cenario_com(lanc("g", date(2026, 9, 1), "150.00"))
+    assert negativo.servico.listar("2026-09").totais.saldo == Decimal("-150.00")
+
+    vazio = Cenario().servico.listar("2026-09")
+    assert (vazio.totais.gastos, vazio.totais.receitas, vazio.totais.saldo) == (
+        Decimal("0.00"),
+        Decimal("0.00"),
+        Decimal("0.00"),
+    )
+
+
+def test_nome_atual_e_categoria_inexistente__CA_11_2() -> None:
+    """CA-11.2, CA-F07.6, bordas 6–8: nome atual; inativa normal; apagada = placeholder."""
+    cenario = cenario_com(
+        lanc("renomeada", date(2019, 1, 10), categoria_id="mercado"),
+        lanc("inativa", date(2019, 1, 11), categoria_id="velha"),
+        lanc("apagada", date(2019, 1, 12), categoria_id="sumiu"),
+    )
+    cenario.categorias.atualizar(
+        Categoria.model_validate(
+            {**cenario.categorias.obter("mercado").model_dump(), "nome": "Supermercado"}
+        )
+    )
+
+    itens = {item.lancamento.id: item for item in cenario.servico.listar("2019-01").itens}
+
+    assert itens["renomeada"].categoria_nome == "Supermercado"
+    assert itens["inativa"].categoria_nome == "Velha"
+    assert (itens["apagada"].categoria_nome, itens["apagada"].categoria_cor) == (
+        "Categoria não encontrada",
+        "#9E9E9E",
+    )
+
+
+def test_listar_repassa_linhas_ignoradas__CA_16_3() -> None:
+    cenario = Cenario()
+
+    assert cenario.servico.listar("2026-09").linhas_ignoradas == 0

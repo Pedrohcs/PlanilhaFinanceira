@@ -3,7 +3,7 @@
 | Campo | Valor |
 |---|---|
 | Documento | `SPECS/02-definicoes-tecnicas.md` |
-| Versão | 1.9 |
+| Versão | 1.10 |
 | Atualizado em | 2026-09-30 |
 | Status | Aprovado para início |
 | Responde | **Com o quê** o sistema é construído: linguagens, bibliotecas, versões, integração com Google, convenções |
@@ -89,6 +89,7 @@ npm run build                   # ng build
                          PlainSerializer(float, return_type=float, when_used="json")]
     ```
   - Planilha: gravar como número (`float(valor)`), ler e converter com `Decimal(str(round(x, 2)))`.
+  - Totais e saldo (que podem ser zero ou negativos) usam o tipo irmão `Montante` (`domain/dinheiro.py`): mesmo `Decimal` de 2 casas e mesma saída como número, sem o `> 0` do `Dinheiro` (RN-13).
 - **Datas:** `datetime.date` no domínio; ISO 8601 (`YYYY-MM-DD`) no JSON e na planilha. Mês de referência como string `YYYY-MM`.
 - **IDs:** `uuid4().hex` para lançamentos, parcelamentos e recorrências; *slug* imutável para categorias (ex.: `alimentacao`), ver `03-arquitetura.md` §5.
 - **Servidor** escuta apenas em `127.0.0.1` (RNF-05). CORS liberado somente para `http://localhost:4200`.
@@ -299,3 +300,4 @@ Novas decisões: acrescente uma linha com o próximo ID. Decisões substituídas
 | 2026-09-29 | 1.7 | §5.6: `SchemaPlanilhaInvalido` para cabeçalho divergente e `versao_schema` à frente do app (decidido em F-03). |
 | 2026-09-30 | 1.8 | §5.4: inserções com `INSERT_ROWS`, para um append nunca sobrescrever linhas abaixo de uma linha em branco (T-009). |
 | 2026-09-30 | 1.9 | §8: padrões da suíte do frontend (`src/testing/`, `provideMaterialParaTestes`) (T-014). |
+| 2026-09-30 | 1.10 | §3: tipo `Montante` para totais e saldo (T-017). |

@@ -1,5 +1,6 @@
 """`POST /api/lancamentos` (REQ-01, REQ-02, RN-01..06; `SPECS/03` §6; F-06)."""
 
+import time
 from collections.abc import Iterator
 from datetime import datetime
 from typing import Any
@@ -277,3 +278,142 @@ def test_planilha_inacessivel_503__CA_F06_8(cliente: TestClient) -> None:
 
     assert resposta.status_code == 503
     assert resposta.json()["erro"]["codigo"] == "CREDENCIAIS_INVALIDAS"
+
+
+# GET /api/lancamentos (F-07) -----------------------------------------------------
+
+CABECALHO = list(ABA_LANCAMENTOS.colunas)
+
+
+def linha(id_: str, data: str, valor: Any = 42.5, **campos: Any) -> list[Any]:
+    dados: dict[str, Any] = {
+        "id": id_, "data": data, "tipo": "GASTO", "descricao": f"Compra {id_}", "valor": valor,
+        "categoria_id": "alimentacao", "forma_pagamento": "PIX", "observacao": "",
+        "parcelamento_id": "", "parcela_numero": "", "parcela_total": "", "recorrencia_id": "",
+        "criado_em": "2026-09-29T10:15:00", "atualizado_em": "2026-09-29T10:15:00",
+    }  # fmt: skip
+    dados.update(campos)
+    return [dados[coluna] for coluna in CABECALHO]
+
+
+def cliente_com_planilha(
+    monkeypatch: pytest.MonkeyPatch, *linhas: list[Any]
+) -> tuple[TestClient, PlanilhaFalsa]:
+    documento = PlanilhaFalsa({"Lancamentos": [CABECALHO, *linhas]})
+    monkeypatch.setattr(
+        sheets_client,
+        "abrir_planilha",
+        lambda *_a, **_k: PlanilhaAberta(titulo="Planilha", documento=documento),
+    )
+    return TestClient(criar_app()), documento
+
+
+def test_get_formato_de_lista__CA_03_1(cliente_memoria: TestClient) -> None:
+    """Contrato de `03` §6.3, com parcela, recorrência e saldo negativo."""
+    cliente_memoria.post("/api/lancamentos", json=entrada(valor=100.0, data="2026-09-10"))
+    cliente_memoria.post(
+        "/api/lancamentos",
+        json=entrada(tipo="RECEITA", categoria_id="salario", valor=40.0, data="2026-09-20"),
+    )
+
+    resposta = cliente_memoria.get("/api/lancamentos?mes=2026-09")
+
+    assert resposta.status_code == 200
+    corpo = resposta.json()
+    assert corpo["mes"] == "2026-09"
+    assert corpo["totais"] == {"gastos": 100.0, "receitas": 40.0, "saldo": -60.0}
+    assert corpo["linhas_ignoradas"] == 0
+    assert [item["data"] for item in corpo["itens"]] == ["2026-09-20", "2026-09-10"]
+    assert set(corpo["itens"][0]) == {
+        "id", "data", "tipo", "descricao", "valor", "categoria_id", "categoria_nome",
+        "categoria_cor", "forma_pagamento", "observacao", "parcelamento_id", "parcela_numero",
+        "parcela_total", "recorrencia_id", "criado_em", "atualizado_em",
+    }  # fmt: skip
+
+
+def test_get_mes_vazio_e_filtros(cliente_memoria: TestClient) -> None:
+    cliente_memoria.post("/api/lancamentos", json=entrada(data="2026-09-10"))
+
+    vazio = cliente_memoria.get("/api/lancamentos?mes=2026-10").json()
+    filtrado = cliente_memoria.get(
+        "/api/lancamentos?mes=2026-09&tipo=RECEITA&categoria_id=nao-existe&forma_pagamento=PIX"
+    ).json()
+
+    assert vazio["itens"] == []
+    assert vazio["totais"] == {"gastos": 0.0, "receitas": 0.0, "saldo": 0.0}
+    assert filtrado["itens"] == []
+
+
+@pytest.mark.parametrize(
+    ("consulta", "campo"),
+    [
+        ("", "mes"),
+        ("?mes=2026-13", "mes"),
+        ("?mes=setembro", "mes"),
+        ("?mes=2026-9", "mes"),
+        ("?mes=2026-09&tipo=gasto", "tipo"),
+        ("?mes=2026-09&forma_pagamento=CHEQUE", "forma_pagamento"),
+    ],
+)
+def test_get_422__CA_F07_5(cliente_memoria: TestClient, consulta: str, campo: str) -> None:
+    resposta = cliente_memoria.get(f"/api/lancamentos{consulta}")
+
+    assert resposta.status_code == 422
+    assert campos_com_erro(resposta) == [campo]
+
+
+def test_get_ignora_linha_invalida__CA_16_3(monkeypatch: pytest.MonkeyPatch) -> None:
+    """CA-F07.7, borda 9: fora da lista e dos totais, contada em `linhas_ignoradas`."""
+    cliente, _ = cliente_com_planilha(
+        monkeypatch,
+        linha("boa", "2026-09-10", 42.5),
+        linha("zero", "2026-09-11", 0),
+        linha("outro-mes", "2026-08-11", 10),
+    )
+
+    with cliente:
+        corpo = cliente.get("/api/lancamentos?mes=2026-09").json()
+
+    assert [item["id"] for item in corpo["itens"]] == ["boa"]
+    assert corpo["totais"]["gastos"] == 42.5
+    assert corpo["linhas_ignoradas"] == 1
+    assert corpo["itens"][0]["categoria_nome"] == "Alimentação"  # da categoria semeada
+
+
+def test_get_uma_leitura_por_aba__RNF_04(monkeypatch: pytest.MonkeyPatch) -> None:
+    """CA-F07.8, borda 20 de F-03: 5.000 linhas, uma leitura de cada aba, bem abaixo de 3 s."""
+    linhas = [linha(f"l{n}", f"2026-{(n % 12) + 1:02d}-15", 1.25) for n in range(5000)]
+    cliente, documento = cliente_com_planilha(monkeypatch, *linhas)
+
+    with cliente:
+        documento.leituras.clear()
+        inicio = time.perf_counter()
+        corpo = cliente.get("/api/lancamentos?mes=2026-09").json()
+        duracao = time.perf_counter() - inicio
+
+    # 5000 = 12 × 416 + 8: jan–ago têm 417; setembro (índice 8) tem 416.
+    assert len(corpo["itens"]) == 416
+    assert corpo["totais"]["gastos"] == 520.0
+    assert documento.leituras == {"Lancamentos": 1, "Categorias": 1}
+    assert duracao < 3
+
+
+def test_get_503__CA_F07_9(cliente: TestClient) -> None:
+    resposta = cliente.get("/api/lancamentos?mes=2026-09")
+
+    assert resposta.status_code == 503
+    assert resposta.json()["erro"]["codigo"] == "CREDENCIAIS_INVALIDAS"
+
+
+def test_post_e_get_ponta_a_ponta__CA_01_5(monkeypatch: pytest.MonkeyPatch) -> None:
+    """O registrado aparece na listagem seguinte: a escrita invalida o cache (F-03)."""
+    cliente, _ = cliente_com_planilha(monkeypatch)
+
+    with cliente:
+        antes = cliente.get("/api/lancamentos?mes=2026-09").json()
+        cliente.post("/api/lancamentos", json=entrada(categoria_id="alimentacao"))
+        depois = cliente.get("/api/lancamentos?mes=2026-09").json()
+
+    assert antes["itens"] == []
+    assert [item["descricao"] for item in depois["itens"]] == ["Almoço"]
+    assert depois["totais"]["gastos"] == 42.5

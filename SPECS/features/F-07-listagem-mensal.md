@@ -90,19 +90,19 @@ Ver, mês a mês, tudo o que entrou e saiu — com filtros por tipo, categoria e
 - [ ] **CA-03.3** Dado um mês sem lançamentos, quando a listagem abre, então uma mensagem de "nenhum lançamento" é exibida.
 - [x] **CA-04.1** / [x] **CA-04.2** *(já verificados em F-04 com a página provisória; em F-07 continuam valendo com a página real — teste de regressão.)*
 - [ ] **CA-01.5** *(exibição)* Dado um gasto recém-registrado, quando o usuário vê a listagem do mês, então o gasto já aparece e os totais já o consideram.
-- [ ] **CA-11.2** *(exibição)* Dado uma categoria renomeada, então todos os lançamentos dela exibem o novo nome, inclusive os antigos.
+- [~] **CA-11.2** *(exibição)* Dado uma categoria renomeada, então todos os lançamentos dela exibem o novo nome, inclusive os antigos. *(T-017: API devolve o nome atual; a tela é T-018.)*
 
 **Refinados — backend (T-017)**
 
-- [ ] **CA-F07.1** Dado lançamentos em agosto, setembro e outubro, quando `GET ?mes=2026-09`, então só os de setembro vêm — inclusive os de 01/09 e 30/09 (RN-03).
-- [ ] **CA-F07.2** Dado lançamentos em datas variadas, então a ordem é data decrescente; na mesma data, o registrado por último primeiro.
-- [ ] **CA-F07.3** Dado filtros `tipo`, `categoria_id` e `forma_pagamento`, isolados e combinados, então só os itens que atendem a **todos** vêm; e os totais somam só esses itens (CA-03.2).
-- [ ] **CA-F07.4** Dado gastos 0,10 + 0,20 e uma receita de 1.000,00, então `gastos = 0.30`, `receitas = 1000.00`, `saldo = 999.70`, exatos (RN-13, RN-16); e mês vazio → `0.0` nos três.
-- [ ] **CA-F07.5** Dado `mes` ausente, `2026-13` ou `setembro`, ou `tipo`/`forma_pagamento` fora do enum, então 422 no campo; `categoria_id` inexistente → 200 com lista vazia.
-- [ ] **CA-F07.6** Dado uma categoria renomeada, então `categoria_nome` dos lançamentos antigos vem com o nome novo (CA-11.2); e dado um lançamento cuja categoria não existe mais, então `categoria_nome` = "Categoria não encontrada" e `categoria_cor` = `#9E9E9E`.
-- [ ] **CA-F07.7** Dado uma linha inválida na aba, então ela não entra na lista nem nos totais e `linhas_ignoradas` a conta (CA-16.3).
-- [ ] **CA-F07.8** Dado 5.000 lançamentos, então a listagem faz uma leitura de cada aba (Lancamentos, Categorias) e responde em menos de 3 s (RNF-04; medição formal em T-032).
-- [ ] **CA-F07.9** Dado a planilha inacessível, então 503 com o código da causa.
+- [x] **CA-F07.1** Dado lançamentos em agosto, setembro e outubro, quando `GET ?mes=2026-09`, então só os de setembro vêm — inclusive os de 01/09 e 30/09 (RN-03).
+- [x] **CA-F07.2** Dado lançamentos em datas variadas, então a ordem é data decrescente; na mesma data, o registrado por último primeiro.
+- [x] **CA-F07.3** Dado filtros `tipo`, `categoria_id` e `forma_pagamento`, isolados e combinados, então só os itens que atendem a **todos** vêm; e os totais somam só esses itens (CA-03.2).
+- [x] **CA-F07.4** Dado gastos 0,10 + 0,20 e uma receita de 1.000,00, então `gastos = 0.30`, `receitas = 1000.00`, `saldo = 999.70`, exatos (RN-13, RN-16); e mês vazio → `0.0` nos três.
+- [x] **CA-F07.5** Dado `mes` ausente, `2026-13` ou `setembro`, ou `tipo`/`forma_pagamento` fora do enum, então 422 no campo; `categoria_id` inexistente → 200 com lista vazia.
+- [x] **CA-F07.6** Dado uma categoria renomeada, então `categoria_nome` dos lançamentos antigos vem com o nome novo (CA-11.2); e dado um lançamento cuja categoria não existe mais, então `categoria_nome` = "Categoria não encontrada" e `categoria_cor` = `#9E9E9E`.
+- [x] **CA-F07.7** Dado uma linha inválida na aba, então ela não entra na lista nem nos totais e `linhas_ignoradas` a conta (CA-16.3).
+- [x] **CA-F07.8** Dado 5.000 lançamentos, então a listagem faz uma leitura de cada aba (Lancamentos, Categorias) e responde em menos de 3 s (RNF-04; medição formal em T-032).
+- [x] **CA-F07.9** Dado a planilha inacessível, então 503 com o código da causa.
 
 **Refinados — frontend (T-018)**
 
@@ -223,6 +223,8 @@ Ordem: T-017 → T-018 (T-018 também depende de T-016, concluída).
 | Categoria inexistente num lançamento → "Categoria não encontrada", cor `#9E9E9E`. | O contrato exige `categoria_nome`/`categoria_cor`; a linha continua válida (o `categoria_id` é texto) e não pode sumir (RN-14). | Não |
 | `categoria_id` desconhecido no filtro → lista vazia (200), não erro. | É um filtro, não uma referência a recurso. | Não |
 | Filtro de categoria mostra ativas **e** inativas. | Lançamentos de categorias inativas continuam na listagem (CA-11.4); o usuário precisa poder filtrá-los. | Não |
+| Tipo `Montante` (2 casas, zero ou negativo) para `totais` (T-017). | O `Dinheiro` exige > 0 (RN-01) e não serve para saldo; o mesmo tipo atende o resumo de F-09. `02` → 1.10. | Não |
+| `LancamentoComCategoria` guarda `categoria_nome`/`categoria_cor` em vez do objeto `Categoria` (T-017, ajuste interno de T-015). | Um lançamento com categoria apagada não tem `Categoria` a montar; criar e listar passam a usar a mesma estrutura, sem mudar a API. | Não |
 | Recarga mantém o conteúdo anterior esmaecido; resposta antiga é descartada. | Evita piscar e evita que uma resposta lenta de outro mês sobrescreva a atual. | Não |
 | Filtros na URL com `replaceUrl`; o menu leva só o mês (Q1). | Mesmo comportamento do `?mes=` (F-04); recarregar não perde o que o usuário escolheu, e navegar pelo menu recomeça limpo. `03` → 1.20 (§8.1). | Não |
 | Valor com sinal e receita em verde, com `aria-label` do tipo (Q2). | O tipo é o que dá direção ao valor (RN-01); cor sozinha não basta para acessibilidade. | Não |
@@ -246,3 +248,4 @@ Ordem: T-017 → T-018 (T-018 também depende de T-016, concluída).
 |---|---|
 | 2026-09-30 | Criação (`/especificar-feature F-07`). Status `Rascunho` — 3 questões em aberto. |
 | 2026-09-30 | Q1–Q3 respondidas → status **Aprovada**. CA-F07.18 detalhado; CA-F07.19 (filtros na URL) e CA-F07.20 (sinal e cor do valor) acrescentados. `03` → 1.20. |
+| 2026-09-30 | T-017 concluída: CA-F07.1 a .9 verificados por teste (serviço em memória; API com planilha falsa, inclusive 5.000 linhas com uma leitura por aba). CA-11.2 com a parte da API. Duas decisões em §10. `02` → 1.10, `03` → 1.21. |

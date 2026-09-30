@@ -9,6 +9,7 @@ from app.domain.dinheiro import (
     PARCELAS_MAX,
     PARCELAS_MIN,
     Dinheiro,
+    Montante,
     dividir_em_parcelas,
     valor_da_planilha,
 )
@@ -132,3 +133,14 @@ def test_dinheiro_recusa_zero_negativo_e_mais_de_2_casas__RN_01(invalido: str) -
 def test_dinheiro_sai_no_json_como_numero__CA_F03_8() -> None:
     assert DINHEIRO.dump_json(Decimal("42.50")) == b"42.5"
     assert DINHEIRO.dump_python(Decimal("42.50")) == Decimal("42.50")
+
+
+def test_montante_aceita_zero_e_negativo__RN_13() -> None:
+    """Totais e saldo podem ser zero ou negativos; continuam com 2 casas e saem como número."""
+    montante = TypeAdapter(Montante)
+
+    assert montante.validate_python(Decimal("-60.00")) == Decimal("-60.00")
+    assert montante.validate_python(Decimal("0.00")) == Decimal("0")
+    assert montante.dump_json(Decimal("-60.00")) == b"-60.0"
+    with pytest.raises(ValidationError):
+        montante.validate_python(Decimal("1.005"))

@@ -23,13 +23,13 @@
 | Marco | Features | Tarefas | Não iniciada | Iniciada | Concluída | Progresso |
 |---|---|---|---|---|---|---|
 | M0 · Fundação | F-01..F-04 | 12 | 0 | 0 | 12 | 100% |
-| M1 · Registro e consulta | F-05..F-08 | 8 | 4 | 0 | 4 | 50% |
+| M1 · Registro e consulta | F-05..F-08 | 8 | 3 | 0 | 5 | 63% |
 | M2 · Visão financeira | F-09..F-11 | 5 | 5 | 0 | 0 | 0% |
 | M3 · Automação | F-12..F-13 | 5 | 5 | 0 | 0 | 0% |
 | M4 · Acabamento | F-14..F-15 | 5 | 5 | 0 | 0 | 0% |
-| **Total** | **15** | **35** | **19** | **0** | **16** | **46%** |
+| **Total** | **15** | **35** | **18** | **0** | **17** | **49%** |
 
-**M0 concluído (F-01 a F-04); F-05 e F-06 concluídas.** Próxima tarefa disponível: **T-017** (BE, F-07, caminho crítico; spec aprovada) — depois T-018 (FE). Pendentes com o usuário, sem bloquear: seguir o README com a planilha real (CA-F02.13), rodar `pytest -m integracao` (CA-15.1/15.2) e a conferência visual (CA-F04.7, CA-F04.30, CA-F05.20, F-06 borda 16).
+**M0 concluído (F-01 a F-04); F-05 e F-06 concluídas.** Próxima tarefa disponível: **T-018** (FE, última de F-07). Também desbloqueadas: T-019 (BE, F-08 — sem spec) e T-021 (BE, F-09 — sem spec). Pendentes com o usuário, sem bloquear: seguir o README com a planilha real (CA-F02.13), rodar `pytest -m integracao` (CA-15.1/15.2) e a conferência visual (CA-F04.7, CA-F04.30, CA-F05.20, F-06 borda 16).
 
 ---
 
@@ -43,7 +43,7 @@
 | F-04 | Shell do frontend | M0 | Concluída | [`F-04-shell-do-frontend.md`](features/F-04-shell-do-frontend.md) (Concluída) |
 | F-05 | Categorias | M1 | Concluída | [`F-05-categorias.md`](features/F-05-categorias.md) (Concluída) |
 | F-06 | Registrar lançamento | M1 | Concluída | [`F-06-registrar-lancamento.md`](features/F-06-registrar-lancamento.md) (Concluída) |
-| F-07 | Listagem mensal | M1 | Não iniciada | [`F-07-listagem-mensal.md`](features/F-07-listagem-mensal.md) (Aprovada) |
+| F-07 | Listagem mensal | M1 | Iniciada | [`F-07-listagem-mensal.md`](features/F-07-listagem-mensal.md) (Aprovada) |
 | F-08 | Editar e excluir lançamentos | M1 | Não iniciada | — |
 | F-09 | Resumo mensal | M2 | Não iniciada | — |
 | F-10 | Gráficos do mês | M2 | Não iniciada | — |
@@ -81,7 +81,8 @@ flowchart LR
     classDef naoIniciada fill:#eeeeee,stroke:#9e9e9e,color:#424242;
     classDef iniciada fill:#fff3cd,stroke:#f0ad4e,color:#5c4400;
     classDef concluida fill:#d4edda,stroke:#28a745,color:#155724;
-    class F07,F08,F09,F10,F11,F12,F13,F14,F15 naoIniciada;
+    class F08,F09,F10,F11,F12,F13,F14,F15 naoIniciada;
+    class F07 iniciada;
     class F01,F02,F03,F04,F05,F06 concluida;
 ```
 
@@ -116,7 +117,7 @@ Camadas: **BE** = backend · **FE** = frontend · **DOC** = documentação/infra
 | T-014 | Página `/categorias`: lista por tipo, criar/renomear/cor/ativar-desativar/excluir via diálogo; `CategoriasStore`. | F-05 | FE | T-013, T-011 | Concluída | 2026-09-30 | 2026-09-30 | Página `/categorias` (seções Gastos/Receitas, selo Inativa, menu ⋮ com Editar, Desativar/Reativar, Excluir — em uso oferece desativar; aviso de re-seed na última), `categoria-form.dialog` (salva sozinho; 409/422 no campo; contador 40; paleta de 24 com pré-seleção e cor extra), `CategoriasApi`, `CategoriasStore` (carga única + recarga por `versao`), `paleta.ts`, `src/testing/`. Shell sem `mat-nav-list` (decisão do usuário; pacote 529→456 kB). 22 testes novos (91 no total); build sem avisos. CA-11.3, CA-F05.14..19, .24 (+ .20 visual pendente). |
 | T-015 | `lancamento_service.criar` (RN-01..06) + `POST /api/lancamentos` + `GET /api/formas-pagamento`. Testes CA-01.x, CA-02.x. | F-06 | BE | T-013 | Concluída | 2026-09-30 | 2026-09-30 | `lancamento_service.criar` (existe → mesmo tipo → ativa → forma no gasto; uma escrita; resposta com nome/cor da categoria), `CategoriaInativa`/`CategoriaTipoIncompativel` → 409, `ErroValidacao.no_campo` com `detalhes`, schemas `LancamentoEntrada`/`LancamentoSaida`/`FormaPagamentoSaida`, `POST /api/lancamentos`, `GET /api/formas-pagamento` (sem planilha). 41 testes novos (683 no total); `ruff` limpo. CA-F06.1..8 (+ parte BE de CA-02.2). |
 | T-016 | `lancamento-form.dialog` (novo gasto/receita; form reativo tipado; data padrão hoje; só categorias ativas do tipo); ligar botões do shell; manter dados em erro (CA-01.4); `DadosStore.versao++` no sucesso. Marcador `TRATAMENTO_LOCAL` no interceptor, aplicado também ao diálogo de categoria (F-06 Q3). | F-06 | FE | T-015, T-014 | Concluída | 2026-09-30 | 2026-09-30 | `lancamento-form.dialog` (tipo fixo, hoje por padrão, foco no valor, valor pt-BR reformatado ao sair, só categorias ativas do tipo com cor, "Não informar" na receita, orientação sem categorias; salva sozinho e mantém os dados em 422/409/503/sem backend), `abrir-lancamento.ts` (aviso + `versao++`) aberto pelo shell via `import()`, `LancamentosApi`, `FormasPagamentoApi`/`Store`, `utils/valor.ts`, `AdaptadorDeDataPtBr`, marcador `TRATAMENTO_LOCAL` (também no diálogo de categoria). 48 testes novos (139 no total); build 472 kB inicial + 39 kB do diálogo, sem avisos. CA-01.1..01.4, CA-02.1/.2, CA-F06.9..16 (+ CA-01.5 parcial). |
-| T-017 | `lancamento_service.listar(mes, filtros)` com totais e `linhas_ignoradas` + `GET /api/lancamentos`. Testes CA-03.x. | F-07 | BE | T-015 | Não iniciada | | | |
+| T-017 | `lancamento_service.listar(mes, filtros)` com totais e `linhas_ignoradas` + `GET /api/lancamentos`. Testes CA-03.x. | F-07 | BE | T-015 | Concluída | 2026-09-30 | 2026-09-30 | `lancamento_service.listar` (mês de referência, filtros E, ordem data→criado_em→id desc, totais `Decimal` do filtrado, nome/cor atuais ou "Categoria não encontrada", `linhas_ignoradas`), tipo `Montante`, `ListaLancamentosSaida`, `GET /api/lancamentos` (`mes` obrigatório `YYYY-MM`). 25 testes novos (708 no total); 5.000 linhas com uma leitura por aba; `ruff` limpo. CA-F07.1..9. |
 | T-018 | Página `/lancamentos`: tabela (data, descrição, categoria, forma, valor, "k/N"/ícone de recorrência), filtros, totais do backend, seletor de mês, estado vazio. | F-07 | FE | T-017, T-016 | Não iniciada | | | |
 | T-019 | `lancamento_service.editar/excluir` + `PUT`/`DELETE /api/lancamentos/{id}` (404). Teste garantindo que só a linha certa muda após reordenação manual. | F-08 | BE | T-017 | Não iniciada | | | |
 | T-020 | Ações editar (reusa o diálogo) e excluir (com `confirmacao-dialog`) na listagem. | F-08 | FE | T-019, T-018 | Não iniciada | | | |
@@ -157,6 +158,8 @@ Camadas: **BE** = backend · **FE** = frontend · **DOC** = documentação/infra
 
 | Data | Tarefa/Feature | Mudança | Observação |
 |---|---|---|---|
+| 2026-09-30 | T-017 | `Iniciada` → `Concluída` | Listagem mensal no backend. `02` → 1.10 (`Montante`), `03` → 1.21 (§6.3). Guarda de rotas com `GET /api/lancamentos`. |
+| 2026-09-30 | T-017 | `Não iniciada` → `Iniciada` | Dependência T-015 `Concluída`; spec F-07 `Aprovada`. F-07 passa a `Iniciada` (§2) e o mapa (§3) foi atualizado. |
 | 2026-09-30 | F-07 | Spec da feature criada e **aprovada** | `features/F-07-listagem-mensal.md`: Q1–Q3 respondidas (todas na opção recomendada). `03` → 1.20 (§8.1, filtros na URL). Nenhum status de tarefa alterado. |
 | 2026-09-30 | T-016 / F-06 | `Iniciada` → `Concluída` | Diálogo de registro. **F-06 concluída** (§2 e §3 atualizados). `03` → 1.19 (arquivos novos em §3). Revisão registrada em F-05 (aviso duplicado corrigido). |
 | 2026-09-30 | T-016 | Sugestão anotada | Pacote inicial em 472 kB (aviso em 500): o `app.config` importa o adaptador de data de `@angular/material/core`, que reexporta o `MatOption` — com o `mat-select` do diálogo, o esbuild o compartilha com o pacote inicial (~16 kB). Se a margem apertar, mover `provideNativeDateAdapter`/`AdaptadorDeDataPtBr` para os `providers` das rotas e do diálogo. Avaliar em T-031. |

@@ -5,11 +5,11 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel, BeforeValidator, Field
 
-from app.domain.dinheiro import Dinheiro
+from app.domain.dinheiro import Dinheiro, Montante
 from app.domain.enums import FormaPagamento, TipoLancamento
 from app.domain.modelos import Data
 from app.services.categoria_service import CategoriaComUso, normalizar_nome
-from app.services.lancamento_service import LancamentoComCategoria
+from app.services.lancamento_service import LancamentoComCategoria, ListaDoMes
 
 STATUS_OK = "ok"
 STATUS_DEGRADADO = "degradado"
@@ -154,8 +154,8 @@ class LancamentoSaida(BaseModel):
     def de(cls, item: LancamentoComCategoria) -> "LancamentoSaida":
         return cls(
             **item.lancamento.model_dump(),
-            categoria_nome=item.categoria.nome,
-            categoria_cor=item.categoria.cor,
+            categoria_nome=item.categoria_nome,
+            categoria_cor=item.categoria_cor,
         )
 
 
@@ -164,3 +164,33 @@ class FormaPagamentoSaida(BaseModel):
 
     codigo: FormaPagamento
     nome: str
+
+
+class TotaisSaida(BaseModel):
+    """Totais do que foi listado (`03` §6.3); `saldo` pode ser negativo (RN-13)."""
+
+    gastos: Montante
+    receitas: Montante
+    saldo: Montante
+
+
+class ListaLancamentosSaida(BaseModel):
+    """`GET /api/lancamentos` (`SPECS/03` §6.3)."""
+
+    mes: str
+    itens: list[LancamentoSaida]
+    totais: TotaisSaida
+    linhas_ignoradas: int
+
+    @classmethod
+    def de(cls, lista: ListaDoMes) -> "ListaLancamentosSaida":
+        return cls(
+            mes=lista.mes,
+            itens=[LancamentoSaida.de(item) for item in lista.itens],
+            totais=TotaisSaida(
+                gastos=lista.totais.gastos,
+                receitas=lista.totais.receitas,
+                saldo=lista.totais.saldo,
+            ),
+            linhas_ignoradas=lista.linhas_ignoradas,
+        )
