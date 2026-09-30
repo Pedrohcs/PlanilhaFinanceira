@@ -29,7 +29,7 @@
 | M4 · Acabamento | F-14..F-15 | 5 | 5 | 0 | 0 | 0% |
 | **Total** | **15** | **35** | **17** | **0** | **18** | **51%** |
 
-**M0 concluído (F-01 a F-04); F-05, F-06 e F-07 concluídas.** Próximo passo: `/especificar-feature F-08` (Editar e excluir, caminho crítico) — depois T-019 (BE) e T-020 (FE). Também desbloqueada: T-021 (BE, F-09 — sem spec). Pendentes com o usuário, sem bloquear: seguir o README com a planilha real (CA-F02.13), rodar `pytest -m integracao` (CA-15.1/15.2) e a conferência visual (CA-F04.7, CA-F04.30, CA-F05.20, F-06 borda 16, CA-F07.18).
+**M0 concluído (F-01 a F-04); F-05, F-06 e F-07 concluídas.** Próxima tarefa disponível: **T-019** (BE, F-08, caminho crítico; spec aprovada) — depois T-020 (FE). Também desbloqueada: T-021 (BE, F-09 — sem spec). Pendentes com o usuário, sem bloquear: seguir o README com a planilha real (CA-F02.13), rodar `pytest -m integracao` (CA-15.1/15.2) e a conferência visual (CA-F04.7, CA-F04.30, CA-F05.20, F-06 borda 16, CA-F07.18).
 
 ---
 
@@ -44,7 +44,7 @@
 | F-05 | Categorias | M1 | Concluída | [`F-05-categorias.md`](features/F-05-categorias.md) (Concluída) |
 | F-06 | Registrar lançamento | M1 | Concluída | [`F-06-registrar-lancamento.md`](features/F-06-registrar-lancamento.md) (Concluída) |
 | F-07 | Listagem mensal | M1 | Concluída | [`F-07-listagem-mensal.md`](features/F-07-listagem-mensal.md) (Concluída) |
-| F-08 | Editar e excluir lançamentos | M1 | Não iniciada | — |
+| F-08 | Editar e excluir lançamentos | M1 | Não iniciada | [`F-08-editar-excluir-lancamentos.md`](features/F-08-editar-excluir-lancamentos.md) (Aprovada) |
 | F-09 | Resumo mensal | M2 | Não iniciada | — |
 | F-10 | Gráficos do mês | M2 | Não iniciada | — |
 | F-11 | Histórico | M2 | Não iniciada | — |
@@ -157,6 +157,7 @@ Camadas: **BE** = backend · **FE** = frontend · **DOC** = documentação/infra
 
 | Data | Tarefa/Feature | Mudança | Observação |
 |---|---|---|---|
+| 2026-09-30 | F-08 | Spec da feature criada e **aprovada** | `features/F-08-editar-excluir-lancamentos.md`: Q1–Q3 respondidas (todas na opção recomendada). Nenhuma mudança em 01–03. Nenhum status de tarefa alterado. |
 | 2026-09-30 | T-018 / F-07 | `Iniciada` → `Concluída` | Página de lançamentos. **F-07 concluída** (§2 e §3 atualizados). `03` → 1.22. CA-11.2 de F-05 fechado (exibição verificada aqui). `BreakpointsFalsos` virou helper comum em `src/testing/`. |
 | 2026-09-30 | T-018 | Sugestão anotada | Pacote inicial: o `DatePipe` numa página lazy levou +11 kB ao inicial (o `@angular/common` já está nele e o esbuild divide por módulo). Regra prática para as próximas telas (F-09 a F-13): formatar datas e valores com os utilitários de `core/utils/` em vez de `DatePipe`/`CurrencyPipe`, e medir o pacote a cada tarefa de frontend. |
 | 2026-09-30 | T-018 | `Não iniciada` → `Iniciada` | Dependências T-017 e T-016 `Concluída`. Última tarefa de F-07. |
