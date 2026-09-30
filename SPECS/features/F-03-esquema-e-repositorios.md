@@ -4,7 +4,7 @@
 |---|---|
 | Feature | F-03 |
 | Marco | M0 |
-| Status | Aprovada |
+| Status | Concluída |
 | Requisitos | REQ-15, REQ-16 (CA-16.3), RNF-02, RNF-04 (parcial) |
 | Regras | RN-07 (aritmética), RN-14, RN-15, RN-16; base para RN-01..06 e RN-09 |
 | Depende de | F-02 (**Concluída**) |
@@ -138,10 +138,14 @@ para que gasto e receita não se confundam num gráfico. Alimentação usa `#E57
 1. Leitura: **uma chamada por aba**, `get_all_values` com `UNFORMATTED_VALUE` (`02` §5.4).
 2. Cada linha é validada conforme `03` §5.6. Linha inválida → **ignorada**, contada em `linhas_ignoradas` e registrada em log `WARNING` com aba e número de linha (CA-16.3, RN-14).
 3. Motivos de invalidez: `id` vazio · data não ISO · valor não numérico ou ≤ 0 · `tipo`/`forma_pagamento`/`status` fora do enum · campos obrigatórios vazios.
-4. Escrita: `append_rows` com `RAW` (`02` §5.4) — **sempre em lote**, mesmo para um item só, para o caminho ser um só.
+4. Escrita: `append_rows` com `RAW` e `INSERT_ROWS` (`02` §5.4) — **sempre em lote**, mesmo para um item só, para o caminho ser um só. Lista vazia não faz chamada. `inserir` não verifica `id` repetido: os serviços geram `uuid4` (e slug único para categoria).
 5. Atualizar/remover: localizar a linha **pelo `id`**, relendo a aba na hora; nunca guardar índice de linha entre requisições (o usuário reordena a planilha à mão).
-6. Remoção de vários `id`s: apagar de baixo para cima (ou em um único lote), para os índices não deslizarem.
-7. `obter(id)` de `id` inexistente → `NaoEncontrado` (código `NAO_ENCONTRADO`, `03` §6.2).
+6. Remoção de vários `id`s: **uma** chamada `batch_update` com os `deleteDimension` de baixo para cima, para os índices não deslizarem. **Tudo ou nada:** se algum `id` não existir, levanta `NaoEncontrado` e nenhuma linha é apagada.
+6a. Atualizar reescreve só as colunas do schema (A até a última); colunas extras do usuário na mesma linha ficam intactas.
+6b. Linhas **totalmente vazias** no meio da aba são puladas sem contar em `linhas_ignoradas` — são espaço, não dado inválido.
+6c. `id` repetido, em qualquer aba: vale a primeira linha; as seguintes são ignoradas e contadas (borda 18).
+7. `obter(id)` — e `atualizar`/`remover` — de `id` inexistente → `NaoEncontrado` (código `NAO_ENCONTRADO`, `03` §6.2).
+7a. Os repositórios acessam a planilha por `ConexaoPlanilha.executar(operacao)`: sem conexão, levanta o erro guardado (503); com conexão, aplica a política de tentativas de `02` §5.5. A referência de cada aba (`Worksheet`) fica guardada no repositório, para a leitura continuar sendo **uma** chamada por aba.
 8. Datas e enums vão para a planilha como **texto**; valores como **número** (`02` §5.4).
 
 ### 3.7 Repositório em memória (T-009)
@@ -154,9 +158,9 @@ Mesmos Protocols, guardando os itens em listas. É o que os testes de serviço d
 
 **Herdados de `01`**
 
-- [~] **CA-15.1** Dado uma planilha nova e vazia, quando o sistema inicia, então as 4 abas existem com o cabeçalho correto e as 15 categorias padrão de RN-15 estão lá. *(T-008: verificado com planilha falsa, inclusive subindo a aplicação inteira; a conferência na planilha real fica para o teste `@integracao` de T-009 e para CA-F02.13.)*
-- [~] **CA-15.2** Dado uma planilha já preparada, quando o sistema inicia de novo, então nada é duplicado nem sobrescrito: mesma quantidade de abas, de colunas e de linhas. *(T-008: verificado com planilha falsa, inclusive subindo a aplicação inteira; a conferência na planilha real fica para o teste `@integracao` de T-009 e para CA-F02.13.)*
-- [ ] **CA-16.3** Dado uma linha inválida na aba (editada à mão), quando a listagem é lida, então a linha é ignorada nos resultados, `linhas_ignoradas` reflete a contagem, um `WARNING` cita aba e linha, e as linhas válidas voltam normalmente.
+- [~] **CA-15.1** Dado uma planilha nova e vazia, quando o sistema inicia, então as 4 abas existem com o cabeçalho correto e as 15 categorias padrão de RN-15 estão lá. *(Verificado com planilha falsa, inclusive subindo a aplicação inteira (T-008). O teste `tests/integracao/test_planilha_real.py` (T-009) cobre a planilha real, mas só roda com `SPREADSHEET_ID_TESTE` — **pendente de execução pelo usuário**, junto com CA-F02.13.)*
+- [~] **CA-15.2** Dado uma planilha já preparada, quando o sistema inicia de novo, então nada é duplicado nem sobrescrito: mesma quantidade de abas, de colunas e de linhas. *(Verificado com planilha falsa, inclusive subindo a aplicação inteira (T-008). O teste `tests/integracao/test_planilha_real.py` (T-009) cobre a planilha real, mas só roda com `SPREADSHEET_ID_TESTE` — **pendente de execução pelo usuário**, junto com CA-F02.13.)*
+- [x] **CA-16.3** Dado uma linha inválida na aba (editada à mão), quando a listagem é lida, então a linha é ignorada nos resultados, `linhas_ignoradas` reflete a contagem, um `WARNING` cita aba e linha, e as linhas válidas voltam normalmente.
 
 **Refinados — domínio (T-007)**
 
@@ -183,14 +187,14 @@ Mesmos Protocols, guardando os itens em listas. É o que os testes de serviço d
 
 **Refinados — repositórios e cache (T-009)**
 
-- [ ] **CA-F03.16** Dado uma aba com 3 linhas válidas e 2 inválidas, quando `listar()` é chamado, então devolve 3 itens e `linhas_ignoradas == 2` (CA-16.3).
-- [ ] **CA-F03.17** Dado uma escrita, quando a leitura seguinte da mesma aba acontece, então ela **não** vem do cache — a entrada foi invalidada na escrita.
-- [ ] **CA-F03.18** Dado duas leituras da mesma aba dentro do TTL, quando se conta as chamadas ao gspread, então houve **uma** só; passado o TTL, duas.
-- [ ] **CA-F03.19** Dado que o usuário reordenou as linhas na planilha à mão, quando um item é atualizado pelo `id`, então **apenas a linha daquele `id`** muda.
-- [ ] **CA-F03.20** Dado vários `id`s removidos de uma vez, quando a remoção termina, então exatamente esses itens desapareceram e nenhum outro (índices não deslizaram).
-- [ ] **CA-F03.21** Dado `obter(id)` com `id` inexistente, quando chamado, então levanta `NaoEncontrado`, tanto no repositório de planilha quanto no de memória.
-- [ ] **CA-F03.22** Dado uma descrição começando com `=`, quando é gravada, então volta como **texto** na leitura, não como fórmula (escrita `RAW`, ADR-04).
-- [ ] **CA-F03.23** Dado os dois repositórios (planilha e memória), quando o mesmo roteiro de operações é aplicado a ambos, então o comportamento observável é o mesmo.
+- [x] **CA-F03.16** Dado uma aba com 3 linhas válidas e 2 inválidas, quando `listar()` é chamado, então devolve 3 itens e `linhas_ignoradas == 2` (CA-16.3).
+- [x] **CA-F03.17** Dado uma escrita, quando a leitura seguinte da mesma aba acontece, então ela **não** vem do cache — a entrada foi invalidada na escrita.
+- [x] **CA-F03.18** Dado duas leituras da mesma aba dentro do TTL, quando se conta as chamadas ao gspread, então houve **uma** só; passado o TTL, duas.
+- [x] **CA-F03.19** Dado que o usuário reordenou as linhas na planilha à mão, quando um item é atualizado pelo `id`, então **apenas a linha daquele `id`** muda.
+- [x] **CA-F03.20** Dado vários `id`s removidos de uma vez, quando a remoção termina, então exatamente esses itens desapareceram e nenhum outro (índices não deslizaram).
+- [x] **CA-F03.21** Dado `obter(id)` com `id` inexistente, quando chamado, então levanta `NaoEncontrado`, tanto no repositório de planilha quanto no de memória.
+- [x] **CA-F03.22** Dado uma descrição começando com `=`, quando é gravada, então volta como **texto** na leitura, não como fórmula (escrita `RAW`, ADR-04).
+- [x] **CA-F03.23** Dado os dois repositórios (planilha e memória), quando o mesmo roteiro de operações é aplicado a ambos, então o comportamento observável é o mesmo.
 
 ---
 
@@ -320,6 +324,10 @@ Ordem obrigatória: T-007 → T-008 → T-009 (`05` §4; T-008 também depende d
 | Colunas extras depois da última do schema são aceitas e ignoradas (T-008, decisão do usuário). | Mesmo espírito da 5ª aba do usuário (borda 8): o que o app não conhece, ele não toca. Uma futura coluna nova do schema nessa posição seria detectada como divergência. | Não |
 | `versao_schema` < 1 é inválido (T-008). | Não existe versão anterior à 1; tratar como migração seria inventar comportamento. | Não |
 | Seed de RN-15 fica no `bootstrap`, não no `categoria_service` (T-008). | `infra` não pode chamar `services` (`03` §4.2); `03` §4.4 citava o seed no serviço, em contradição com §4.5. `03` → 1.9. | Não |
+| Inserções com `INSERT_ROWS` (T-009), inclusive no bootstrap. | Com o padrão `OVERWRITE`, um append depois de uma linha em branco deixada pelo usuário pode sobrescrever dados. `02` → 1.8. | Não |
+| `remover` tudo-ou-nada (T-009). | CA-F03.20 pede "exatamente esses itens e nenhum outro"; remoção parcial deixaria o parcelamento (T-026) pela metade sem aviso. | Não |
+| Linha totalmente vazia não conta como ignorada; `id` repetido vale a primeira em todas as abas (T-009). | Contar espaço em branco geraria aviso falso; a regra do repetido era só de `Categorias` (borda 18) e vale igual para as outras. | Não |
+| Composição (instância única do cache e dos repositórios em `api/deps.py`) fica para o primeiro endpoint de negócio, T-013. | Nenhuma rota usa repositório em F-03; montar antes seria código morto. | Não |
 | P-03 **confirmada**; resto de centavos na 1ª parcela (Q1). | Resposta do usuário; `01` → 1.1 com a premissa marcada. RN-07 não mudou. | Não |
 | Paleta de 15 cores proposta por mim (Q2). | RN-15 não define cores e `03` §5.2 exige `#RRGGBB`. Tons distinguíveis, legíveis em tema claro e escuro, receitas em verdes; `#E57373` para Alimentação por coerência com `03` §6.3. Trocáveis em T-014. | Não |
 | Total mínimo `N × R$ 0,01` para parcelar (Q3). | Parcela de R$ 0,00 violaria RN-01; recusar é explícito, reduzir o número de parcelas seria silencioso. | Não |
@@ -346,3 +354,4 @@ Ordem obrigatória: T-007 → T-008 → T-009 (`05` §4; T-008 também depende d
 | 2026-09-29 | Q1–Q4 respondidas → status **Aprovada**. Paleta das 15 categorias, total mínimo por parcela e `SchemaPlanilhaInvalido` incorporados; CA-F03.24 e .25 acrescentados. `01` → 1.1, `02` → 1.7, `03` → 1.6. |
 | 2026-09-30 | T-007 concluída: CA-F03.1 a .8 verificados por teste. `ErroValidacao` acrescentado ao escopo de T-007 (§9) e três decisões registradas em §10 (validação entre campos nos modelos, `ErroValidacao`, `data_da_parcela`). |
 | 2026-09-30 | T-008 concluída: CA-F03.9 a .15, .24 e .25 verificados por teste; CA-15.1/15.2 com planilha falsa (real pendente). §3.4 refinado — bootstrap a cada conexão estabelecida, validação inteira antes de escrever, colunas extras no fim aceitas (decisão do usuário), `versao_schema` < 1 inválido — e cinco decisões em §10. `03` → 1.9. |
+| 2026-09-30 | T-009 concluída → **feature Concluída**. CA-16.3 e CA-F03.16 a .23 verificados por teste; CA-15.1/15.2 com teste de integração pronto, aguardando execução na planilha real. §3.6 refinado (`INSERT_ROWS`, remoção tudo-ou-nada, linha vazia não conta, `id` repetido em todas as abas, `executar`) e quatro decisões em §10. `02` → 1.8, `03` → 1.10. |

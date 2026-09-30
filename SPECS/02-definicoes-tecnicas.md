@@ -3,8 +3,8 @@
 | Campo | Valor |
 |---|---|
 | Documento | `SPECS/02-definicoes-tecnicas.md` |
-| Versão | 1.7 |
-| Atualizado em | 2026-09-29 |
+| Versão | 1.8 |
+| Atualizado em | 2026-09-30 |
 | Status | Aprovado para início |
 | Responde | **Com o quê** o sistema é construído: linguagens, bibliotecas, versões, integração com Google, convenções |
 | Depende de | `01-requisitos.md` (RNF-xx) |
@@ -170,6 +170,7 @@ Toda chamada ao gspread fica encapsulada em `backend/app/infra/` (ver arquitetur
 | Operação | Opção | Motivo |
 |---|---|---|
 | Escrita | `value_input_option = RAW` | Evita que uma descrição começando com `=` vire fórmula (injeção de fórmula) e que o Google reinterprete datas/números conforme o locale da planilha. |
+| Inserção (`append_rows`) | `insert_data_option = INSERT_ROWS` | O padrão da API (`OVERWRITE`) escreve nas linhas logo após a "tabela" detectada; se o usuário deixou uma linha em branco no meio da aba, o append pode cair ali e **sobrescrever** as linhas de baixo. `INSERT_ROWS` insere linhas novas e nunca apaga dado. |
 | Leitura | `value_render_option = UNFORMATTED_VALUE` | Números voltam como números (não "R$ 1.234,56"), booleanos como booleanos. |
 | Datas | texto ISO `YYYY-MM-DD` | Legível para humanos, ordenável, independente de locale. |
 | Chamadas gspread | sempre com **argumentos nomeados** | gspread 6 mudou a ordem de parâmetros de `update()`; nomeados evitam erro silencioso. |
@@ -294,3 +295,4 @@ Novas decisões: acrescente uma linha com o próximo ID. Decisões substituídas
 | 2026-09-29 | 1.5 | ADR-14 e §1: prettier (e `jsdom`) registrados como dependências de desenvolvimento trazidas pelo CLI 22 em T-003. |
 | 2026-09-29 | 1.6 | §5.6: 403 desambiguado — nova exceção `ApiSheetsDesabilitada` para Sheets API desativada no projeto (decidido em F-02). |
 | 2026-09-29 | 1.7 | §5.6: `SchemaPlanilhaInvalido` para cabeçalho divergente e `versao_schema` à frente do app (decidido em F-03). |
+| 2026-09-30 | 1.8 | §5.4: inserções com `INSERT_ROWS`, para um append nunca sobrescrever linhas abaixo de uma linha em branco (T-009). |

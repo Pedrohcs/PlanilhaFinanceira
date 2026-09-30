@@ -10,7 +10,12 @@ import gspread
 import pytest
 from requests.exceptions import ConnectionError as ErroDeConexao
 
-from app.domain.erros import PlanilhaIndisponivel, SchemaPlanilhaInvalido
+from app.domain.erros import (
+    CredenciaisInvalidas,
+    NaoEncontrado,
+    PlanilhaIndisponivel,
+    SchemaPlanilhaInvalido,
+)
 from app.infra import sheets_client
 from app.infra.bootstrap import preparar_planilha
 from app.infra.schema_planilha import ABA_CATEGORIAS, ABAS
@@ -123,3 +128,55 @@ def test_sem_preparar_so_abre(abrir_falso: Callable[[PlanilhaFalsa], AberturaFal
 
     assert nova_conexao(preparar=None).conectar() is not None
     assert documento.escritas == []
+
+
+def test_executar_sem_conexao_levanta_o_erro_guardado__CA_16_1() -> None:
+    """Endpoints de negócio respondem 503 com a causa real (`03` §4.5)."""
+    conexao = nova_conexao()
+    conexao.conectar()  # credencial inexistente: a conexão falha e guarda o erro
+
+    with pytest.raises(CredenciaisInvalidas):
+        conexao.executar(lambda documento: documento)
+
+
+def test_executar_retenta_falha_transitoria__F02_3_2(
+    abrir_falso: Callable[[PlanilhaFalsa], AberturaFalsa],
+) -> None:
+    """Operação de repositório usa a política de `02` §5.5: até 4 tentativas."""
+    documento = PlanilhaFalsa()
+    abrir_falso(documento)
+    esperas: list[float] = []
+    conexao = ConexaoPlanilha(
+        CREDENCIAL_INEXISTENTE, "id-de-teste", preparar=None, dormir=esperas.append
+    )
+    conexao.conectar()
+    tentativas: list[int] = []
+
+    def operacao(recebido: gspread.Spreadsheet) -> str:
+        tentativas.append(1)
+        if len(tentativas) < 3:
+            raise ErroDeConexao("instável")
+        assert recebido is documento
+        return "ok"
+
+    assert conexao.executar(operacao) == "ok"
+    assert len(tentativas) == 3
+    assert len(esperas) == 2
+
+
+def test_executar_nao_mascara_erro_de_dominio(
+    abrir_falso: Callable[[PlanilhaFalsa], AberturaFalsa],
+) -> None:
+    """`NaoEncontrado` levantado dentro da operação sobe intacto, sem retry."""
+    abrir_falso(PlanilhaFalsa())
+    conexao = nova_conexao(preparar=None)
+    conexao.conectar()
+    chamadas: list[int] = []
+
+    def operacao(_documento: gspread.Spreadsheet) -> None:
+        chamadas.append(1)
+        raise NaoEncontrado()
+
+    with pytest.raises(NaoEncontrado):
+        conexao.executar(operacao)
+    assert len(chamadas) == 1

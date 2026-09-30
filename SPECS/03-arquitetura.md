@@ -3,7 +3,7 @@
 | Campo | Valor |
 |---|---|
 | Documento | `SPECS/03-arquitetura.md` |
-| Versão | 1.9 |
+| Versão | 1.10 |
 | Atualizado em | 2026-09-30 |
 | Status | Aprovado para início |
 | Responde | **Como** o sistema se organiza: componentes, pastas, camadas, modelo de dados na planilha, contrato da API e fluxos |
@@ -76,15 +76,16 @@ PlanilhaFinanceira/
 │   │   │                          # proximo_mes, mes_anterior, meses_entre, mes_corrente
 │   │   ├── services/              # categoria, lancamento, parcelamento, recorrencia, resumo
 │   │   ├── repositories/
-│   │   │   ├── base.py            # Protocols dos repositórios
-│   │   │   ├── memoria/           # implementações em memória (testes)
-│   │   │   └── planilha/          # implementações gspread
+│   │   │   ├── base.py            # Protocols dos repositórios (`Repositorio[T]` + 3 específicos)
+│   │   │   ├── memoria/           # implementações em memória (testes), mesmo comportamento
+│   │   │   └── planilha/          # `aba.py` (repositório genérico por aba) + 3 implementações
 │   │   └── infra/
 │   │       ├── sheets_client.py   # autenticação, abertura, retry/backoff, mapeamento de
-│       │                   # erros e `ConexaoPlanilha` (estado + nova tentativa)
+│   │       │                      # erros e `ConexaoPlanilha` (estado, nova tentativa,
+│   │       │                      # `executar` para os repositórios)
 │   │       ├── schema_planilha.py # abas e colunas (fonte única)
 │   │       ├── bootstrap.py       # cria abas/cabeçalhos/seed de forma idempotente
-│   │       └── cache.py           # cache por aba com TTL
+│   │       └── cache.py           # cache por aba com TTL, invalidação por aba e total
 │   └── tests/
 │       ├── conftest.py
 │       ├── planilha_falsa.py      # dublê do gspread (RAW/UNFORMATTED obrigatórios), T-008
@@ -155,7 +156,7 @@ class LancamentoRepository(Protocol):
     def atualizar(self, item: Lancamento) -> None: ...
     def remover(self, ids: list[str]) -> None: ...
 ```
-`CategoriaRepository` e `RecorrenciaRepository` seguem o mesmo formato. Filtros por mês, tipo etc. são feitos no *service* sobre `listar()` (volume pessoal; leitura única por aba — ver `02` §5.5).
+`CategoriaRepository` e `RecorrenciaRepository` seguem o mesmo formato (os três derivam de um `Repositorio[T]` genérico). `atualizar` e `remover` levantam `NaoEncontrado` para `id` inexistente; `remover` é tudo-ou-nada. As implementações de planilha acessam o Google por `ConexaoPlanilha.executar` (503 sem conexão; tentativas de `02` §5.5). Filtros por mês, tipo etc. são feitos no *service* sobre `listar()` (volume pessoal; leitura única por aba — ver `02` §5.5).
 
 ### 4.4 Serviços e responsabilidades
 
@@ -466,4 +467,5 @@ Quando o **backend não responde** (status 0, ou 502/504 sem o envelope de §6.2
 | 2026-09-30 | 1.7 | §3: funções reais de `domain/datas.py`. §4.2: explicitado que módulos de `domain` importam uns aos outros (T-007). |
 | 2026-09-30 | 1.8 | §8.4: código local `BACKEND_INDISPONIVEL` para backend fora do ar, no mesmo banner dos 503 (F-04, Q3). |
 | 2026-09-30 | 1.9 | §4.5: `bootstrap` roda a cada conexão estabelecida (inclusive pela nova tentativa do health) e ignora colunas extras no fim. §4.4: seed padrão sai do `categoria_service` (é do `bootstrap`). §3: `tests/planilha_falsa.py` — T-008. |
+| 2026-09-30 | 1.10 | §3 e §4.3: estrutura real de `repositories/` (`Repositorio[T]`, `planilha/aba.py`), `ConexaoPlanilha.executar`, `NaoEncontrado` em `atualizar`/`remover` e remoção tudo-ou-nada (T-009). |
 | 2026-09-29 | 1.1 | Frontend em Angular 22 (zoneless); pasta `shared/grafico/` com diretiva Chart.js própria (§3, §8.2.1). |

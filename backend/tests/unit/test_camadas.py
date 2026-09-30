@@ -54,3 +54,29 @@ def test_infra_nao_importa_api_nem_services__CA_F02_12() -> None:
             if mod.startswith(("app.api", "app.services", "app.repositories", "app.config"))
         }
         assert not proibidos, f"{arquivo.name} importa {proibidos}"
+
+
+def test_repositorios_respeitam_as_camadas__T_009() -> None:
+    """`base` e `memoria` não conhecem gspread nem `infra`; `planilha` não sobe para cima.
+
+    Os serviços dependem só de `repositories.base` (`SPECS/03` §4.2); os testes
+    de serviço usam `memoria`, que não pode arrastar o Google junto.
+    """
+    raiz = RAIZ_APP / "repositories"
+    sem_google = [raiz / "base.py", *sorted((raiz / "memoria").glob("*.py"))]
+    for arquivo in sem_google:
+        proibidos = {
+            mod
+            for mod in imports_de(arquivo)
+            if mod == "gspread"
+            or mod.startswith(("gspread.", "google.", "app.infra", "app.repositories.planilha"))
+        }
+        assert not proibidos, f"{arquivo.name} importa {proibidos}"
+
+    for arquivo in sorted((raiz / "planilha").glob("*.py")):
+        proibidos = {
+            mod
+            for mod in imports_de(arquivo)
+            if mod.startswith(("app.services", "app.api", "app.config"))
+        }
+        assert not proibidos, f"planilha/{arquivo.name} importa {proibidos}"

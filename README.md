@@ -130,14 +130,14 @@ Abre em <http://localhost:4200>. As chamadas a `/api` são encaminhadas ao backe
 # backend (em ./backend, com a .venv ativa)
 pytest                                    # unitários e de API; não acessa a rede
 ruff check . ; ruff format .
-pytest -m integracao                      # só com SPREADSHEET_ID_TESTE definido
+$env:SPREADSHEET_ID_TESTE = "<id>" ; pytest -m integracao   # planilha real de teste
 
 # frontend (em ./frontend)
 npm test
 npm run build
 ```
 
-Os testes de integração ficam de fora da execução normal de propósito: eles escrevem numa planilha de verdade. Use **uma planilha separada** em `SPREADSHEET_ID_TESTE`, nunca a que guarda seus dados.
+Os testes de integração ficam de fora da execução normal de propósito: eles escrevem numa planilha de verdade. Use **uma planilha separada**, nunca a que guarda seus dados, compartilhada com a conta de serviço como **Editor** (passo 2.3), e informe o ID dela na variável `SPREADSHEET_ID_TESTE` **do terminal**, como acima — sem ela os testes são pulados. A credencial usada é a mesma do app (`GOOGLE_CREDENTIALS_PATH` do terminal, se existir; senão `../credentials.json`). O teste cria as abas na planilha de teste e apaga o lançamento que criar.
 
 ---
 

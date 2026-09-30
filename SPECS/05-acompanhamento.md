@@ -22,14 +22,14 @@
 
 | Marco | Features | Tarefas | Não iniciada | Iniciada | Concluída | Progresso |
 |---|---|---|---|---|---|---|
-| M0 · Fundação | F-01..F-04 | 12 | 4 | 0 | 8 | 67% |
+| M0 · Fundação | F-01..F-04 | 12 | 3 | 0 | 9 | 75% |
 | M1 · Registro e consulta | F-05..F-08 | 8 | 8 | 0 | 0 | 0% |
 | M2 · Visão financeira | F-09..F-11 | 5 | 5 | 0 | 0 | 0% |
 | M3 · Automação | F-12..F-13 | 5 | 5 | 0 | 0 | 0% |
 | M4 · Acabamento | F-14..F-15 | 5 | 5 | 0 | 0 | 0% |
-| **Total** | **15** | **35** | **27** | **0** | **8** | **23%** |
+| **Total** | **15** | **35** | **26** | **0** | **9** | **26%** |
 
-**F-01 e F-02 concluídas; F-03 iniciada.** Próxima tarefa disponível: **T-009** (BE, última de F-03, caminho crítico). Também desbloqueada: T-010 (FE, F-04, spec aprovada). Pendente com o usuário, sem bloquear: conferência na planilha real (CA-F02.13, CA-15.1/15.2).
+**F-01, F-02 e F-03 concluídas.** Desbloqueadas: **T-013** (BE, F-05, caminho crítico — F-05 ainda sem spec, e a feature também depende de F-04 no roadmap) e **T-010** (FE, F-04, spec aprovada). Pendente com o usuário, sem bloquear: rodar `pytest -m integracao` na planilha de teste e seguir o README com a planilha real (CA-F02.13, CA-15.1/15.2).
 
 ---
 
@@ -39,7 +39,7 @@
 |---|---|---|---|---|
 | F-01 | Fundação do repositório | M0 | Concluída | [`F-01-fundacao-do-repositorio.md`](features/F-01-fundacao-do-repositorio.md) (Aprovada) |
 | F-02 | Conexão com Google Sheets | M0 | Concluída | [`F-02-conexao-google-sheets.md`](features/F-02-conexao-google-sheets.md) (Aprovada) |
-| F-03 | Esquema e repositórios da planilha | M0 | Iniciada | [`F-03-esquema-e-repositorios.md`](features/F-03-esquema-e-repositorios.md) (Aprovada) |
+| F-03 | Esquema e repositórios da planilha | M0 | Concluída | [`F-03-esquema-e-repositorios.md`](features/F-03-esquema-e-repositorios.md) (Concluída) |
 | F-04 | Shell do frontend | M0 | Não iniciada | [`F-04-shell-do-frontend.md`](features/F-04-shell-do-frontend.md) (Aprovada) |
 | F-05 | Categorias | M1 | Não iniciada | — |
 | F-06 | Registrar lançamento | M1 | Não iniciada | — |
@@ -82,8 +82,7 @@ flowchart LR
     classDef iniciada fill:#fff3cd,stroke:#f0ad4e,color:#5c4400;
     classDef concluida fill:#d4edda,stroke:#28a745,color:#155724;
     class F04,F05,F06,F07,F08,F09,F10,F11,F12,F13,F14,F15 naoIniciada;
-    class F03 iniciada;
-    class F01,F02 concluida;
+    class F01,F02,F03 concluida;
 ```
 
 ---
@@ -104,7 +103,7 @@ Camadas: **BE** = backend · **FE** = frontend · **DOC** = documentação/infra
 | T-006 | `README.md` na raiz: pré-requisitos, preparação única da planilha (compartilhar com `client_email`, obter ID), configuração do `.env`, como rodar. | F-02 | DOC | T-004 | Concluída | 2026-09-29 | 2026-09-29 | `README.md` com pré-requisitos, preparação única da planilha (inclusive descobrir o `client_email` pelo próprio `/api/health`), `.env`, execução, testes, tabela dos 5 erros e seção de segurança. 6 testes guardam a documentação (52 no total). CA-F02.13 — falta só a leitura do usuário. |
 | T-007 | Domínio base: `enums.py`, `dinheiro.py` (tipo `Dinheiro`, divisão em parcelas RN-07), `datas.py` (`somar_meses`, `ajustar_dia`, iteração de meses `YYYY-MM`), `modelos.py`. Testes cobrindo RN-07 e fim de mês/ano bissexto. | F-03 | BE | T-002 | Concluída | 2026-09-30 | 2026-09-30 | `enums`, `dinheiro` (tipo `Dinheiro`, `valor_da_planilha`, `dividir_em_parcelas` em centavos inteiros), `datas` (inclui `data_da_parcela` a partir da compra) e `modelos` (linha válida de `03` §5, com regras entre campos, e `ListagemComAvisos[T]`); `NaoEncontrado` e `ErroValidacao` em `erros.py`. 431 testes novos (483 no total, maioria parametrização N=2..48); `ruff` limpo. CA-F03.1 a .8. |
 | T-008 | `infra/schema_planilha.py` (abas/colunas de `03` §5) e `infra/bootstrap.py` idempotente: cria abas e cabeçalhos, valida cabeçalhos, grava `versao_schema`, seed de categorias RN-15. Chamado no lifespan. Testes com planilha falsa. | F-03 | BE | T-005, T-007 | Concluída | 2026-09-30 | 2026-09-30 | `schema_planilha.py` (fonte única das 4 abas) e `bootstrap.py` em duas fases (valida tudo → escreve só o que falta; seed RN-15 em uma escrita). Roda a cada conexão estabelecida, injetado em `ConexaoPlanilha` (`03` §4.5). `SchemaPlanilhaInvalido` → 503 + linha no README. `tests/planilha_falsa.py` exige RAW/UNFORMATTED e argumentos nomeados. 44 testes novos (527 no total); `ruff` limpo. CA-F03.9..15, .24, .25; CA-15.1/15.2 com planilha falsa. |
-| T-009 | `infra/cache.py` (TTL + invalidação), `repositories/base.py` (Protocols), `repositories/planilha/` (leitura UNFORMATTED, validação de linhas → `linhas_ignoradas`, `append_rows` RAW em lote, atualizar/remover localizando por `id`), `repositories/memoria/`. Testes unitários + 1 teste `@integracao`. | F-03 | BE | T-008 | Não iniciada | | | |
+| T-009 | `infra/cache.py` (TTL + invalidação), `repositories/base.py` (Protocols), `repositories/planilha/` (leitura UNFORMATTED, validação de linhas → `linhas_ignoradas`, `append_rows` RAW em lote, atualizar/remover localizando por `id`), `repositories/memoria/`. Testes unitários + 1 teste `@integracao`. | F-03 | BE | T-008 | Concluída | 2026-09-30 | 2026-09-30 | `infra/cache.py` (TTL + geração por aba contra corrida leitura×escrita), `repositories/base.py` (`Repositorio[T]` + 3 Protocols), `planilha/aba.py` genérico (leitura única UNFORMATTED → validação pelo modelo, `linhas_ignoradas` + WARNING; `append_rows` RAW + `INSERT_ROWS`; atualizar/remover relendo a aba, remoção em um `batch_update` tudo-ou-nada), `memoria/` equivalente (teste dedicado nas 3 entidades), `ConexaoPlanilha.executar`. 58 testes novos (585 no total) + 1 `@integracao` pronto; `ruff` limpo. CA-16.3, CA-F03.16..23. |
 | T-010 | Shell: `app.ts` (classe `App`) com barra superior (botões "Registrar gasto"/"Registrar receita" ainda sem ação), navegação lateral, rotas lazy das 5 páginas (placeholders), `GraficoDirective` + `grafico.config.ts` em `shared/grafico/` (Chart.js direto, `02` §4) com teste unitário. | F-04 | FE | T-003 | Não iniciada | | | |
 | T-011 | Core: `core/models` base (`ErroApi`, enums), `erro.interceptor.ts`, `ConexaoStore` + banner de erro, `MesSelecionadoStore` sincronizado com `?mes=`, `DadosStore`, `utils/mes.ts`, componentes `seletor-mes`, `confirmacao-dialog`, `estado-vazio`, `carregando`. Testes unitários. | F-04 | FE | T-010 | Não iniciada | | | |
 | T-012 | `provideAppInitializer` chamando `GET /api/health`; banner com mensagem e "Tentar novamente" em falha (sem bloquear o app). | F-04 | FE | T-011, T-005 | Não iniciada | | | |
@@ -158,6 +157,9 @@ Camadas: **BE** = backend · **FE** = frontend · **DOC** = documentação/infra
 
 | Data | Tarefa/Feature | Mudança | Observação |
 |---|---|---|---|
+| 2026-09-30 | T-009 / F-03 | `Iniciada` → `Concluída` | Cache e repositórios. **F-03 concluída** (§2 e §3 atualizados). `02` → 1.8 (`INSERT_ROWS`, aplicado também ao bootstrap), `03` → 1.10 (`repositories/`, `executar`). `README.md` §4 explica como rodar `pytest -m integracao` (variável no terminal, planilha separada compartilhada). |
+| 2026-09-30 | T-009 | Sugestões anotadas | (1) **T-013**: montar em `api/deps.py` **uma** `CacheAbas(settings.cache_ttl_segundos)` compartilhada e os repositórios de planilha com `FontePlanilha = app.state.conexao`; os testes de API trocam por `repositories.memoria` via `dependency_overrides`. (2) **T-032**: "Recarregar" = `cache.invalidar_tudo()`. (3) O `conftest` usa `setdefault` para `GOOGLE_CREDENTIALS_PATH`: se essa variável existir no terminal, o `pytest` comum tentaria a credencial real no lifespan (falharia sem rede, sem dano, mas contraria a intenção). Avaliar forçar o caminho falso e manter o real só em `CREDENCIAL_DO_AMBIENTE` — fora do escopo de T-009. |
+| 2026-09-30 | T-009 | `Não iniciada` → `Iniciada` | Dependência T-008 `Concluída`. Última tarefa de F-03. |
 | 2026-09-30 | T-008 | `Iniciada` → `Concluída` | Bootstrap idempotente ligado à conexão. `03` → 1.9 (§4.5 bootstrap a cada conexão e colunas extras; §4.4 sem seed no serviço; `planilha_falsa.py` em §3). F-03 §3.4 e §10 refinados. `README.md` §5 ganhou a linha de `SCHEMA_PLANILHA_INVALIDO` (a guarda de T-006 cobrou) e o teste da guarda passou a ignorar o ponto final ao comparar mensagens. |
 | 2026-09-30 | T-008 | Sugestões anotadas | (1) **T-009**: reaproveitar `tests/planilha_falsa.py`, acrescentando só o que faltar (ex.: `delete_rows`/`batch_clear`), mantendo a exigência de RAW/UNFORMATTED. (2) Planilha nova do Google vem com uma aba padrão ("Página1"/"Sheet1"); o bootstrap a deixa intacta (borda 8). Avaliar em **T-031** se vale citar no README ou removê-la quando estiver vazia — hoje seria comportamento fora da spec. |
 | 2026-09-30 | T-008 | `Não iniciada` → `Iniciada` | Dependências T-005 e T-007 `Concluída`. A pendência de CA-F02.13 (planilha real) **não** bloqueia: os testes usam planilha falsa; só a conferência manual final depende dela. |

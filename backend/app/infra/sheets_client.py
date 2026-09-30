@@ -213,11 +213,13 @@ class ConexaoPlanilha:
         *,
         tentativas: int = 1,
         preparar: Callable[[gspread.Spreadsheet], None] | None = None,
+        dormir: Callable[[float], None] = time.sleep,
     ) -> None:
         self._caminho_credenciais = caminho_credenciais
         self._spreadsheet_id = spreadsheet_id
         self._tentativas = tentativas
         self._preparar = preparar
+        self._dormir = dormir
         self._planilha: PlanilhaAberta | None = None
         self._erro: ErroPlanilha | None = None
 
@@ -279,3 +281,16 @@ class ConexaoPlanilha:
         if self._planilha is not None:
             return self._planilha
         raise self._erro or PlanilhaIndisponivel()
+
+    def executar[T](self, operacao: Callable[[gspread.Spreadsheet], T]) -> T:
+        """Roda uma operação de repositório sobre a planilha aberta.
+
+        Sem conexão, levanta o erro guardado (503). Com conexão, aplica a
+        política de tentativas de `SPECS/02` §5.5 e traduz os erros do Google.
+        """
+        documento = self.exigir_planilha().documento
+        return executar_com_retry(
+            lambda: operacao(documento),
+            client_email=obter_client_email(self._caminho_credenciais),
+            dormir=self._dormir,
+        )

@@ -16,7 +16,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 import gspread
-from gspread.utils import ValueInputOption, ValueRenderOption, rowcol_to_a1
+from gspread.utils import InsertDataOption, ValueInputOption, ValueRenderOption, rowcol_to_a1
 
 from app.domain.datas import agora
 from app.domain.enums import TipoLancamento
@@ -122,6 +122,7 @@ def _aplicar(documento: gspread.Spreadsheet, plano: _Plano) -> None:
         plano.abas[ABA_CONFIG.nome].append_rows(
             values=[[CHAVE_VERSAO_SCHEMA, VERSAO_SCHEMA]],
             value_input_option=ValueInputOption.raw,
+            insert_data_option=InsertDataOption.insert_rows,
         )
         logger.info("versao_schema gravada: %d", VERSAO_SCHEMA)
 
@@ -133,6 +134,7 @@ def _aplicar(documento: gspread.Spreadsheet, plano: _Plano) -> None:
                 for id_, nome, tipo, cor in CATEGORIAS_PADRAO
             ],
             value_input_option=ValueInputOption.raw,
+            insert_data_option=InsertDataOption.insert_rows,
         )
         logger.info("Categorias padrão inseridas: %d", len(CATEGORIAS_PADRAO))
 

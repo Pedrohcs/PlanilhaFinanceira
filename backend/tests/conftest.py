@@ -2,6 +2,7 @@
 
 import os
 from collections.abc import Iterator
+from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
@@ -16,7 +17,13 @@ os.environ.setdefault("SPREADSHEET_ID", "planilha-de-teste")
 # (`../credentials.json`) é o arquivo real do usuário, e o lifespan tentaria
 # autenticar no Google a cada `pytest`. Assim a carga falha na hora, sem rede e
 # sem tocar na credencial (RNF-05). Quem precisa de conexão boa injeta um dublê.
+#
+# O caminho que existia antes é guardado para os testes `integracao`, os únicos
+# que falam com o Google de verdade. Só o **caminho**: o conteúdo nunca é lido
+# pelos testes — quem abre o arquivo é o `google-auth`, como no app.
+CREDENCIAL_DO_AMBIENTE = os.environ.get("GOOGLE_CREDENTIALS_PATH")
 os.environ.setdefault("GOOGLE_CREDENTIALS_PATH", "credencial-inexistente-de-teste.json")
+PASTA_BACKEND = Path(__file__).resolve().parents[1]
 
 
 def pytest_collection_modifyitems(items: list[pytest.Item]) -> None:
@@ -40,3 +47,13 @@ def cliente() -> Iterator[TestClient]:
 
     with TestClient(criar_app()) as cliente_http:
         yield cliente_http
+
+
+@pytest.fixture
+def credencial_real() -> Path:
+    """Caminho da credencial para os testes `integracao` (padrão do `.env.example`).
+
+    Relativo à pasta `backend/`, como no app (`SPECS/02` §6).
+    """
+    caminho = Path(CREDENCIAL_DO_AMBIENTE or "../credentials.json")
+    return caminho if caminho.is_absolute() else PASTA_BACKEND / caminho
