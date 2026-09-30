@@ -3,7 +3,7 @@
 | Campo | Valor |
 |---|---|
 | Documento | `SPECS/03-arquitetura.md` |
-| Versão | 1.7 |
+| Versão | 1.8 |
 | Atualizado em | 2026-09-30 |
 | Status | Aprovado para início |
 | Responde | **Como** o sistema se organiza: componentes, pastas, camadas, modelo de dados na planilha, contrato da API e fluxos |
@@ -446,6 +446,8 @@ Um único componente `lancamento-form.dialog` atende: novo gasto, nova receita, 
 
 `erro.interceptor.ts` converte respostas no formato §6.2 em `ErroApi` tipado; erros 503 atualizam o `ConexaoStore`; demais exibem snackbar com `mensagem`. Erros de validação (422) são entregues ao formulário para marcar campos (`detalhes[].campo`).
 
+Quando o **backend não responde** (status 0, ou 502/504 sem o envelope de §6.2 — o que o proxy do `ng serve` devolve com o backend desligado), o interceptor cria um `ErroApi` local com `codigo: "BACKEND_INDISPONIVEL"` e a mensagem "O servidor do aplicativo não está respondendo. Verifique se o backend está rodando e tente novamente.", tratado como os 503: vai para o `ConexaoStore` e para o banner. Esse código **só existe no frontend** e não faz parte do contrato da API (§6.2). Decidido em F-04 (Q3).
+
 ---
 
 ## Histórico de alterações
@@ -459,4 +461,5 @@ Um único componente `lancamento-form.dialog` atende: novo gasto, nova receita, 
 | 2026-09-29 | 1.5 | §3: `README.md` na raiz (T-006). |
 | 2026-09-29 | 1.6 | §6.2: código `SCHEMA_PLANILHA_INVALIDO` (decidido em F-03). |
 | 2026-09-30 | 1.7 | §3: funções reais de `domain/datas.py`. §4.2: explicitado que módulos de `domain` importam uns aos outros (T-007). |
+| 2026-09-30 | 1.8 | §8.4: código local `BACKEND_INDISPONIVEL` para backend fora do ar, no mesmo banner dos 503 (F-04, Q3). |
 | 2026-09-29 | 1.1 | Frontend em Angular 22 (zoneless); pasta `shared/grafico/` com diretiva Chart.js própria (§3, §8.2.1). |

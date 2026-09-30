@@ -40,7 +40,7 @@
 | F-01 | Fundação do repositório | M0 | Concluída | [`F-01-fundacao-do-repositorio.md`](features/F-01-fundacao-do-repositorio.md) (Aprovada) |
 | F-02 | Conexão com Google Sheets | M0 | Concluída | [`F-02-conexao-google-sheets.md`](features/F-02-conexao-google-sheets.md) (Aprovada) |
 | F-03 | Esquema e repositórios da planilha | M0 | Iniciada | [`F-03-esquema-e-repositorios.md`](features/F-03-esquema-e-repositorios.md) (Aprovada) |
-| F-04 | Shell do frontend | M0 | Não iniciada | — |
+| F-04 | Shell do frontend | M0 | Não iniciada | [`F-04-shell-do-frontend.md`](features/F-04-shell-do-frontend.md) (Aprovada) |
 | F-05 | Categorias | M1 | Não iniciada | — |
 | F-06 | Registrar lançamento | M1 | Não iniciada | — |
 | F-07 | Listagem mensal | M1 | Não iniciada | — |
@@ -158,6 +158,7 @@ Camadas: **BE** = backend · **FE** = frontend · **DOC** = documentação/infra
 
 | Data | Tarefa/Feature | Mudança | Observação |
 |---|---|---|---|
+| 2026-09-30 | F-04 | Spec da feature criada e **aprovada** | `features/F-04-shell-do-frontend.md`: Q1–Q7 respondidas (todas na opção recomendada). `03` → 1.8 (§8.4, código local `BACKEND_INDISPONIVEL`). Nenhum status de tarefa alterado. |
 | 2026-09-30 | T-007 | `Iniciada` → `Concluída` | Domínio base de F-03. `03` → 1.7 (funções de `datas.py`; `domain` importa o próprio `domain`, e `test_camadas` passou a checar também bibliotecas externas). Decisões em F-03 §10. |
 | 2026-09-30 | T-007 | Sugestões anotadas | (1) **T-009**: antes de `model_validate`, tirar espaços das células, trocar `""` por `None` e passar `valor` por `valor_da_planilha` — o modelo recusa `42.500000000000004` (mais de 2 casas); daí em diante a validação de linha é só `ValidationError` → ignorada. (2) **Serviços (T-013 em diante)**: `model_copy(update=...)` do Pydantic **não valida**; para editar, usar `Modelo.model_validate({**item.model_dump(), ...})`. |
 | 2026-09-30 | T-007 | `Não iniciada` → `Iniciada` | Dependência T-002 `Concluída`; spec F-03 `Aprovada`. F-03 passa a `Iniciada` (§2) e o mapa (§3) foi atualizado. |
