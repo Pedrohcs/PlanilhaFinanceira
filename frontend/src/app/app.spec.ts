@@ -1,4 +1,6 @@
 import { BreakpointObserver, BreakpointState } from '@angular/cdk/layout';
+import { HttpClient, provideHttpClient, withInterceptors } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MAT_DATE_LOCALE, provideNativeDateAdapter } from '@angular/material/core';
 import { MatSidenav } from '@angular/material/sidenav';
@@ -7,6 +9,10 @@ import { provideRouter, Router } from '@angular/router';
 import { BehaviorSubject, map, Observable } from 'rxjs';
 import { App, ITENS_DE_NAVEGACAO } from './app';
 import { routes } from './app.routes';
+import { Avisos } from './core/avisos/avisos';
+import { erroInterceptor } from './core/interceptors/erro.interceptor';
+import { MENSAGEM_BACKEND_INDISPONIVEL } from './core/models/erro-api';
+import { provideVerificacaoDeConexao } from './core/state/conexao.store';
 
 /** `BreakpointObserver` com a largura da janela controlada pelo teste. */
 class BreakpointsFalsos {
@@ -74,6 +80,9 @@ describe('App (shell)', () => {
         provideNativeDateAdapter(),
         { provide: MAT_DATE_LOCALE, useValue: 'pt-BR' },
         { provide: BreakpointObserver, useValue: breakpoints },
+        provideHttpClient(withInterceptors([erroInterceptor])),
+        provideHttpClientTesting(),
+        { provide: Avisos, useValue: { mostrar: vi.fn() } },
       ],
     });
   });
@@ -205,5 +214,65 @@ describe('App (shell)', () => {
 
     expect(menu().opened).toBe(true);
     expect(TestBed.inject(Router).url.split('?')[0]).toBe('/lancamentos');
+  });
+
+  function banner(): HTMLElement | null {
+    return elemento.querySelector<HTMLElement>('app-banner-conexao [role="alert"]');
+  }
+
+  it('backend_desligado_nao_trava_o_app__CA_F04_29', async () => {
+    TestBed.configureTestingModule({ providers: [provideVerificacaoDeConexao()] });
+    await criar(1280);
+    await navegar('/resumo');
+
+    // A abertura não esperou o health: shell e página já estão na tela.
+    expect(elemento.querySelector('h1')?.textContent).toBe('Resumo');
+    expect(botao('Registrar gasto')).not.toBeNull();
+    expect(banner()).toBeNull();
+
+    // O proxy do `ng serve` responde 504 sem o envelope (borda 13).
+    TestBed.inject(HttpTestingController)
+      .expectOne('/api/health')
+      .flush('Error occurred while trying to proxy', { status: 504, statusText: 'x' });
+    await new Promise((resolver) => setTimeout(resolver));
+    await fixture.whenStable();
+
+    expect(banner()?.textContent).toContain(MENSAGEM_BACKEND_INDISPONIVEL);
+    expect(banner()?.textContent).toContain('Tentar novamente');
+    await navegar('/categorias'); // continua navegável
+    expect(elemento.querySelector('h1')?.textContent).toBe('Categorias');
+  });
+
+  it('volta_do_banner_apos_503__borda_16', async () => {
+    TestBed.configureTestingModule({ providers: [provideVerificacaoDeConexao()] });
+    await criar(1280);
+    const controle = TestBed.inject(HttpTestingController);
+    controle.expectOne('/api/health').flush({
+      status: 'ok',
+      planilha: { ok: true, titulo: 'Planilha Financeira', erro: null },
+    });
+    await new Promise((resolver) => setTimeout(resolver));
+    await fixture.whenStable();
+    expect(banner()).toBeNull(); // CA-F04.24
+
+    // Uma chamada de negócio qualquer recebe 503 depois.
+    TestBed.inject(HttpClient)
+      .get('/api/lancamentos')
+      .subscribe({ error: () => undefined });
+    controle
+      .expectOne('/api/lancamentos')
+      .flush(
+        {
+          erro: {
+            codigo: 'PLANILHA_INDISPONIVEL',
+            mensagem: 'Google Sheets indisponível.',
+            detalhes: [],
+          },
+        },
+        { status: 503, statusText: 'x' },
+      );
+    await fixture.whenStable();
+
+    expect(banner()?.textContent).toContain('Google Sheets indisponível.');
   });
 });

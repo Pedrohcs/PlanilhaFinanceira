@@ -15,6 +15,7 @@ import { MatIconRegistry } from '@angular/material/icon';
 import { provideRouter } from '@angular/router';
 import { routes } from './app.routes';
 import { erroInterceptor } from './core/interceptors/erro.interceptor';
+import { provideVerificacaoDeConexao } from './core/state/conexao.store';
 
 // Dados de pt-BR para CurrencyPipe, DatePipe e DecimalPipe (RNF-03).
 registerLocaleData(localePt);
@@ -27,6 +28,8 @@ export const appConfig: ApplicationConfig = {
     provideZonelessChangeDetection(),
     provideRouter(routes),
     provideHttpClient(withFetch(), withInterceptors([erroInterceptor])),
+    // Health na abertura, sem segurar a 1ª renderização (SPECS/03 §7.2, F-04 Q4).
+    provideVerificacaoDeConexao(),
     { provide: LOCALE_ID, useValue: 'pt-BR' },
     { provide: DEFAULT_CURRENCY_CODE, useValue: 'BRL' },
     // Datepicker (seletor de mês, F-04 Q7; formulários em F-06), em pt-BR.

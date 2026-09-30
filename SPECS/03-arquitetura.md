@@ -3,7 +3,7 @@
 | Campo | Valor |
 |---|---|
 | Documento | `SPECS/03-arquitetura.md` |
-| Versão | 1.12 |
+| Versão | 1.13 |
 | Atualizado em | 2026-09-30 |
 | Status | Aprovado para início |
 | Responde | **Como** o sistema se organiza: componentes, pastas, camadas, modelo de dados na planilha, contrato da API e fluxos |
@@ -411,7 +411,7 @@ sequenceDiagram
         F->>F: banner persistente com a mensagem e botão "Tentar novamente"
     end
 ```
-Falha no inicializador **não impede** o app de abrir.
+Falha no inicializador **não impede** o app de abrir: o `provideAppInitializer` dispara o health e **não espera** a resposta (F-04 Q4), e o banner aparece quando e se ela vier com falha. "Tentar novamente" repete o `GET /api/health`; se a planilha voltar, o banner some, um aviso confirma e `DadosStore.versao` é incrementado (F-04 Q5).
 
 ---
 
@@ -453,7 +453,7 @@ Um único componente `lancamento-form.dialog` atende: novo gasto, nova receita, 
 
 `erro.interceptor.ts` converte respostas no formato §6.2 em `ErroApi` tipado; erros 503 atualizam o `ConexaoStore`; demais exibem snackbar com `mensagem` (via `core/avisos`, que carrega o `MatSnackBar` sob demanda para o overlay do CDK ficar fora do pacote inicial). Erros de validação (422) são entregues ao formulário para marcar campos (`detalhes[].campo`).
 
-Quando o **backend não responde** (status 0, ou 502/504 sem o envelope de §6.2 — o que o proxy do `ng serve` devolve com o backend desligado), o interceptor cria um `ErroApi` local com `codigo: "BACKEND_INDISPONIVEL"` e a mensagem "O servidor do aplicativo não está respondendo. Verifique se o backend está rodando e tente novamente.", tratado como os 503: vai para o `ConexaoStore` e para o banner. Esse código **só existe no frontend** e não faz parte do contrato da API (§6.2). Decidido em F-04 (Q3).
+Quando o **backend não responde** (status 0, ou 502/504 sem o envelope de §6.2 — com o backend desligado, o proxy do `ng serve` devolve **502** em `text/plain`, conferido em T-012), o interceptor cria um `ErroApi` local com `codigo: "BACKEND_INDISPONIVEL"` e a mensagem "O servidor do aplicativo não está respondendo. Verifique se o backend está rodando e tente novamente.", tratado como os 503: vai para o `ConexaoStore` e para o banner. Esse código **só existe no frontend** e não faz parte do contrato da API (§6.2). Decidido em F-04 (Q3).
 
 ---
 
@@ -473,4 +473,5 @@ Quando o **backend não responde** (status 0, ou 502/504 sem o envelope de §6.2
 | 2026-09-30 | 1.10 | §3 e §4.3: estrutura real de `repositories/` (`Repositorio[T]`, `planilha/aba.py`), `ConexaoPlanilha.executar`, `NaoEncontrado` em `atualizar`/`remover` e remoção tudo-ou-nada (T-009). |
 | 2026-09-30 | 1.11 | §3: páginas em `features/<nome>/<nome>.page.ts` e tokens de `shared/grafico/`. §8.1: layout por largura, título da aba e rota desconhecida (T-010, F-04). |
 | 2026-09-30 | 1.12 | §3: `core/avisos/`, stores reais de `core/state/`, `banner-conexao`. §8.4: snackbar sob demanda (T-011, F-04). |
+| 2026-09-30 | 1.13 | §7.2: inicializador sem espera e comportamento do "Tentar novamente". §8.4: status real do proxy com o backend desligado (502), conferido em T-012. |
 | 2026-09-29 | 1.1 | Frontend em Angular 22 (zoneless); pasta `shared/grafico/` com diretiva Chart.js própria (§3, §8.2.1). |

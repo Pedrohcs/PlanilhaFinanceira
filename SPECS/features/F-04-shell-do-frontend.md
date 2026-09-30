@@ -4,7 +4,7 @@
 |---|---|
 | Feature | F-04 |
 | Marco | M0 |
-| Status | Aprovada |
+| Status | Concluída |
 | Requisitos | REQ-01 (botão global, CA-01.1 parcial), REQ-04 (CA-04.1, CA-04.2), REQ-16 (CA-16.1, CA-16.2 no frontend), RNF-03, RNF-07 |
 | Regras | — (nenhuma RN de negócio; o frontend não calcula totais, `02` §4) |
 | Depende de | F-01 (**Concluída**), F-02 (**Concluída**) |
@@ -104,7 +104,7 @@ Implementa exatamente `02` §4:
    | 503 (qualquer código de `03` §6.2) | `ConexaoStore` passa a "falha" com a `mensagem` → banner. Sem snackbar. |
    | 422 `VALIDACAO` | Nada global: o erro chega ao formulário, que marca os campos por `detalhes[].campo`. Sem snackbar. |
    | Demais (404, 409, 500) | Snackbar com a `mensagem`, botão "Fechar", 5 s. |
-   | Sem resposta (status 0), ou 502/504 fora do formato §6.2 (backend desligado; é o que o proxy do `ng serve` devolve) | `ErroApi` **local** com `codigo: "BACKEND_INDISPONIVEL"` e a mensagem de §3.3.4 → `ConexaoStore` em `'falha'` → **mesmo banner**, com "Tentar novamente". Sem snackbar (Q3). |
+   | Sem resposta (status 0), ou 502/504 fora do formato §6.2 (backend desligado; o proxy do `ng serve` devolve **502** em `text/plain` — conferido em T-012) | `ErroApi` **local** com `codigo: "BACKEND_INDISPONIVEL"` e a mensagem de §3.3.4 → `ConexaoStore` em `'falha'` → **mesmo banner**, com "Tentar novamente". Sem snackbar (Q3). |
 | Qualquer outro status com corpo fora do formato §6.2 (ex.: 500 com HTML) | Snackbar com "Erro interno. Consulte o log do servidor." (a mesma mensagem genérica do backend, `03` §6.2). |
 3. A mensagem exibida é **a do backend, sem reescrita** — as de conexão foram escritas para isso (F-02 §7).
 4. **Código local `BACKEND_INDISPONIVEL`** (Q3) — só existe no frontend, nunca vem da API. Mensagem: "O servidor do aplicativo não está respondendo. Verifique se o backend está rodando e tente novamente." Registrado em `03` §8.4.
@@ -151,8 +151,8 @@ Implementa exatamente `02` §4:
 - [x] **CA-01.1** *(parcial — só a visibilidade)* Dado qualquer tela aberta, quando o usuário procura a ação, então "Registrar gasto" está visível. A abertura do formulário com a data de hoje é verificada em F-06 (T-016).
 - [x] **CA-04.1** Dado o aplicativo recém-aberto, quando o usuário entra no resumo ou na listagem, então o mês corrente é exibido.
 - [x] **CA-04.2** Dado um mês selecionado, quando o usuário troca entre resumo e listagem, então o mesmo mês permanece selecionado.
-- [ ] **CA-16.1** *(lado do frontend)* Dado que a planilha não foi compartilhada com o sistema, quando o app abre, então o banner mostra a mensagem do backend indicando que é preciso compartilhá-la, com o `client_email`.
-- [ ] **CA-16.2** *(lado do frontend)* Dado uma falha temporária, quando o usuário clica "Tentar novamente" e a planilha volta a responder, então o banner some sem reiniciar o aplicativo.
+- [x] **CA-16.1** *(lado do frontend)* Dado que a planilha não foi compartilhada com o sistema, quando o app abre, então o banner mostra a mensagem do backend indicando que é preciso compartilhá-la, com o `client_email`.
+- [x] **CA-16.2** *(lado do frontend)* Dado uma falha temporária, quando o usuário clica "Tentar novamente" e a planilha volta a responder, então o banner some sem reiniciar o aplicativo.
 
 **Refinados — shell e gráficos (T-010)**
 
@@ -186,13 +186,13 @@ Implementa exatamente `02` §4:
 
 **Refinados — abertura e reconexão (T-012)**
 
-- [ ] **CA-F04.23** Dado o app abrindo, quando o inicializador roda, então é feito exatamente **um** `GET /api/health`, e o inicializador termina **sem esperar** a resposta (Q4).
-- [ ] **CA-F04.24** Dado health `ok`, quando a resposta chega, então nenhum banner aparece.
-- [ ] **CA-F04.25** Dado health `degradado`, quando a resposta chega, então o banner mostra `planilha.erro.mensagem` e o botão "Tentar novamente", e as rotas continuam navegáveis.
-- [ ] **CA-F04.26** Dado o banner visível, quando o usuário clica "Tentar novamente", então sai **um** novo `GET /api/health`, o botão fica desabilitado ("Tentando…") até a resposta, e cliques durante a espera não geram outra requisição.
-- [ ] **CA-F04.27** Dado "Tentar novamente" com resposta `ok`, quando a resposta chega, então o banner some, o snackbar "Conexão com a planilha restabelecida." aparece e `DadosStore.versao` aumenta 1 (Q5).
-- [ ] **CA-F04.28** Dado "Tentar novamente" com nova falha, quando a resposta chega, então o banner continua, com a mensagem nova.
-- [ ] **CA-F04.29** Dado o backend desligado, quando o app abre, então as telas renderizam normalmente e o banner com a mensagem de `BACKEND_INDISPONIVEL` aparece — o app **não** fica em branco nem travado (`03` §7.2).
+- [x] **CA-F04.23** Dado o app abrindo, quando o inicializador roda, então é feito exatamente **um** `GET /api/health`, e o inicializador termina **sem esperar** a resposta (Q4).
+- [x] **CA-F04.24** Dado health `ok`, quando a resposta chega, então nenhum banner aparece.
+- [x] **CA-F04.25** Dado health `degradado`, quando a resposta chega, então o banner mostra `planilha.erro.mensagem` e o botão "Tentar novamente", e as rotas continuam navegáveis.
+- [x] **CA-F04.26** Dado o banner visível, quando o usuário clica "Tentar novamente", então sai **um** novo `GET /api/health`, o botão fica desabilitado ("Tentando…") até a resposta, e cliques durante a espera não geram outra requisição.
+- [x] **CA-F04.27** Dado "Tentar novamente" com resposta `ok`, quando a resposta chega, então o banner some, o snackbar "Conexão com a planilha restabelecida." aparece e `DadosStore.versao` aumenta 1 (Q5).
+- [x] **CA-F04.28** Dado "Tentar novamente" com nova falha, quando a resposta chega, então o banner continua, com a mensagem nova.
+- [x] **CA-F04.29** Dado o backend desligado, quando o app abre, então as telas renderizam normalmente e o banner com a mensagem de `BACKEND_INDISPONIVEL` aparece — o app **não** fica em branco nem travado (`03` §7.2).
 
 ---
 
@@ -213,7 +213,7 @@ Implementa exatamente `02` §4:
 | 11 | Janela com 360 px | Sem título na barra; ☰ + "+ Gasto" + "+ Receita"; sem rolagem horizontal. | RNF-07, Q1 |
 | 11a | Janela com exatamente 600 px / 960 px | 600 px já mostra o título e os rótulos completos; 960 px já fixa a navegação (limites inclusivos). | Q1 |
 | 12 | Health demora 10 s (Google lento) | App já navegável desde o início; o banner só aparece se a resposta vier com falha. | `03` §7.2, Q4 |
-| 13 | Backend desligado, `ng serve` ligado | O proxy responde 504 sem o envelope → `BACKEND_INDISPONIVEL` → banner. | CA-F04.17 |
+| 13 | Backend desligado, `ng serve` ligado | O proxy responde **502** em `text/plain`, sem o envelope (conferido em T-012; 504 tratado igual) → `BACKEND_INDISPONIVEL` → banner. | CA-F04.17 |
 | 14 | Dois 503 quase simultâneos | Um só banner, com a mensagem do último. | §3.6.6 |
 | 15 | Duplo clique em "Tentar novamente" | Uma só requisição. | CA-F04.26 |
 | 16 | Health volta `ok`, mas logo depois um endpoint dá 503 | O banner volta com a nova mensagem. | §3.3 |
@@ -361,7 +361,8 @@ Ordem obrigatória: T-010 → T-011 → T-012 (`05` §4; T-012 também depende d
 | Item ativo do menu compara só o caminho (`routerLinkActiveOptions` com query ignorada) (T-011). | Com a comparação padrão, `/resumo?mes=…` no link não ficaria ativo com a URL `/resumo` (app recém-aberto) e o `aria-current` sumiria (CA-F04.4). | Não |
 | Datepicker ancorado num `<input>` invisível sob o botão do mês (T-011). | O `mat-datepicker` exige um input associado para abrir e para marcar o mês atual; invisível, fora do Tab e com `aria-hidden`, ele só posiciona o calendário. | Não |
 | `confirmar(dialog, dados)` devolve `Observable<boolean>` (T-011). | Esc e clique fora fecham o diálogo do Material sem valor; a função converte isso em `false` (CA-F04.21). | Não |
-| Escolha de mês pelo `mat-datepicker` em visão multi-year → mês (Q7). | Componente oficial, acessível e em pt-BR; o adaptador de datas já seria necessário em F-06. | Não |
+| Escolha de mês pelo `mat-datepicker` em visão multi-year → mês (Q7). |
+| `verificar()` também põe no banner um erro do próprio health que não seja de conexão (T-012). | O interceptor já cuida do backend fora do ar; um 500 do health (que não deveria acontecer) viraria só um aviso passageiro e a falha na abertura passaria despercebida. | Não | Componente oficial, acessível e em pt-BR; o adaptador de datas já seria necessário em F-06. | Não |
 
 ---
 
@@ -388,3 +389,4 @@ Ordem obrigatória: T-010 → T-011 → T-012 (`05` §4; T-012 também depende d
 | 2026-09-30 | T-010 concluída: CA-01.1 (parcial), CA-F04.1 a .6 e .8 a .12 verificados por teste; CA-F04.7 e .30 com a parte automatizável verificada e a conferência visual pendente. Três decisões de implementação em §10. `03` → 1.11. |
 | 2026-09-30 | §9 ajustado ao planejar T-011: o banner passa a ser exibido já em T-011 (só a mensagem), porque CA-F04.14/.17 dependem dele; T-012 fica com `verificar()`, o botão "Tentar novamente" e a verificação na abertura. |
 | 2026-09-30 | T-011 concluída: CA-04.1, CA-04.2, CA-F04.13 a .22 e .31 verificados por teste. Quatro decisões de implementação em §10 (snackbar sob demanda, item ativo sem query, input do datepicker, `confirmar`). `03` → 1.12. |
+| 2026-09-30 | T-012 concluída → **feature Concluída**. CA-16.1, CA-16.2 e CA-F04.23 a .29 verificados por teste; contrato conferido de ponta a ponta com `ng serve` + uvicorn (config falsa): health `degradado`, envelope de erro e **502** do proxy com o backend desligado (bordas 13 e §3.3 corrigidas de 504 para 502). Pendentes só as conferências visuais de CA-F04.7 e .30. `03` → 1.13. |

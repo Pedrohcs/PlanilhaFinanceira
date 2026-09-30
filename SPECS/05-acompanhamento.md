@@ -22,14 +22,14 @@
 
 | Marco | Features | Tarefas | Não iniciada | Iniciada | Concluída | Progresso |
 |---|---|---|---|---|---|---|
-| M0 · Fundação | F-01..F-04 | 12 | 1 | 0 | 11 | 92% |
+| M0 · Fundação | F-01..F-04 | 12 | 0 | 0 | 12 | 100% |
 | M1 · Registro e consulta | F-05..F-08 | 8 | 8 | 0 | 0 | 0% |
 | M2 · Visão financeira | F-09..F-11 | 5 | 5 | 0 | 0 | 0% |
 | M3 · Automação | F-12..F-13 | 5 | 5 | 0 | 0 | 0% |
 | M4 · Acabamento | F-14..F-15 | 5 | 5 | 0 | 0 | 0% |
-| **Total** | **15** | **35** | **24** | **0** | **11** | **31%** |
+| **Total** | **15** | **35** | **23** | **0** | **12** | **34%** |
 
-**F-01, F-02 e F-03 concluídas.** Próxima tarefa disponível: **T-012** (FE, última de F-04 — plano do usuário: fechar F-04 antes de especificar F-05). Também desbloqueada: T-013 (BE, F-05, sem spec). Pendente com o usuário, sem bloquear: rodar `pytest -m integracao` na planilha de teste e seguir o README com a planilha real (CA-F02.13, CA-15.1/15.2).
+**M0 concluído (F-01 a F-04).** Próximo passo: `/especificar-feature F-05` (Categorias, caminho crítico) — depois T-013 (BE) e T-014 (FE). Pendentes com o usuário, sem bloquear: seguir o README com a planilha real (CA-F02.13), rodar `pytest -m integracao` (CA-15.1/15.2) e a conferência visual do shell (CA-F04.7, CA-F04.30).
 
 ---
 
@@ -40,7 +40,7 @@
 | F-01 | Fundação do repositório | M0 | Concluída | [`F-01-fundacao-do-repositorio.md`](features/F-01-fundacao-do-repositorio.md) (Aprovada) |
 | F-02 | Conexão com Google Sheets | M0 | Concluída | [`F-02-conexao-google-sheets.md`](features/F-02-conexao-google-sheets.md) (Aprovada) |
 | F-03 | Esquema e repositórios da planilha | M0 | Concluída | [`F-03-esquema-e-repositorios.md`](features/F-03-esquema-e-repositorios.md) (Concluída) |
-| F-04 | Shell do frontend | M0 | Iniciada | [`F-04-shell-do-frontend.md`](features/F-04-shell-do-frontend.md) (Aprovada) |
+| F-04 | Shell do frontend | M0 | Concluída | [`F-04-shell-do-frontend.md`](features/F-04-shell-do-frontend.md) (Concluída) |
 | F-05 | Categorias | M1 | Não iniciada | — |
 | F-06 | Registrar lançamento | M1 | Não iniciada | — |
 | F-07 | Listagem mensal | M1 | Não iniciada | — |
@@ -82,8 +82,7 @@ flowchart LR
     classDef iniciada fill:#fff3cd,stroke:#f0ad4e,color:#5c4400;
     classDef concluida fill:#d4edda,stroke:#28a745,color:#155724;
     class F05,F06,F07,F08,F09,F10,F11,F12,F13,F14,F15 naoIniciada;
-    class F04 iniciada;
-    class F01,F02,F03 concluida;
+    class F01,F02,F03,F04 concluida;
 ```
 
 ---
@@ -107,7 +106,7 @@ Camadas: **BE** = backend · **FE** = frontend · **DOC** = documentação/infra
 | T-009 | `infra/cache.py` (TTL + invalidação), `repositories/base.py` (Protocols), `repositories/planilha/` (leitura UNFORMATTED, validação de linhas → `linhas_ignoradas`, `append_rows` RAW em lote, atualizar/remover localizando por `id`), `repositories/memoria/`. Testes unitários + 1 teste `@integracao`. | F-03 | BE | T-008 | Concluída | 2026-09-30 | 2026-09-30 | `infra/cache.py` (TTL + geração por aba contra corrida leitura×escrita), `repositories/base.py` (`Repositorio[T]` + 3 Protocols), `planilha/aba.py` genérico (leitura única UNFORMATTED → validação pelo modelo, `linhas_ignoradas` + WARNING; `append_rows` RAW + `INSERT_ROWS`; atualizar/remover relendo a aba, remoção em um `batch_update` tudo-ou-nada), `memoria/` equivalente (teste dedicado nas 3 entidades), `ConexaoPlanilha.executar`. 58 testes novos (585 no total) + 1 `@integracao` pronto; `ruff` limpo. CA-16.3, CA-F03.16..23. |
 | T-010 | Shell: `app.ts` (classe `App`) com barra superior (botões "Registrar gasto"/"Registrar receita" ainda sem ação), navegação lateral, rotas lazy das 5 páginas (placeholders), `GraficoDirective` + `grafico.config.ts` em `shared/grafico/` (Chart.js direto, `02` §4) com teste unitário. | F-04 | FE | T-003 | Concluída | 2026-09-30 | 2026-09-30 | Shell (`app.ts`) com barra, navegação lateral e layout por largura via `BreakpointObserver` (Q1); 5 páginas provisórias lazy com título de aba; `/` e rota desconhecida → `/resumo`; `GraficoDirective` + `grafico.config.ts` (registro enxuto, pt-BR, reais, cores do tema e troca claro/escuro). Página de boas-vindas do CLI removida. 16 testes novos (20 no total); build 437 kB inicial, 5 chunks lazy, sem avisos. CA-F04.1..6, .8..12 (+ .7 e .30 com conferência visual pendente). |
 | T-011 | Core: `core/models` base (`ErroApi`, enums), `erro.interceptor.ts`, `ConexaoStore` + banner de erro, `MesSelecionadoStore` sincronizado com `?mes=`, `DadosStore`, `utils/mes.ts`, componentes `seletor-mes`, `confirmacao-dialog`, `estado-vazio`, `carregando`. Testes unitários. | F-04 | FE | T-010 | Concluída | 2026-09-30 | 2026-09-30 | `core/`: `ErroApi`/`RespostaHealth`/enums, `HealthApi`, `erro.interceptor` (503 e backend fora → banner; 422 → formulário; demais → aviso), `ConexaoStore`, `MesSelecionadoStore` (lê/corrige `?mes=` com `replaceUrl`), `DadosStore`, `utils/mes.ts`, `avisos` (snackbar sob demanda). `shared/components/`: seletor de mês com datepicker ano→mês, `confirmacao-dialog`, `estado-vazio`, `carregando`, `banner-conexao` (no shell). Links de Resumo/Lançamentos levam `?mes=`. 38 testes novos (58 no total); build 463 kB inicial, sem avisos. CA-04.1, CA-04.2, CA-F04.13..22, .31. |
-| T-012 | `provideAppInitializer` chamando `GET /api/health`; banner com mensagem e "Tentar novamente" em falha (sem bloquear o app). | F-04 | FE | T-011, T-005 | Não iniciada | | | |
+| T-012 | `provideAppInitializer` chamando `GET /api/health`; banner com mensagem e "Tentar novamente" em falha (sem bloquear o app). | F-04 | FE | T-011, T-005 | Concluída | 2026-09-30 | 2026-09-30 | `ConexaoStore.verificar()` (uma requisição por vez, `tentando`), `tentarNovamente()` (aviso de 4 s + `DadosStore.incrementar()` quando volta), `provideVerificacaoDeConexao()` sem espera; botão "Tentar novamente"/"Tentando…" no banner. 11 testes novos (69 no total); build 465 kB. Contrato conferido com `ng serve` + uvicorn de config falsa (proxy dá 502 com backend desligado). CA-16.1, CA-16.2, CA-F04.23..29. |
 
 ### M1 · Registro e consulta
 
@@ -158,6 +157,9 @@ Camadas: **BE** = backend · **FE** = frontend · **DOC** = documentação/infra
 
 | Data | Tarefa/Feature | Mudança | Observação |
 |---|---|---|---|
+| 2026-09-30 | M0 | **Marco concluído** | F-01 a F-04 concluídas (12/12 tarefas). Verificações que dependem do usuário e não bloqueiam M1: CA-F02.13 (README com a planilha real), CA-15.1/15.2 (`pytest -m integracao` na planilha de teste), CA-F04.7 e CA-F04.30 (conferência visual). |
+| 2026-09-30 | T-012 / F-04 | `Iniciada` → `Concluída` | Verificação na abertura e "Tentar novamente". **F-04 concluída** (§2 e §3 atualizados). `03` → 1.13 (§7.2; §8.4 com o 502 real do proxy). Conferência sem navegador: uvicorn com credencial inexistente e ID falso (nenhum acesso ao Google) + `ng serve` na porta 4299; ambos encerrados ao fim. |
+| 2026-09-30 | T-012 | `Não iniciada` → `Iniciada` | Dependências T-011 e T-005 `Concluída`. Última tarefa de F-04. |
 | 2026-09-30 | T-011 | `Iniciada` → `Concluída` | Erros, estado e componentes comuns. `03` → 1.12 (`core/avisos`, stores, banner; snackbar sob demanda em §8.4). F-04 §9 ajustado (banner já em T-011) e quatro decisões em §10. |
 | 2026-09-30 | T-011 | Sugestão anotada | Nos testes, o Material precisa de `MATERIAL_ANIMATIONS` com `animationsDisabled` (o jsdom não dispara fim de animação CSS) e, para foco em diálogos, de um `InteractivityChecker` que trate elementos como visíveis. Se mais specs precisarem (T-014, T-016, T-020), vale um helper comum em `src/testing/`. A conferência visual pendente de T-010 passa a incluir o seletor de mês (posição do calendário sob o botão). |
 | 2026-09-30 | T-011 | `Não iniciada` → `Iniciada` | Dependência T-010 `Concluída`. |
