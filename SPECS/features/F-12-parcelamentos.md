@@ -4,7 +4,7 @@
 |---|---|
 | Feature | F-12 |
 | Marco | M3 |
-| Status | Aprovada |
+| Status | Concluída |
 | Requisitos | REQ-07 (CA-07.1 a CA-07.3), REQ-08 (CA-08.1, CA-08.2) |
 | Regras | RN-07, RN-08; RN-01..06 (mesmas do registro), RN-03, RN-14 |
 | Depende de | F-08 (**Concluída**) |
@@ -90,7 +90,7 @@ Registrar uma compra parcelada uma vez só — informando o valor total e o núm
 - [x] **CA-07.2** Dado uma compra em 31/01 em 2 parcelas, então a 2ª parcela fica em 28/02 (ou 29/02 em ano bissexto).
 - [x] **CA-07.3** Dado parcelas criadas, quando listadas, então cada uma exibe "k/N" e a descrição original. *(T-026: a API devolve `parcela_numero`/`parcela_total` e a descrição original; o "k/N" na tela já existia desde F-07.)*
 - [x] **CA-08.1** Dado uma parcela, quando o usuário a edita, então apenas aquela parcela muda.
-- [~] **CA-08.2** Dado uma parcela, quando o usuário escolhe "excluir parcelamento inteiro" e confirma, então todas as parcelas daquele parcelamento são removidas, em qualquer mês. *(T-026: remoção na API; a ação na tela é T-027.)*
+- [x] **CA-08.2** Dado uma parcela, quando o usuário escolhe "excluir parcelamento inteiro" e confirma, então todas as parcelas daquele parcelamento são removidas, em qualquer mês. *(T-026: remoção na API; T-027: ação "Excluir parcelamento inteiro" na listagem.)*
 
 **Refinados — backend (T-026)**
 
@@ -106,12 +106,12 @@ Registrar uma compra parcelada uma vez só — informando o valor total e o núm
 
 **Refinados — frontend (T-027)**
 
-- [ ] **CA-F12.10** Dado "Registrar gasto", então a caixa "Compra parcelada" aparece; em "Registrar receita" e em "Editar …" ela não aparece.
-- [ ] **CA-F12.11** Dado "Compra parcelada" marcada, então os rótulos viram "Valor total" e "Data da compra", aparece "Nº de parcelas" e, com 1 e 49, o erro "Informe de 2 a 48 parcelas."; desmarcada, o campo some e o registro volta a ser comum.
-- [ ] **CA-F12.12** Dado R$ 1.000,00 em 3, então a prévia é "3× — 1ª de R$ 333,34 e 2× de R$ 333,33"; dado R$ 1.000,00 em 10, "10× de R$ 100,00"; dado R$ 0,05 em 10, erro "10 parcelas exigem um valor total de no mínimo R$ 0,10." e nenhuma prévia (Q1).
-- [ ] **CA-F12.13** Dado o parcelado salvo, então sai **um** `POST /api/parcelamentos` com o corpo de §3.3.4, o diálogo fecha, o aviso é "Compra parcelada registrada: 3 parcelas, de janeiro de 2026 a março de 2026." e `DadosStore.versao` aumenta; num 422/409, o diálogo fica aberto com os dados e o campo certo marcado (Q3).
-- [ ] **CA-F12.14** Dado a listagem, então o menu ⋮ de uma parcela tem "Excluir parcelamento inteiro" e o de um lançamento comum não (Q2).
-- [ ] **CA-F12.15** Dado "Excluir parcelamento inteiro", então a confirmação mostra o texto de §3.4.3; "Cancelar" não envia nada; confirmar envia o `DELETE /api/parcelamentos/{id}`, avisa "Parcelamento excluído." e a lista recarrega; num 404 a lista recarrega; num 503 não.
+- [x] **CA-F12.10** Dado "Registrar gasto", então a caixa "Compra parcelada" aparece; em "Registrar receita" e em "Editar …" ela não aparece.
+- [x] **CA-F12.11** Dado "Compra parcelada" marcada, então os rótulos viram "Valor total" e "Data da compra", aparece "Nº de parcelas" e, com 1 e 49, o erro "Informe de 2 a 48 parcelas."; desmarcada, o campo some e o registro volta a ser comum.
+- [x] **CA-F12.12** Dado R$ 1.000,00 em 3, então a prévia é "3× — 1ª de R$ 333,34 e 2× de R$ 333,33"; dado R$ 1.000,00 em 10, "10× de R$ 100,00"; dado R$ 0,05 em 10, erro "10 parcelas exigem um valor total de no mínimo R$ 0,10." e nenhuma prévia (Q1).
+- [x] **CA-F12.13** Dado o parcelado salvo, então sai **um** `POST /api/parcelamentos` com o corpo de §3.3.4, o diálogo fecha, o aviso é "Compra parcelada registrada: 3 parcelas, de janeiro de 2026 a março de 2026." e `DadosStore.versao` aumenta; num 422/409, o diálogo fica aberto com os dados e o campo certo marcado (Q3).
+- [x] **CA-F12.14** Dado a listagem, então o menu ⋮ de uma parcela tem "Excluir parcelamento inteiro" e o de um lançamento comum não (Q2).
+- [x] **CA-F12.15** Dado "Excluir parcelamento inteiro", então a confirmação mostra o texto de §3.4.3; "Cancelar" não envia nada; confirmar envia o `DELETE /api/parcelamentos/{id}`, avisa "Parcelamento excluído." e a lista recarrega; num 404 a lista recarrega; num 503 não.
 
 ---
 
@@ -201,15 +201,16 @@ Erros de campo em `detalhes[].campo`: `valor_total`, `parcelas`, `categoria_id`,
 | `…::test_editar_parcela_so_ela__CA_08_1` | API BE | CA-08.1, borda 11 |
 | `…::test_post_delete_503__CA_F12_9` | API BE | CA-F12.9, borda 10 |
 | `tests/api/test_app.py` (guarda de rotas) | API BE | `POST`/`DELETE /api/parcelamentos` |
-| `frontend/…/core/utils/parcelas.spec.ts` › `previa__RN_07` | unitário FE | CA-F12.12 |
-| `…/core/api/parcelamentos.api.spec.ts` › `criar_e_excluir` | unitário FE | §6 |
-| `…/features/lancamentos/lancamento-form.dialog.spec.ts` › `parcelada_so_em_gasto_novo__CA_F12_10` | unitário FE | CA-F12.10 |
+| `frontend/…/core/utils/parcelas.spec.ts` › `previa__RN_07` e `textos__CA_F12_12` | unitário FE | CA-F12.12 |
+| `…/core/api/parcelamentos.api.spec.ts` › `criar_e_excluir__F12` | unitário FE | §6 |
+| `…/features/lancamentos/lancamento-form.dialog.spec.ts` › `parcelada_so_em_gasto_novo__CA_F12_10` e `parcelada_nao_aparece_na_edicao__CA_F12_10` | unitário FE | CA-F12.10 |
 | `…` › `campos_e_validacao_da_parcelada__CA_F12_11` | unitário FE | CA-F12.11, borda 18 |
 | `…` › `previa_das_parcelas__CA_F12_12` | unitário FE | CA-F12.12 |
-| `…` › `salva_parcelada__CA_F12_13` e `erro_marca_campo_da_parcelada` | unitário FE | CA-F12.13 |
+| `…` › `salva_parcelada__CA_F12_13` e `erro_marca_campo_da_parcelada__CA_F12_13` | unitário FE | CA-F12.13, borda 17 |
+| `…` › `desmarcada_envia_lancamento_comum__borda_18` | unitário FE | borda 18 |
 | `…/features/lancamentos/abrir-lancamento.spec.ts` › `aviso_da_parcelada__CA_F12_13` | unitário FE | CA-F12.13 |
 | `…/features/lancamentos/lancamentos.page.spec.ts` › `menu_da_parcela__CA_F12_14` | unitário FE | CA-F12.14 |
-| `…` › `excluir_parcelamento_inteiro__CA_08_2` (inclui cancelar, 404 e 503) | unitário FE | CA-08.2, CA-F12.15 |
+| `…` › `excluir_parcelamento_inteiro__CA_08_2` (inclui cancelar) e `excluir_parcelamento_404_e_503__CA_F12_15` | unitário FE | CA-08.2, CA-F12.15 |
 
 ---
 
@@ -238,6 +239,8 @@ Ordem: T-026 → T-027 (T-027 também depende de T-020, concluída).
 | Prévia dos valores calculada no frontend só para exibição (Q1). | Resposta imediata enquanto digita, sem endpoint novo; não é total (a regra de `03` §4.2 continua valendo), e o valor gravado é sempre o do backend. | Não |
 | "Excluir parcelamento inteiro" como item do menu ⋮ das parcelas (Q2). | Ação destrutiva maior separada da exclusão de uma parcela; mesmo padrão de F-08 Q2. | Não |
 | Aviso com o intervalo de meses (Q3). | Deixa claro que foram criados lançamentos em meses futuros, fora da lista aberta. | Não |
+| O diálogo fecha com um `Lancamento` ou um `Parcelamento` (guarda `ehParcelamento`); a mensagem do mínimo por parcela é a mesma da API e vem pronta no erro do campo Valor total, revalidado quando o nº de parcelas ou a caixa mudam (T-027). | Um só diálogo (`03` §8.3) e um só texto para o mesmo erro, venha do cliente ou do servidor. | Não |
+| Aceito +1,7 kB no pacote inicial (475,94 kB) trazidos pelo `mat-checkbox`: o `_MatInternalFormField` vem de `@angular/material/core`, já usado no pacote inicial (T-027). | Mesmo caso do `MatOption` (F-06); dentro do orçamento de 500 kB; trocar por checkbox nativo quebraria o padrão visual. | Não |
 | "Compra parcelada" só em gasto novo; parcela editada como lançamento comum. | `03` §8.3; CA-08.1. | Não |
 
 ---
@@ -259,3 +262,4 @@ Ordem: T-026 → T-027 (T-027 também depende de T-020, concluída).
 | 2026-09-30 | Criação (`/especificar-feature F-12`). Status `Rascunho` — 3 questões em aberto. |
 | 2026-09-30 | Q1–Q3 respondidas (todas na opção recomendada) → status **Aprovada**. Três decisões em §10. |
 | 2026-09-30 | T-026 concluída: CA-07.1, CA-07.2, CA-07.3, CA-08.1 e CA-F12.1 a .9 verificados por teste (inclui planilha reordenada e linha apagada à mão com cache "quente"); CA-08.2 com a parte da API. Duas decisões em §10. |
+| 2026-09-30 | T-027 concluída → feature **Concluída**. CA-08.2 e CA-F12.10 a .15 verificados por teste; plano de testes com os nomes finais. Duas decisões em §10. |

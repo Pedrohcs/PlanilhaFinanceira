@@ -75,4 +75,18 @@ describe('abrirLancamento', () => {
     expect(avisos.mostrar).toHaveBeenCalledTimes(2);
     expect(TestBed.inject(DadosStore).versao()).toBe(2);
   });
+
+  it('aviso_da_parcelada__CA_F12_13', async () => {
+    resultado = {
+      parcelamento_id: 'par',
+      lancamentos: [{ data: '2026-01-15' }, { data: '2026-02-15' }, { data: '2026-03-15' }],
+    };
+
+    await abrirLancamento(TestBed.inject(Injector), 'GASTO');
+
+    expect(avisos.mostrar).toHaveBeenCalledWith(
+      'Compra parcelada registrada: 3 parcelas, de janeiro de 2026 a março de 2026.',
+    );
+    expect(TestBed.inject(DadosStore).versao()).toBe(1);
+  });
 });

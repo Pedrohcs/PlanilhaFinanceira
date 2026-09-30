@@ -17,8 +17,9 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatSelectModule } from '@angular/material/select';
 import { ActivatedRoute, Router } from '@angular/router';
-import { firstValueFrom, map } from 'rxjs';
+import { firstValueFrom, map, Observable } from 'rxjs';
 import { LancamentosApi } from '../../core/api/lancamentos.api';
+import { ParcelamentosApi } from '../../core/api/parcelamentos.api';
 import { Avisos } from '../../core/avisos/avisos';
 import { ErroApi } from '../../core/models/erro-api';
 import { Categoria } from '../../core/models/categoria';
@@ -51,7 +52,8 @@ interface GrupoDeCategorias {
  * Lançamentos do mês (REQ-03, REQ-04; F-07 §3.2). Filtros na URL (Q1), totais
  * prontos do backend (o frontend não soma — `02` §4), tabela ou cartões
  * conforme a largura (Q3). Recarrega quando mês, filtro ou `versao` mudam.
- * Cada lançamento tem o menu ⋮ com Editar e Excluir (F-08 §3.3).
+ * Cada lançamento tem o menu ⋮ com Editar e Excluir (F-08 §3.3); as parcelas, também
+ * "Excluir parcelamento inteiro" (F-12 Q2).
  */
 @Component({
   selector: 'app-lancamentos-page',
@@ -78,6 +80,7 @@ export class LancamentosPage {
   private readonly categoriasStore = inject(CategoriasStore);
   private readonly formasStore = inject(FormasPagamentoStore);
   private readonly breakpoints = inject(BreakpointObserver);
+  private readonly parcelamentosApi = inject(ParcelamentosApi);
   private readonly dialog = inject(MatDialog);
   private readonly avisos = inject(Avisos);
   private readonly injetor = inject(Injector);
@@ -219,20 +222,46 @@ export class LancamentosPage {
         textoConfirmar: 'Excluir',
       }),
     );
-    if (!confirmado) {
-      return;
+    if (confirmado) {
+      await this.excluirERecarregar(this.api.excluir(lancamento.id), 'Lançamento excluído.');
     }
+  }
+
+  /**
+   * "Excluir parcelamento inteiro" (REQ-08, F-12 Q2): todas as parcelas
+   * restantes, em qualquer mês (CA-08.2).
+   */
+  protected async excluirParcelamento(parcela: Lancamento): Promise<void> {
+    const confirmado = await firstValueFrom(
+      confirmar(this.dialog, {
+        titulo: 'Excluir parcelamento inteiro?',
+        mensagem: `"${parcela.descricao}" — todas as parcelas restantes deste parcelamento em ${parcela.parcela_total}×, em todos os meses, serão excluídas.`,
+        textoConfirmar: 'Excluir parcelas',
+      }),
+    );
+    if (confirmado) {
+      await this.excluirERecarregar(
+        this.parcelamentosApi.excluir(parcela.parcelamento_id!),
+        'Parcelamento excluído.',
+      );
+    }
+  }
+
+  /**
+   * Sucesso → aviso e recarga (CA-06.2). A mensagem de erro já veio do
+   * interceptor. No 404 já não existe: recarrega (F-08 §3.3.4). Planilha
+   * fora: a lista continua (F-08 borda 12).
+   */
+  private async excluirERecarregar(exclusao: Observable<void>, sucesso: string): Promise<void> {
     try {
-      await firstValueFrom(this.api.excluir(lancamento.id));
-      void this.avisos.mostrar('Lançamento excluído.');
+      await firstValueFrom(exclusao, { defaultValue: undefined });
+      void this.avisos.mostrar(sucesso);
     } catch (erro: unknown) {
-      // A mensagem já veio do interceptor. No 404 o lançamento já não existe:
-      // recarrega (F-08 §3.3.4). Planilha fora: a lista continua (borda 12).
       if ((erro as ErroApi).status !== 404) {
         return;
       }
     }
-    this.dados.incrementar(); // lista e totais recalculados (CA-06.2)
+    this.dados.incrementar();
   }
 
   protected mesPorExtenso(mes: string): string {

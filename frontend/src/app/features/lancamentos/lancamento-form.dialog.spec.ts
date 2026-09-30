@@ -9,7 +9,7 @@ import { firstValueFrom } from 'rxjs';
 import { umaCategoria } from '../../../testing/categorias';
 import { provideMaterialParaTestes } from '../../../testing/material';
 import { Avisos } from '../../core/avisos/avisos';
-import { erroInterceptor } from '../../core/interceptors/erro.interceptor';
+import { erroInterceptor, TRATAMENTO_LOCAL } from '../../core/interceptors/erro.interceptor';
 import { Categoria } from '../../core/models/categoria';
 import { MENSAGEM_BACKEND_INDISPONIVEL } from '../../core/models/erro-api';
 import { Lancamento } from '../../core/models/lancamento';
@@ -169,6 +169,25 @@ describe('LancamentoFormDialog', () => {
   async function salvar(): Promise<void> {
     container().querySelector<HTMLButtonElement>('button[type="submit"]')!.click();
     await estabilizar();
+  }
+
+  function caixaParcelada(): HTMLInputElement | null {
+    return container().querySelector<HTMLInputElement>('mat-checkbox.parcelada input');
+  }
+
+  async function alternarParcelada(): Promise<void> {
+    caixaParcelada()!.click();
+    await estabilizar();
+  }
+
+  function rotulos(): string[] {
+    return Array.from(container().querySelectorAll('mat-label')).map(
+      (rotulo) => rotulo.textContent?.trim() ?? '',
+    );
+  }
+
+  function previa(): string {
+    return (container().querySelector('.previa')?.textContent ?? '').replace(/\u00a0/g, ' ').trim();
   }
 
   function erros(): string[] {
@@ -508,5 +527,133 @@ describe('LancamentoFormDialog', () => {
     expect(await resultado).toBeUndefined();
     expect(TestBed.inject(DadosStore).versao()).toBe(1); // a lista recarrega
     controle.expectOne(URL_CATEGORIAS).flush(CATEGORIAS); // e as categorias também
+  });
+
+  it('parcelada_so_em_gasto_novo__CA_F12_10', async () => {
+    await abrir('RECEITA');
+
+    expect(caixaParcelada()).toBeNull();
+  });
+
+  it('parcelada_nao_aparece_na_edicao__CA_F12_10', async () => {
+    await abrirEdicao();
+
+    expect(caixaParcelada()).toBeNull();
+  });
+
+  it('campos_e_validacao_da_parcelada__CA_F12_11', async () => {
+    await abrir('GASTO');
+    expect(caixaParcelada()?.closest('mat-checkbox')?.textContent?.trim()).toBe('Compra parcelada');
+    expect(rotulos().slice(0, 2)).toEqual(['Valor', 'Data']);
+    expect(container().querySelector('[formcontrolname="parcelas"]')).toBeNull();
+
+    await alternarParcelada();
+
+    expect(rotulos().slice(0, 3)).toEqual(['Valor total', 'Data da compra', 'Nº de parcelas']);
+    expect(campo('parcelas').value).toBe(''); // vazio de início
+    for (const invalido of ['1', '49']) {
+      await digitar('parcelas', invalido);
+      expect(erros()).toContain('Informe de 2 a 48 parcelas.');
+    }
+    await digitar('parcelas', '3');
+    expect(erros()).not.toContain('Informe de 2 a 48 parcelas.');
+
+    await alternarParcelada(); // desmarcada: o campo some (borda 18)
+    expect(container().querySelector('[formcontrolname="parcelas"]')).toBeNull();
+    expect(rotulos().slice(0, 2)).toEqual(['Valor', 'Data']);
+  });
+
+  it('previa_das_parcelas__CA_F12_12', async () => {
+    await abrir('GASTO');
+    await alternarParcelada();
+
+    await digitar('valor', '1000');
+    expect(previa()).toBe(''); // sem nº de parcelas ainda
+    await digitar('parcelas', '3');
+    expect(previa()).toBe('3× — 1ª de R$ 333,34 e 2× de R$ 333,33');
+    await digitar('parcelas', '10');
+    expect(previa()).toBe('10× de R$ 100,00');
+
+    await digitar('valor', '0,05');
+    expect(previa()).toBe('');
+    expect(erros()).toContain('10 parcelas exigem um valor total de no mínimo R$ 0,10.');
+    await digitar('parcelas', '5'); // mudar as parcelas revalida o total
+    expect(erros()).not.toContain('10 parcelas exigem um valor total de no mínimo R$ 0,10.');
+    expect(previa()).toBe('5× de R$ 0,01');
+  });
+
+  it('salva_parcelada__CA_F12_13', async () => {
+    await abrir('GASTO');
+    await preencherGasto();
+    await alternarParcelada();
+    await digitar('parcelas', '3');
+
+    await salvar();
+    container().querySelector<HTMLButtonElement>('button[type="submit"]')!.click(); // duplo clique
+    await estabilizar();
+
+    const post = controle.expectOne('/api/parcelamentos'); // um só (borda 17)
+    expect(post.request.method).toBe('POST');
+    expect(post.request.body).toEqual({
+      data: dataParaIso(hoje()),
+      descricao: 'Almoço',
+      valor_total: 1234.5,
+      parcelas: 3,
+      categoria_id: 'mercado',
+      forma_pagamento: 'PIX',
+      observacao: null,
+    });
+    expect(post.request.context.get(TRATAMENTO_LOCAL)).toBe(true);
+    controle.expectNone('/api/lancamentos');
+    post.flush({ parcelamento_id: 'par', lancamentos: [] });
+    await estabilizar();
+
+    expect(await resultado).toEqual({ parcelamento_id: 'par', lancamentos: [] });
+    expect(dialog.openDialogs).toHaveLength(0);
+  });
+
+  it('erro_marca_campo_da_parcelada__CA_F12_13', async () => {
+    await abrir('GASTO');
+    await preencherGasto();
+    await alternarParcelada();
+    await digitar('parcelas', '3');
+    await salvar();
+
+    controle.expectOne('/api/parcelamentos').flush(
+      {
+        erro: {
+          codigo: 'VALIDACAO',
+          mensagem: 'Dados inválidos.',
+          detalhes: [
+            { campo: 'valor_total', mensagem: 'total recusado' },
+            { campo: 'parcelas', mensagem: 'parcelas recusadas' },
+          ],
+        },
+      },
+      { status: 422, statusText: 'x' },
+    );
+    await estabilizar();
+
+    expect(dialog.openDialogs).toHaveLength(1);
+    expect(erros()).toEqual(['total recusado', 'parcelas recusadas']);
+    expect(campo('parcelas').value).toBe('3');
+    expect(avisos.mostrar).not.toHaveBeenCalled();
+  });
+
+  it('desmarcada_envia_lancamento_comum__borda_18', async () => {
+    await abrir('GASTO');
+    await preencherGasto();
+    await alternarParcelada();
+    await digitar('parcelas', '3');
+    await alternarParcelada();
+
+    await salvar();
+
+    controle.expectNone('/api/parcelamentos');
+    const post = controle.expectOne('/api/lancamentos');
+    expect(post.request.body.valor).toBe(1234.5);
+    expect(post.request.body.parcelas).toBeUndefined();
+    post.flush({ ...post.request.body, id: 'novo' });
+    await estabilizar();
   });
 });

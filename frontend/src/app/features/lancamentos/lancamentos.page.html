@@ -217,5 +217,11 @@
       <mat-icon>delete</mat-icon>
       Excluir
     </button>
+    @if (item.parcelamento_id) {
+      <button mat-menu-item type="button" (click)="excluirParcelamento(item)">
+        <mat-icon>delete_sweep</mat-icon>
+        Excluir parcelamento inteiro
+      </button>
+    }
   </mat-menu>
 </ng-template>

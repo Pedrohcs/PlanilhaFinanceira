@@ -3,7 +3,7 @@
 | Campo | Valor |
 |---|---|
 | Documento | `SPECS/03-arquitetura.md` |
-| Versão | 1.24 |
+| Versão | 1.25 |
 | Atualizado em | 2026-09-30 |
 | Status | Aprovado para início |
 | Responde | **Como** o sistema se organiza: componentes, pastas, camadas, modelo de dados na planilha, contrato da API e fluxos |
@@ -98,12 +98,13 @@ PlanilhaFinanceira/
         ├── core/
         │   ├── models/        # interfaces espelhando o JSON da API
         │   ├── api/           # um serviço HTTP por recurso (health, categorias, lancamentos,
-        │   │                  # formas-pagamento)
+        │   │                  # parcelamentos, formas-pagamento)
         │   ├── state/         # mes-selecionado, conexao, dados, categorias, formas-pagamento .store.ts
         │   ├── interceptors/  # erro.interceptor.ts
         │   ├── avisos/        # avisos.ts: snackbar carregado sob demanda
         │   └── utils/         # mes.ts (YYYY-MM), valor.ts (valor pt-BR), adaptador-de-data.ts
-        │                      # (DateAdapter que entende dd/mm/aaaa)
+        │                      # (DateAdapter que entende dd/mm/aaaa), parcelas.ts (prévia de
+        │                      # RN-07 só para exibir, F-12 Q1)
         ├── shared/
         │   ├── components/    # seletor-mes, confirmacao-dialog, estado-vazio, carregando,
         │   │                  # banner-conexao
@@ -501,4 +502,5 @@ Quando o **backend não responde** (status 0, ou 502/504 sem o envelope de §6.2
 | 2026-09-30 | 1.22 | §3: página de lançamentos e `filtros.ts` (T-018). |
 | 2026-09-30 | 1.23 | §3: edição no `lancamento-form.dialog`, `editarLancamento` e menu ⋮ da listagem (T-020). |
 | 2026-09-30 | 1.24 | §3 e §4.4: `parcelamento_service` e validação compartilhada com `lancamento_service` (T-026). |
+| 2026-09-30 | 1.25 | §3: `parcelamentos.api` e `utils/parcelas.ts` no frontend (T-027). |
 | 2026-09-29 | 1.1 | Frontend em Angular 22 (zoneless); pasta `shared/grafico/` com diretiva Chart.js própria (§3, §8.2.1). |

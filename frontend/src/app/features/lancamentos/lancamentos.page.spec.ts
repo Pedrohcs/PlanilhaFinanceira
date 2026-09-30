@@ -186,13 +186,16 @@ describe('LancamentosPage', () => {
   }
 
   /** Abre o menu ⋮ do lançamento e escolhe a ação. */
-  async function acao(descricao: string, texto: 'Editar' | 'Excluir'): Promise<void> {
+  async function acao(
+    descricao: string,
+    texto: 'Editar' | 'Excluir' | 'Excluir parcelamento inteiro',
+  ): Promise<void> {
     pagina()
       .querySelector<HTMLButtonElement>(`button[aria-label="Ações de ${descricao}"]`)!
       .click();
     await estabilizar();
     const item = Array.from(document.querySelectorAll<HTMLElement>('.mat-mdc-menu-item')).find(
-      (opcao) => opcao.textContent?.includes(texto),
+      (opcao) => opcao.textContent?.replace(/^\s*\w+\s*/, '').trim() === texto,
     )!;
     item.click();
     await estabilizar();
@@ -202,11 +205,27 @@ describe('LancamentosPage', () => {
     return document.querySelector<HTMLElement>('app-confirmacao-dialog');
   }
 
-  async function responderConfirmacao(texto: 'Cancelar' | 'Excluir'): Promise<void> {
+  async function responderConfirmacao(
+    texto: 'Cancelar' | 'Excluir' | 'Excluir parcelas',
+  ): Promise<void> {
     Array.from(confirmacao()!.querySelectorAll<HTMLButtonElement>('button'))
       .find((botao) => botao.textContent?.trim() === texto)!
       .click();
     await estabilizar();
+  }
+
+  /** Textos do menu ⋮ do lançamento, sem o nome do ícone; fecha o menu em seguida. */
+  async function itensDoMenu(descricao: string): Promise<string[]> {
+    pagina()
+      .querySelector<HTMLButtonElement>(`button[aria-label="Ações de ${descricao}"]`)!
+      .click();
+    await estabilizar();
+    const itens = Array.from(document.querySelectorAll('.mat-mdc-menu-item')).map(
+      (item) => item.textContent?.replace(/^\s*\w+\s*/, '').trim() ?? '',
+    );
+    document.querySelector<HTMLElement>('.cdk-overlay-backdrop')!.click();
+    await estabilizar();
+    return itens;
   }
 
   function semNbsp(texto: string | null | undefined): string {
@@ -510,5 +529,69 @@ describe('LancamentosPage', () => {
     );
     expect(dialogo.querySelector('.vinculo')?.textContent?.trim()).toBe('Parcela 3/10');
     controle.expectNone('/api/lancamentos/p3'); // nada salvo só por abrir
+  });
+
+  it('menu_da_parcela__CA_F12_14', async () => {
+    await abrir('/lancamentos?mes=2026-09');
+
+    expect(await itensDoMenu('Geladeira')).toEqual([
+      'Editar',
+      'Excluir',
+      'Excluir parcelamento inteiro',
+    ]);
+    expect(await itensDoMenu('Compra g1')).toEqual(['Editar', 'Excluir']);
+  });
+
+  it('excluir_parcelamento_inteiro__CA_08_2', async () => {
+    await abrir('/lancamentos?mes=2026-09');
+
+    await acao('Geladeira', 'Excluir parcelamento inteiro');
+    expect(confirmacao()?.querySelector('h2')?.textContent).toBe('Excluir parcelamento inteiro?');
+    expect(semNbsp(confirmacao()?.querySelector('mat-dialog-content')?.textContent)).toBe(
+      '"Geladeira" — todas as parcelas restantes deste parcelamento em 10×, ' +
+        'em todos os meses, serão excluídas.',
+    );
+    await responderConfirmacao('Cancelar');
+    controle.expectNone('/api/parcelamentos/par'); // cancelar não exclui
+
+    await acao('Geladeira', 'Excluir parcelamento inteiro');
+    await responderConfirmacao('Excluir parcelas');
+    const del = controle.expectOne('/api/parcelamentos/par');
+    expect(del.request.method).toBe('DELETE');
+    del.flush(null, { status: 204, statusText: 'No Content' });
+    await estabilizar();
+
+    expect(avisos.mostrar).toHaveBeenCalledWith('Parcelamento excluído.');
+    await responder(lista([ITENS[0], ITENS[2]])); // lista e totais recalculados
+    expect(linhas()).toHaveLength(2);
+  });
+
+  it('excluir_parcelamento_404_e_503__CA_F12_15', async () => {
+    await abrir('/lancamentos?mes=2026-09');
+
+    await acao('Geladeira', 'Excluir parcelamento inteiro');
+    await responderConfirmacao('Excluir parcelas');
+    controle
+      .expectOne('/api/parcelamentos/par')
+      .flush(
+        { erro: { codigo: 'PLANILHA_INDISPONIVEL', mensagem: 'Indisponível.', detalhes: [] } },
+        { status: 503, statusText: 'x' },
+      );
+    await estabilizar();
+    expect(pedidosDeLista()).toHaveLength(0); // planilha fora: a lista continua
+
+    await acao('Geladeira', 'Excluir parcelamento inteiro');
+    await responderConfirmacao('Excluir parcelas');
+    controle.expectOne('/api/parcelamentos/par').flush(
+      {
+        erro: { codigo: 'NAO_ENCONTRADO', mensagem: 'Parcelamento não encontrado.', detalhes: [] },
+      },
+      { status: 404, statusText: 'x' },
+    );
+    await estabilizar();
+
+    expect(avisos.mostrar).toHaveBeenCalledWith('Parcelamento não encontrado.');
+    expect(avisos.mostrar).not.toHaveBeenCalledWith('Parcelamento excluído.');
+    await responder(lista([ITENS[0], ITENS[2]])); // já não existia: a lista se atualiza
   });
 });

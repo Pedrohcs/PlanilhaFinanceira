@@ -4,9 +4,14 @@ import { firstValueFrom } from 'rxjs';
 import { Avisos } from '../../core/avisos/avisos';
 import { TipoLancamento } from '../../core/models/enums';
 import { Lancamento } from '../../core/models/lancamento';
+import { ehParcelamento, Parcelamento } from '../../core/models/parcelamento';
 import { DadosStore } from '../../core/state/dados.store';
 import { mesPorExtenso } from '../../core/utils/mes';
-import { DadosFormularioLancamento, LancamentoFormDialog } from './lancamento-form.dialog';
+import {
+  DadosFormularioLancamento,
+  LancamentoFormDialog,
+  ResultadoDoFormulario,
+} from './lancamento-form.dialog';
 
 const TAMANHO_DO_DIALOGO = { width: '36rem', maxWidth: 'calc(100vw - 32px)' };
 
@@ -20,12 +25,26 @@ const TAMANHO_DO_DIALOGO = { width: '36rem', maxWidth: 'calc(100vw - 32px)' };
  */
 export async function abrirLancamento(injetor: Injector, tipo: TipoLancamento): Promise<void> {
   const salvo = await abrirDialogo(injetor, { tipo });
-  if (salvo) {
-    void injetor
-      .get(Avisos)
-      .mostrar(tipo === 'GASTO' ? 'Gasto registrado.' : 'Receita registrada.');
-    injetor.get(DadosStore).incrementar();
+  if (!salvo) {
+    return;
   }
+  const mensagem = ehParcelamento(salvo)
+    ? avisoDoParcelamento(salvo)
+    : tipo === 'GASTO'
+      ? 'Gasto registrado.'
+      : 'Receita registrada.';
+  void injetor.get(Avisos).mostrar(mensagem);
+  injetor.get(DadosStore).incrementar();
+}
+
+/**
+ * "Compra parcelada registrada: 10 parcelas, de setembro de 2026 a junho de
+ * 2027." — meses da 1ª e da última parcela da resposta (F-12 Q3).
+ */
+function avisoDoParcelamento({ lancamentos }: Parcelamento): string {
+  const primeiro = mesPorExtenso(lancamentos[0].data.slice(0, 7));
+  const ultimo = mesPorExtenso(lancamentos[lancamentos.length - 1].data.slice(0, 7));
+  return `Compra parcelada registrada: ${lancamentos.length} parcelas, de ${primeiro} a ${ultimo}.`;
 }
 
 /**
@@ -34,7 +53,7 @@ export async function abrirLancamento(injetor: Injector, tipo: TipoLancamento): 
  */
 export async function editarLancamento(injetor: Injector, lancamento: Lancamento): Promise<void> {
   const salvo = await abrirDialogo(injetor, { tipo: lancamento.tipo, lancamento });
-  if (!salvo) {
+  if (!salvo || ehParcelamento(salvo)) {
     return;
   }
   const mesAntigo = lancamento.data.slice(0, 7);
@@ -50,12 +69,15 @@ export async function editarLancamento(injetor: Injector, lancamento: Lancamento
 function abrirDialogo(
   injetor: Injector,
   dados: DadosFormularioLancamento,
-): Promise<Lancamento | undefined> {
+): Promise<ResultadoDoFormulario | undefined> {
   const referencia = injetor
     .get(MatDialog)
-    .open<LancamentoFormDialog, DadosFormularioLancamento, Lancamento>(LancamentoFormDialog, {
-      data: dados,
-      ...TAMANHO_DO_DIALOGO,
-    });
+    .open<LancamentoFormDialog, DadosFormularioLancamento, ResultadoDoFormulario>(
+      LancamentoFormDialog,
+      {
+        data: dados,
+        ...TAMANHO_DO_DIALOGO,
+      },
+    );
   return firstValueFrom(referencia.afterClosed());
 }

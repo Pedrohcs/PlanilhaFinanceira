@@ -2,7 +2,8 @@
  * Valor digitado em pt-BR (F-06 §3.2.1, Q2).
  *
  * Só interpreta e formata: nenhuma conta com dinheiro acontece no frontend
- * (RN-16) — o número vai para a API como foi digitado.
+ * (RN-16) — o número vai para a API como foi digitado. A única exceção é a
+ * prévia das parcelas (`parcelas.ts`, F-12 Q1), só para exibir.
  */
 
 export type ResultadoValor = { valor: number } | { erro: 'vazio' | 'casas' | 'invalido' };

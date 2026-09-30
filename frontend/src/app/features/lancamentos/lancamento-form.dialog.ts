@@ -9,6 +9,7 @@ import {
   Validators,
 } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -17,6 +18,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { LancamentosApi } from '../../core/api/lancamentos.api';
+import { ParcelamentosApi } from '../../core/api/parcelamentos.api';
 import { Avisos } from '../../core/avisos/avisos';
 import { FormaPagamento, TipoLancamento } from '../../core/models/enums';
 import { ErroApi } from '../../core/models/erro-api';
@@ -26,10 +28,18 @@ import {
   LancamentoEntrada,
   OBSERVACAO_MAXIMO,
 } from '../../core/models/lancamento';
+import { Parcelamento, ParcelamentoEntrada } from '../../core/models/parcelamento';
 import { CategoriasStore } from '../../core/state/categorias.store';
 import { DadosStore } from '../../core/state/dados.store';
 import { FormasPagamentoStore } from '../../core/state/formas-pagamento.store';
 import { dataParaIso, hoje, isoParaData } from '../../core/utils/adaptador-de-data';
+import {
+  mensagemDoMinimo,
+  PARCELAS_MAX,
+  PARCELAS_MIN,
+  previaDasParcelas,
+  textoDaPrevia,
+} from '../../core/utils/parcelas';
 import { formatarValor, interpretarValor } from '../../core/utils/valor';
 
 export interface DadosFormularioLancamento {
@@ -38,7 +48,11 @@ export interface DadosFormularioLancamento {
   lancamento?: Lancamento;
 }
 
-type Campo = 'data' | 'valor' | 'descricao' | 'categoria_id' | 'forma_pagamento' | 'observacao';
+/** O que o diálogo devolve ao fechar salvando: o parcelamento só na compra parcelada. */
+export type ResultadoDoFormulario = Lancamento | Parcelamento;
+
+type Campo =
+  'data' | 'valor' | 'descricao' | 'categoria_id' | 'forma_pagamento' | 'observacao' | 'parcelas';
 const CAMPOS: readonly Campo[] = [
   'data',
   'valor',
@@ -46,7 +60,11 @@ const CAMPOS: readonly Campo[] = [
   'categoria_id',
   'forma_pagamento',
   'observacao',
+  'parcelas',
 ];
+/** Campos da API com outro nome no formulário (F-12 §3.3.4). */
+const CAMPO_DA_API: Record<string, Campo> = { valor_total: 'valor' };
+const MENSAGEM_PARCELAS = `Informe de ${PARCELAS_MIN} a ${PARCELAS_MAX} parcelas.`;
 
 /** Mensagens de F-06 §3.2, por campo e por tipo de erro. */
 const MENSAGENS: Record<Campo, Record<string, string>> = {
@@ -67,6 +85,12 @@ const MENSAGENS: Record<Campo, Record<string, string>> = {
   categoria_id: { required: 'Escolha uma categoria.' },
   forma_pagamento: { required: 'Escolha a forma de pagamento.' },
   observacao: { longo: `Use no máximo ${OBSERVACAO_MAXIMO} caracteres.` },
+  parcelas: {
+    required: MENSAGEM_PARCELAS,
+    min: MENSAGEM_PARCELAS,
+    max: MENSAGEM_PARCELAS,
+    pattern: MENSAGEM_PARCELAS,
+  },
 };
 
 function valorValido(controle: AbstractControl<string>): ValidationErrors | null {
@@ -75,6 +99,26 @@ function valorValido(controle: AbstractControl<string>): ValidationErrors | null
     return { [resultado.erro === 'vazio' ? 'obrigatorio' : resultado.erro]: true };
   }
   return resultado.valor > 0 ? null : { zero: true };
+}
+
+/**
+ * Na compra parcelada, o total tem de dar R$ 0,01 por parcela (RN-07). A
+ * mensagem já vem pronta no erro, com N e o mínimo (F-12 §3.3.2).
+ */
+function minimoDasParcelas(controle: AbstractControl<string>): ValidationErrors | null {
+  const parcelada = controle.parent?.get('parcelada')?.value as boolean | undefined;
+  const parcelas = controle.parent?.get('parcelas');
+  if (!parcelada || !parcelas?.valid || !parcelas.value) {
+    return null;
+  }
+  const resultado = interpretarValor(controle.value ?? '');
+  if (!('valor' in resultado) || resultado.valor <= 0) {
+    return null;
+  }
+  const previa = previaDasParcelas(resultado.valor, parcelas.value as number);
+  return 'minimo' in previa
+    ? { minimoParcelas: mensagemDoMinimo(parcelas.value as number, previa.minimo) }
+    : null;
 }
 
 function textoAparado(maximo: number, obrigatorio: boolean): ValidatorFn {
@@ -90,7 +134,8 @@ function textoAparado(maximo: number, obrigatorio: boolean): ValidatorFn {
 /**
  * Registrar gasto/receita (REQ-01, REQ-02; F-06 §3) e editar lançamento
  * (REQ-05; F-08 §3.4). No registro o tipo vem do botão que abriu o diálogo;
- * na edição ele é um campo (REQ-05: "qualquer campo"). O próprio diálogo
+ * na edição ele é um campo (REQ-05: "qualquer campo"). No gasto novo, a
+ * "Compra parcelada" envia para `/api/parcelamentos` (F-12 §3.3). O próprio diálogo
  * salva, para continuar aberto com tudo o que foi digitado quando algo falha
  * (CA-01.4).
  */
@@ -101,6 +146,7 @@ function textoAparado(maximo: number, obrigatorio: boolean): ValidatorFn {
     ReactiveFormsModule,
     RouterLink,
     MatButtonModule,
+    MatCheckboxModule,
     MatDatepickerModule,
     MatDialogModule,
     MatFormFieldModule,
@@ -130,7 +176,7 @@ function textoAparado(maximo: number, obrigatorio: boolean): ValidatorFn {
         }
 
         <mat-form-field>
-          <mat-label>Valor</mat-label>
+          <mat-label>{{ parcelada() ? 'Valor total' : 'Valor' }}</mat-label>
           <span matTextPrefix>R$&nbsp;</span>
           <input
             matInput
@@ -146,7 +192,7 @@ function textoAparado(maximo: number, obrigatorio: boolean): ValidatorFn {
         </mat-form-field>
 
         <mat-form-field>
-          <mat-label>Data</mat-label>
+          <mat-label>{{ parcelada() ? 'Data da compra' : 'Data' }}</mat-label>
           <input matInput [matDatepicker]="calendario" formControlName="data" />
           <mat-datepicker-toggle matIconSuffix [for]="calendario" />
           <mat-datepicker #calendario />
@@ -155,6 +201,29 @@ function textoAparado(maximo: number, obrigatorio: boolean): ValidatorFn {
             <mat-error>{{ texto }}</mat-error>
           }
         </mat-form-field>
+
+        @if (podeParcelar) {
+          <mat-checkbox class="largo parcelada" formControlName="parcelada">
+            Compra parcelada
+          </mat-checkbox>
+          @if (parcelada()) {
+            <mat-form-field>
+              <mat-label>Nº de parcelas</mat-label>
+              <input
+                matInput
+                type="number"
+                inputmode="numeric"
+                formControlName="parcelas"
+                [min]="parcelasMin"
+                [max]="parcelasMax"
+              />
+              @if (mensagem('parcelas'); as texto) {
+                <mat-error>{{ texto }}</mat-error>
+              }
+            </mat-form-field>
+            <p class="previa" aria-live="polite">{{ previa() }}</p>
+          }
+        }
 
         <mat-form-field class="largo">
           <mat-label>Descrição</mat-label>
@@ -241,6 +310,14 @@ function textoAparado(maximo: number, obrigatorio: boolean): ValidatorFn {
       margin: 0 0 8px;
       color: var(--mat-sys-on-surface-variant);
     }
+    .parcelada {
+      margin: 0 0 8px;
+    }
+    .previa {
+      align-self: center;
+      margin: 0 0 20px;
+      color: var(--mat-sys-on-surface-variant);
+    }
     .sem-categorias {
       margin: 0 0 16px;
       color: var(--mat-sys-error);
@@ -250,8 +327,9 @@ function textoAparado(maximo: number, obrigatorio: boolean): ValidatorFn {
 export class LancamentoFormDialog {
   private readonly dados = inject<DadosFormularioLancamento>(MAT_DIALOG_DATA);
   private readonly referencia =
-    inject<MatDialogRef<LancamentoFormDialog, Lancamento>>(MatDialogRef);
+    inject<MatDialogRef<LancamentoFormDialog, ResultadoDoFormulario>>(MatDialogRef);
   private readonly api = inject(LancamentosApi);
+  private readonly parcelamentosApi = inject(ParcelamentosApi);
   private readonly avisos = inject(Avisos);
   private readonly categoriasStore = inject(CategoriasStore);
   private readonly formasStore = inject(FormasPagamentoStore);
@@ -263,6 +341,10 @@ export class LancamentoFormDialog {
   protected readonly descricaoMaximo = DESCRICAO_MAXIMO;
   protected readonly observacaoMaximo = OBSERVACAO_MAXIMO;
   protected readonly salvando = signal(false);
+  /** "Compra parcelada" só em gasto novo (`03` §8.3; F-12 §3.3.1). */
+  protected readonly podeParcelar = !this.edicao && this.dados.tipo === 'GASTO';
+  protected readonly parcelasMin = PARCELAS_MIN;
+  protected readonly parcelasMax = PARCELAS_MAX;
 
   protected readonly formulario = this.construirFormulario(this.edicao?.tipo ?? this.dados.tipo);
 
@@ -302,6 +384,25 @@ export class LancamentoFormDialog {
   protected readonly tamanhoDescricao = computed(() => this.descricao().trim().length);
   protected readonly tamanhoObservacao = computed(() => this.observacao().trim().length);
 
+  protected readonly parcelada = toSignal(this.formulario.controls.parcelada.valueChanges, {
+    initialValue: false,
+  });
+  private readonly mudancas = toSignal(this.formulario.valueChanges);
+  /** Prévia só para exibir (F-12 Q1); vazia enquanto valor ou parcelas forem inválidos. */
+  protected readonly previa = computed(() => {
+    this.mudancas();
+    const { valor, parcelas } = this.formulario.controls;
+    if (!this.parcelada() || !parcelas.valid || !parcelas.value || valor.invalid) {
+      return '';
+    }
+    const resultado = interpretarValor(valor.value);
+    if (!('valor' in resultado)) {
+      return '';
+    }
+    const previa = previaDasParcelas(resultado.valor, parcelas.value);
+    return 'minimo' in previa ? '' : textoDaPrevia(parcelas.value, previa);
+  });
+
   constructor() {
     void this.categoriasStore.garantirCarga();
     void this.formasStore.garantirCarga();
@@ -310,6 +411,18 @@ export class LancamentoFormDialog {
     this.formulario.controls.tipo.valueChanges
       .pipe(takeUntilDestroyed())
       .subscribe((tipo) => this.aoTrocarTipo(tipo));
+    const { parcelada, parcelas, valor } = this.formulario.controls;
+    parcelada.valueChanges.pipe(takeUntilDestroyed()).subscribe((marcada) => {
+      if (marcada) {
+        parcelas.enable();
+      } else {
+        parcelas.disable(); // sai da validação e do corpo (F-12 §3.3.3)
+      }
+      valor.updateValueAndValidity();
+    });
+    parcelas.valueChanges
+      .pipe(takeUntilDestroyed())
+      .subscribe(() => valor.updateValueAndValidity());
   }
 
   /** Mensagem do primeiro erro do campo, só depois de tocado (ou vinda do backend). */
@@ -320,6 +433,9 @@ export class LancamentoFormDialog {
     }
     if (controle.errors['servidor']) {
       return controle.errors['servidor'] as string;
+    }
+    if (controle.errors['minimoParcelas']) {
+      return controle.errors['minimoParcelas'] as string;
     }
     const chave = Object.keys(controle.errors).find((erro) => MENSAGENS[campo][erro]);
     return chave ? MENSAGENS[campo][chave] : null;
@@ -345,12 +461,13 @@ export class LancamentoFormDialog {
     }
     this.salvando.set(true);
     try {
-      const entrada = this.montarEntrada();
       const opcoes = { tratamentoLocal: true };
-      const salvo = await firstValueFrom(
-        this.edicao
-          ? this.api.atualizar(this.edicao.id, entrada, opcoes)
-          : this.api.criar(entrada, opcoes),
+      const salvo = await firstValueFrom<ResultadoDoFormulario>(
+        this.parcelada()
+          ? this.parcelamentosApi.criar(this.montarParcelamento(), opcoes)
+          : this.edicao
+            ? this.api.atualizar(this.edicao.id, this.montarEntrada(), opcoes)
+            : this.api.criar(this.montarEntrada(), opcoes),
       );
       this.referencia.close(salvo);
     } catch (erro: unknown) {
@@ -374,6 +491,12 @@ export class LancamentoFormDialog {
     };
   }
 
+  /** Corpo de `POST /api/parcelamentos` (F-12 §3.3.4): sem `tipo`, `valor` vira `valor_total`. */
+  private montarParcelamento(): ParcelamentoEntrada {
+    const { tipo: _tipo, valor, ...resto } = this.montarEntrada();
+    return { ...resto, valor_total: valor, parcelas: this.formulario.controls.parcelas.value! };
+  }
+
   /**
    * 422 → no campo de cada `detalhe`; 409 de categoria → no campo categoria,
    * recarregando a lista (a categoria mudou em outro lugar). 503/backend fora
@@ -393,9 +516,9 @@ export class LancamentoFormDialog {
       return;
     }
     if (erro.status === 422) {
-      const marcados = (erro.detalhes ?? []).filter((detalhe) =>
-        CAMPOS.includes(detalhe.campo as Campo),
-      );
+      const marcados = (erro.detalhes ?? [])
+        .map((detalhe) => ({ ...detalhe, campo: CAMPO_DA_API[detalhe.campo] ?? detalhe.campo }))
+        .filter((detalhe) => CAMPOS.includes(detalhe.campo as Campo));
       marcados.forEach((detalhe) => this.marcar(detalhe.campo as Campo, detalhe.mensagem));
       if (marcados.length === 0) {
         // 422 sem campo conhecido: sem isto o usuário não veria nada.
@@ -417,7 +540,7 @@ export class LancamentoFormDialog {
       data: this.fb.control<Date | null>(original ? isoParaData(original.data) : hoje(), [
         Validators.required,
       ]),
-      valor: [original ? formatarValor(original.valor) : '', [valorValido]],
+      valor: [original ? formatarValor(original.valor) : '', [valorValido, minimoDasParcelas]],
       descricao: [original?.descricao ?? '', [textoAparado(DESCRICAO_MAXIMO, true)]],
       categoria_id: [original?.categoria_id ?? '', [Validators.required]],
       // '' = "Não informar" (só na receita — RN-05, CA-02.2). Nunca pré-selecionada (F-06 Q4).
@@ -426,6 +549,14 @@ export class LancamentoFormDialog {
         tipo === 'GASTO' ? [Validators.required] : [],
       ],
       observacao: [original?.observacao ?? '', [textoAparado(OBSERVACAO_MAXIMO, false)]],
+      parcelada: [false],
+      // Vazio de início; habilitado só com "Compra parcelada" marcada (F-12 §3.3.2).
+      parcelas: this.fb.control<number | null>({ value: null, disabled: true }, [
+        Validators.required,
+        Validators.min(PARCELAS_MIN),
+        Validators.max(PARCELAS_MAX),
+        Validators.pattern(/^\d+$/),
+      ]),
     });
   }
 
