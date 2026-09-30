@@ -3,7 +3,7 @@
 | Campo | Valor |
 |---|---|
 | Documento | `SPECS/03-arquitetura.md` |
-| Versão | 1.21 |
+| Versão | 1.22 |
 | Atualizado em | 2026-09-30 |
 | Status | Aprovado para início |
 | Responde | **Como** o sistema se organiza: componentes, pastas, camadas, modelo de dados na planilha, contrato da API e fluxos |
@@ -111,8 +111,8 @@ PlanilhaFinanceira/
         │                      # tokens FABRICA_GRAFICO e CORES_DO_TEMA para testes)
         └── features/          # uma pasta por tela; página em <nome>/<nome>.page.ts (classe <Nome>Page)
             ├── resumo/        # dashboard do mês (cards + gráficos)
-            ├── lancamentos/   # listagem + lancamento-form.dialog + abrir-lancamento.ts
-            │                  # (aberto pelo shell via import sob demanda)
+            ├── lancamentos/   # lancamentos.page (listagem, filtros.ts) + lancamento-form.dialog
+            │                  # + abrir-lancamento.ts (aberto pelo shell via import sob demanda)
             ├── historico/
             ├── categorias/    # categorias.page, categoria-form.dialog, paleta.ts
             └── recorrencias/
@@ -497,4 +497,5 @@ Quando o **backend não responde** (status 0, ou 502/504 sem o envelope de §6.2
 | 2026-09-30 | 1.19 | §3: `lancamentos.api`, `formas-pagamento.api`/`.store`, `utils/valor.ts`, `utils/adaptador-de-data.ts`, `abrir-lancamento.ts` (T-016). |
 | 2026-09-30 | 1.20 | §8.1: filtros da listagem na URL (F-07, Q1). |
 | 2026-09-30 | 1.21 | §6.3: ordem, totais filtrados, saldo negativo e categoria ausente em `ListaLancamentos` (T-017). |
+| 2026-09-30 | 1.22 | §3: página de lançamentos e `filtros.ts` (T-018). |
 | 2026-09-29 | 1.1 | Frontend em Angular 22 (zoneless); pasta `shared/grafico/` com diretiva Chart.js própria (§3, §8.2.1). |

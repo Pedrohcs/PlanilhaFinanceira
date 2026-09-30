@@ -1,15 +1,219 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { BreakpointObserver } from '@angular/cdk/layout';
+import { NgTemplateOutlet } from '@angular/common';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  signal,
+  untracked,
+} from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { MatSelectModule } from '@angular/material/select';
+import { ActivatedRoute, Router } from '@angular/router';
+import { firstValueFrom, map } from 'rxjs';
+import { LancamentosApi } from '../../core/api/lancamentos.api';
+import { Categoria } from '../../core/models/categoria';
+import { FormaPagamento, TipoLancamento } from '../../core/models/enums';
+import { FiltrosLancamentos, Lancamento, ListaLancamentos } from '../../core/models/lancamento';
+import { CategoriasStore } from '../../core/state/categorias.store';
+import { DadosStore } from '../../core/state/dados.store';
+import { FormasPagamentoStore } from '../../core/state/formas-pagamento.store';
+import { MesSelecionadoStore } from '../../core/state/mes-selecionado.store';
+import { exibirData } from '../../core/utils/adaptador-de-data';
+import { mesPorExtenso } from '../../core/utils/mes';
+import { formatarValor } from '../../core/utils/valor';
+import { Carregando } from '../../shared/components/carregando/carregando';
+import { EstadoVazio } from '../../shared/components/estado-vazio/estado-vazio';
 import { SeletorMes } from '../../shared/components/seletor-mes/seletor-mes';
+import { filtrosParaParams, lerFiltros, temFiltro } from './filtros';
 
-/** Página provisória de F-04; o conteúdo real chega na feature da tela. */
+/** Mesma quebra do shell (F-04 Q1): tabela a partir daqui, cartões abaixo (F-07 Q3). */
+export const LARGURA_TABELA = 600;
+const MENOS = '−';
+
+interface GrupoDeCategorias {
+  rotulo: string | null;
+  categorias: Categoria[];
+}
+
+/**
+ * Lançamentos do mês (REQ-03, REQ-04; F-07 §3.2). Filtros na URL (Q1), totais
+ * prontos do backend (o frontend não soma — `02` §4), tabela ou cartões
+ * conforme a largura (Q3). Recarrega quando mês, filtro ou `versao` mudam.
+ */
 @Component({
   selector: 'app-lancamentos-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [SeletorMes],
-  template: `
-    <h1>Lançamentos</h1>
-    <app-seletor-mes />
-    <p>Esta tela ainda está em construção.</p>
-  `,
+  imports: [
+    NgTemplateOutlet,
+    MatButtonModule,
+    MatIconModule,
+    MatSelectModule,
+    SeletorMes,
+    Carregando,
+    EstadoVazio,
+  ],
+  templateUrl: './lancamentos.page.html',
+  styleUrl: './lancamentos.page.scss',
 })
-export class LancamentosPage {}
+export class LancamentosPage {
+  private readonly api = inject(LancamentosApi);
+  private readonly rota = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+  private readonly mesStore = inject(MesSelecionadoStore);
+  private readonly dados = inject(DadosStore);
+  private readonly categoriasStore = inject(CategoriasStore);
+  private readonly formasStore = inject(FormasPagamentoStore);
+  private readonly breakpoints = inject(BreakpointObserver);
+
+  private readonly parametros = toSignal(this.rota.queryParams, { initialValue: {} });
+  private readonly leitura = computed(() => lerFiltros(this.parametros()));
+  /** Comparado por valor: a URL mudar só no `?mes=` (ou ser corrigida) não refaz a busca. */
+  protected readonly filtros = computed(() => this.leitura().filtros, {
+    equal: (a, b) =>
+      a.tipo === b.tipo &&
+      a.categoria_id === b.categoria_id &&
+      a.forma_pagamento === b.forma_pagamento,
+  });
+  protected readonly filtrando = computed(() => temFiltro(this.filtros()));
+  protected readonly mes = this.mesStore.mes;
+  protected readonly formas = this.formasStore.formas;
+
+  protected readonly lista = signal<ListaLancamentos | null>(null);
+  protected readonly carregando = signal(false);
+  protected readonly erro = signal(false);
+  private sequencia = 0;
+
+  protected readonly tabela = toSignal(
+    this.breakpoints
+      .observe(`(min-width: ${LARGURA_TABELA}px)`)
+      .pipe(map((estado) => estado.matches)),
+    { initialValue: this.breakpoints.isMatched(`(min-width: ${LARGURA_TABELA}px)`) },
+  );
+
+  /** Categorias do filtro: do tipo escolhido; com "Todos", agrupadas (inclui inativas). */
+  protected readonly gruposDeCategorias = computed<GrupoDeCategorias[]>(() => {
+    const tipo = this.filtros().tipo;
+    if (tipo) {
+      return [{ rotulo: null, categorias: this.categoriasStore.porTipo(tipo) }];
+    }
+    return [
+      { rotulo: 'Gastos', categorias: this.categoriasStore.porTipo('GASTO') },
+      { rotulo: 'Receitas', categorias: this.categoriasStore.porTipo('RECEITA') },
+    ];
+  });
+
+  private readonly nomesDasFormas = computed(
+    () => new Map(this.formas().map((forma) => [forma.codigo, forma.nome])),
+  );
+
+  constructor() {
+    void this.categoriasStore.garantirCarga();
+    void this.formasStore.garantirCarga();
+
+    // Valor inválido na URL (ex.: tipo=OUTRO) é descartado e a URL, corrigida (Q1).
+    effect(() => {
+      if (this.leitura().descartou) {
+        untracked(() => this.gravarFiltros(this.filtros()));
+      }
+    });
+
+    // Mês, filtros ou `versao` (uma escrita) mudaram: busca de novo (CA-01.5).
+    effect(() => {
+      const mes = this.mes();
+      const filtros = this.filtros();
+      this.dados.versao();
+      untracked(() => void this.carregar(mes, filtros));
+    });
+  }
+
+  protected definirTipo(tipo: TipoLancamento | null): void {
+    const atual = this.filtros();
+    const categoria = this.categoriasStore.todas().find((c) => c.id === atual.categoria_id);
+    // Trocar o tipo limpa uma categoria de outro tipo (F-07 §3.2.2).
+    const manterCategoria = !tipo || !categoria || categoria.tipo === tipo;
+    this.gravarFiltros({
+      ...atual,
+      tipo,
+      categoria_id: manterCategoria ? atual.categoria_id : null,
+    });
+  }
+
+  protected definirCategoria(categoriaId: string | null): void {
+    this.gravarFiltros({ ...this.filtros(), categoria_id: categoriaId });
+  }
+
+  protected definirForma(forma: FormaPagamento | null): void {
+    this.gravarFiltros({ ...this.filtros(), forma_pagamento: forma });
+  }
+
+  protected limparFiltros(): void {
+    this.gravarFiltros({ tipo: null, categoria_id: null, forma_pagamento: null });
+  }
+
+  protected valor(lancamento: Lancamento): string {
+    const sinal = lancamento.tipo === 'GASTO' ? MENOS : '+';
+    return `${sinal} R$ ${formatarValor(lancamento.valor)}`;
+  }
+
+  protected rotuloDoValor(lancamento: Lancamento): string {
+    const tipo = lancamento.tipo === 'GASTO' ? 'gasto' : 'receita';
+    return `${tipo} de R$ ${formatarValor(lancamento.valor)}`;
+  }
+
+  /** Totais e saldo: o saldo pode ser negativo (RN-13). */
+  protected montante(valor: number): string {
+    return valor < 0 ? `${MENOS} R$ ${formatarValor(-valor)}` : `R$ ${formatarValor(valor)}`;
+  }
+
+  protected forma(lancamento: Lancamento): string {
+    if (!lancamento.forma_pagamento) {
+      return '—';
+    }
+    return this.nomesDasFormas().get(lancamento.forma_pagamento) ?? lancamento.forma_pagamento;
+  }
+
+  protected data(iso: string): string {
+    return exibirData(iso);
+  }
+
+  protected mesPorExtenso(mes: string): string {
+    return mesPorExtenso(mes);
+  }
+
+  /** Uma busca por vez vale: resposta de busca anterior é descartada (borda 15). */
+  private async carregar(mes: string, filtros: FiltrosLancamentos): Promise<void> {
+    const minha = ++this.sequencia;
+    this.carregando.set(true);
+    try {
+      const lista = await firstValueFrom(this.api.listar(mes, filtros));
+      if (minha === this.sequencia) {
+        this.lista.set(lista);
+        this.erro.set(false);
+      }
+    } catch {
+      if (minha === this.sequencia) {
+        this.lista.set(null);
+        this.erro.set(true); // a causa já foi mostrada pelo interceptor/banner
+      }
+    } finally {
+      if (minha === this.sequencia) {
+        this.carregando.set(false);
+      }
+    }
+  }
+
+  /** Grava os filtros na URL, mantendo o `?mes=`, sem empilhar histórico (Q1). */
+  private gravarFiltros(filtros: FiltrosLancamentos): void {
+    void this.router.navigate([], {
+      relativeTo: this.rota,
+      queryParams: filtrosParaParams(filtros),
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    });
+  }
+}

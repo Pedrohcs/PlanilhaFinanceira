@@ -1,0 +1,177 @@
+// Listagem mensal (F-07 §3.2). Cor de receita legível nos temas claro e escuro (Q2).
+:host {
+  --cor-receita: light-dark(#2e7d32, #81c784);
+  display: block;
+}
+
+.cabecalho {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.filtros {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  margin: 8px 0 16px;
+
+  mat-form-field {
+    flex: 1 1 12rem;
+    min-width: 0;
+  }
+}
+
+.conteudo.recarregando {
+  opacity: 0.6;
+  transition: opacity 150ms;
+}
+
+.totais {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.total {
+  display: flex;
+  flex-direction: column;
+  padding: 12px 16px;
+  border-radius: 12px;
+  background: var(--mat-sys-surface-container);
+
+  .rotulo {
+    font: var(--mat-sys-label-medium);
+    color: var(--mat-sys-on-surface-variant);
+  }
+
+  .numero {
+    font: var(--mat-sys-title-medium);
+    font-variant-numeric: tabular-nums;
+  }
+
+  &.saldo.negativo {
+    background: var(--mat-sys-error-container);
+    color: var(--mat-sys-on-error-container);
+
+    .rotulo {
+      color: inherit;
+    }
+  }
+}
+
+.legenda {
+  grid-column: 1 / -1;
+  margin: 0;
+  font: var(--mat-sys-body-small);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.tabela {
+  width: 100%;
+  border-collapse: collapse;
+
+  th,
+  td {
+    padding: 8px;
+    text-align: left;
+    vertical-align: top;
+    border-bottom: 1px solid var(--mat-sys-outline-variant);
+  }
+
+  th {
+    font: var(--mat-sys-label-large);
+    color: var(--mat-sys-on-surface-variant);
+  }
+
+  .data {
+    white-space: nowrap;
+  }
+}
+
+.coluna-valor {
+  text-align: right !important;
+  white-space: nowrap;
+}
+
+.cartoes {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.cartao {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+
+  .linha {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
+  }
+
+  .secundaria {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    margin-top: 4px;
+    font: var(--mat-sys-body-small);
+    color: var(--mat-sys-on-surface-variant);
+  }
+}
+
+.descricao {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.parcela {
+  padding: 0 6px;
+  border-radius: 8px;
+  font: var(--mat-sys-label-small);
+  background: var(--mat-sys-surface-container-highest);
+}
+
+.recorrente {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.observacao {
+  flex-basis: 100%;
+  font: var(--mat-sys-body-small);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.valor {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+
+  &.receita {
+    color: var(--cor-receita);
+  }
+}
+
+.cor {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-right: 6px;
+  border-radius: 50%;
+}
+
+.vazio {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}

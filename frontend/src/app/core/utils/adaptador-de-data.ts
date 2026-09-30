@@ -47,3 +47,13 @@ export function hoje(): Date {
   const agora = new Date();
   return new Date(agora.getFullYear(), agora.getMonth(), agora.getDate());
 }
+
+/**
+ * `2026-09-30` → `30/09/2026` (RNF-03), só rearranjando o texto: sem `Date`,
+ * sem fuso, e sem o `DatePipe` (que puxaria a formatação de datas do
+ * `@angular/common` para o pacote inicial — T-018).
+ */
+export function exibirData(iso: string): string {
+  const [ano, mes, dia] = iso.split('-');
+  return `${dia}/${mes}/${ano}`;
+}

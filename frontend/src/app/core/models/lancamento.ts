@@ -34,3 +34,24 @@ export interface FormaPagamentoOpcao {
 /** Limites de RN-06, iguais aos da API. */
 export const DESCRICAO_MAXIMO = 100;
 export const OBSERVACAO_MAXIMO = 500;
+
+/** Filtros opcionais da listagem (F-07 §3.1.3); combinados com E. */
+export interface FiltrosLancamentos {
+  tipo: TipoLancamento | null;
+  categoria_id: string | null;
+  forma_pagamento: FormaPagamento | null;
+}
+
+export const SEM_FILTROS: FiltrosLancamentos = {
+  tipo: null,
+  categoria_id: null,
+  forma_pagamento: null,
+};
+
+/** `GET /api/lancamentos` (SPECS/03 §6.3). Totais já somados pelo backend (RN-16). */
+export interface ListaLancamentos {
+  mes: string;
+  itens: Lancamento[];
+  totais: { gastos: number; receitas: number; saldo: number };
+  linhas_ignoradas: number;
+}

@@ -1,0 +1,186 @@
+<header class="cabecalho">
+  <h1>Lançamentos</h1>
+  <app-seletor-mes />
+</header>
+
+<section class="filtros" aria-label="Filtros">
+  <mat-form-field subscriptSizing="dynamic">
+    <mat-label>Tipo</mat-label>
+    <mat-select
+      class="filtro-tipo"
+      [value]="filtros().tipo"
+      (selectionChange)="definirTipo($event.value)"
+    >
+      <mat-option [value]="null">Todos</mat-option>
+      <mat-option value="GASTO">Gastos</mat-option>
+      <mat-option value="RECEITA">Receitas</mat-option>
+    </mat-select>
+  </mat-form-field>
+
+  <mat-form-field subscriptSizing="dynamic">
+    <mat-label>Categoria</mat-label>
+    <mat-select
+      class="filtro-categoria"
+      [value]="filtros().categoria_id"
+      (selectionChange)="definirCategoria($event.value)"
+    >
+      <mat-option [value]="null">Todas</mat-option>
+      @for (grupo of gruposDeCategorias(); track grupo.rotulo) {
+        @if (grupo.rotulo) {
+          <mat-optgroup [label]="grupo.rotulo">
+            @for (categoria of grupo.categorias; track categoria.id) {
+              <mat-option [value]="categoria.id">
+                <span class="cor" [style.background-color]="categoria.cor"></span>
+                {{ categoria.nome }}
+              </mat-option>
+            }
+          </mat-optgroup>
+        } @else {
+          @for (categoria of grupo.categorias; track categoria.id) {
+            <mat-option [value]="categoria.id">
+              <span class="cor" [style.background-color]="categoria.cor"></span>
+              {{ categoria.nome }}
+            </mat-option>
+          }
+        }
+      }
+    </mat-select>
+  </mat-form-field>
+
+  <mat-form-field subscriptSizing="dynamic">
+    <mat-label>Forma de pagamento</mat-label>
+    <mat-select
+      class="filtro-forma"
+      [value]="filtros().forma_pagamento"
+      (selectionChange)="definirForma($event.value)"
+    >
+      <mat-option [value]="null">Todas</mat-option>
+      @for (forma of formas(); track forma.codigo) {
+        <mat-option [value]="forma.codigo">{{ forma.nome }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+
+  @if (filtrando()) {
+    <button matButton type="button" class="limpar" (click)="limparFiltros()">Limpar filtros</button>
+  }
+</section>
+
+@if (lista() === null && carregando()) {
+  <app-carregando texto="Carregando lançamentos…" />
+} @else if (erro()) {
+  <app-estado-vazio icone="cloud_off" mensagem="Não foi possível carregar os lançamentos." />
+} @else if (lista(); as dados) {
+  <div class="conteudo" [class.recarregando]="carregando()">
+    <section class="totais" aria-label="Totais">
+      <div class="total">
+        <span class="rotulo">Gastos</span>
+        <span class="numero">{{ montante(dados.totais.gastos) }}</span>
+      </div>
+      <div class="total">
+        <span class="rotulo">Receitas</span>
+        <span class="numero">{{ montante(dados.totais.receitas) }}</span>
+      </div>
+      <div class="total saldo" [class.negativo]="dados.totais.saldo < 0">
+        <span class="rotulo">Saldo</span>
+        <span class="numero">{{ montante(dados.totais.saldo) }}</span>
+      </div>
+      @if (filtrando()) {
+        <p class="legenda">Totais dos lançamentos filtrados</p>
+      }
+    </section>
+
+    @if (dados.itens.length === 0) {
+      @if (filtrando()) {
+        <div class="vazio">
+          <app-estado-vazio mensagem="Nenhum lançamento com esses filtros." />
+          <button matButton="tonal" type="button" (click)="limparFiltros()">Limpar filtros</button>
+        </div>
+      } @else {
+        <app-estado-vazio [mensagem]="'Nenhum lançamento em ' + mesPorExtenso(dados.mes) + '.'" />
+      }
+    } @else if (tabela()) {
+      <table class="tabela">
+        <thead>
+          <tr>
+            <th scope="col">Data</th>
+            <th scope="col">Descrição</th>
+            <th scope="col">Categoria</th>
+            <th scope="col">Forma</th>
+            <th scope="col" class="coluna-valor">Valor</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of dados.itens; track item.id) {
+            <tr class="lancamento">
+              <td class="data">{{ data(item.data) }}</td>
+              <td>
+                <ng-container
+                  [ngTemplateOutlet]="descricao"
+                  [ngTemplateOutletContext]="{ $implicit: item }"
+                />
+              </td>
+              <td>
+                <span class="cor" [style.background-color]="item.categoria_cor"></span>
+                <span class="categoria">{{ item.categoria_nome }}</span>
+              </td>
+              <td class="forma">{{ forma(item) }}</td>
+              <td class="coluna-valor">
+                <span
+                  class="valor"
+                  [class.receita]="item.tipo === 'RECEITA'"
+                  [attr.aria-label]="rotuloDoValor(item)"
+                  >{{ valor(item) }}</span
+                >
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    } @else {
+      <ul class="cartoes">
+        @for (item of dados.itens; track item.id) {
+          <li class="lancamento cartao">
+            <div class="linha">
+              <ng-container
+                [ngTemplateOutlet]="descricao"
+                [ngTemplateOutletContext]="{ $implicit: item }"
+              />
+              <span
+                class="valor"
+                [class.receita]="item.tipo === 'RECEITA'"
+                [attr.aria-label]="rotuloDoValor(item)"
+                >{{ valor(item) }}</span
+              >
+            </div>
+            <div class="linha secundaria">
+              <span class="data">{{ data(item.data) }}</span>
+              <span>
+                <span class="cor" [style.background-color]="item.categoria_cor"></span>
+                <span class="categoria">{{ item.categoria_nome }}</span>
+              </span>
+              <span class="forma">{{ forma(item) }}</span>
+            </div>
+          </li>
+        }
+      </ul>
+    }
+  </div>
+}
+
+<ng-template #descricao let-item>
+  <span class="descricao">
+    <span class="texto">{{ item.descricao }}</span>
+    @if (item.parcela_numero) {
+      <span class="parcela">{{ item.parcela_numero }}/{{ item.parcela_total }}</span>
+    }
+    @if (item.recorrencia_id) {
+      <mat-icon class="recorrente" aria-label="Lançamento recorrente" title="Lançamento recorrente"
+        >event_repeat</mat-icon
+      >
+    }
+    @if (item.observacao) {
+      <span class="observacao">{{ item.observacao }}</span>
+    }
+  </span>
+</ng-template>

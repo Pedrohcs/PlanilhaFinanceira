@@ -4,7 +4,7 @@
 |---|---|
 | Feature | F-07 |
 | Marco | M1 |
-| Status | Aprovada |
+| Status | Concluída |
 | Requisitos | REQ-03 (CA-03.1 a CA-03.3), REQ-04 (CA-04.1, CA-04.2 — já com a parte de F-04), CA-01.5 (exibição), CA-11.2 (exibição) |
 | Regras | RN-03, RN-13, RN-14, RN-16 |
 | Depende de | F-06 (**Concluída**) |
@@ -85,12 +85,12 @@ Ver, mês a mês, tudo o que entrou e saiu — com filtros por tipo, categoria e
 
 **Herdados de `01`**
 
-- [ ] **CA-03.1** Dado um mês com lançamentos, quando a listagem abre, então mostra data, descrição, categoria, forma de pagamento, valor e indicação de parcela (ex.: "3/10") ou de recorrência.
-- [ ] **CA-03.2** Dado um filtro aplicado, quando a lista atualiza, então o total exibido corresponde à soma dos itens visíveis (gastos e receitas separados).
-- [ ] **CA-03.3** Dado um mês sem lançamentos, quando a listagem abre, então uma mensagem de "nenhum lançamento" é exibida.
+- [x] **CA-03.1** Dado um mês com lançamentos, quando a listagem abre, então mostra data, descrição, categoria, forma de pagamento, valor e indicação de parcela (ex.: "3/10") ou de recorrência.
+- [x] **CA-03.2** Dado um filtro aplicado, quando a lista atualiza, então o total exibido corresponde à soma dos itens visíveis (gastos e receitas separados).
+- [x] **CA-03.3** Dado um mês sem lançamentos, quando a listagem abre, então uma mensagem de "nenhum lançamento" é exibida.
 - [x] **CA-04.1** / [x] **CA-04.2** *(já verificados em F-04 com a página provisória; em F-07 continuam valendo com a página real — teste de regressão.)*
-- [ ] **CA-01.5** *(exibição)* Dado um gasto recém-registrado, quando o usuário vê a listagem do mês, então o gasto já aparece e os totais já o consideram.
-- [~] **CA-11.2** *(exibição)* Dado uma categoria renomeada, então todos os lançamentos dela exibem o novo nome, inclusive os antigos. *(T-017: API devolve o nome atual; a tela é T-018.)*
+- [x] **CA-01.5** *(exibição)* Dado um gasto recém-registrado, quando o usuário vê a listagem do mês, então o gasto já aparece e os totais já o consideram.
+- [x] **CA-11.2** *(exibição)* Dado uma categoria renomeada, então todos os lançamentos dela exibem o novo nome, inclusive os antigos. *(T-017: API devolve o nome atual; T-018: a tela mostra o nome recebido.)*
 
 **Refinados — backend (T-017)**
 
@@ -106,17 +106,17 @@ Ver, mês a mês, tudo o que entrou e saiu — com filtros por tipo, categoria e
 
 **Refinados — frontend (T-018)**
 
-- [ ] **CA-F07.10** Dado a resposta da API, quando a página renderiza, então cada item mostra os campos de CA-03.1 formatados em pt-BR ("30/09/2026", "R$ 1.234,56"), "3/10" nas parcelas, o ícone nos recorrentes e "—" na forma não informada.
-- [ ] **CA-F07.11** Dado um filtro trocado, quando a página recarrega, então a requisição leva os parâmetros certos e os cartões mostram os totais **da resposta** (o frontend não soma nada).
-- [ ] **CA-F07.12** Dado saldo negativo, então o cartão Saldo aparece em destaque de erro.
-- [ ] **CA-F07.13** Dado mês sem lançamentos, então "Nenhum lançamento em <mês por extenso>."; com filtros ativos e sem resultado, "Nenhum lançamento com esses filtros." e o botão "Limpar filtros" (CA-03.3).
-- [ ] **CA-F07.14** Dado um lançamento registrado pelo diálogo (F-06), então a lista recarrega sozinha e o mostra (CA-01.5).
-- [ ] **CA-F07.15** Dado a troca de mês pelo seletor, então a lista busca o mês novo, mantendo os filtros; e durante a recarga o conteúdo anterior continua visível.
-- [ ] **CA-F07.16** Dado o tipo "Receitas" escolhido, então o filtro de categoria só oferece categorias de receita; e uma categoria de gasto escolhida antes é limpa.
-- [ ] **CA-F07.17** Dado falha ao carregar, então aparece "Não foi possível carregar os lançamentos." (e o banner de F-04, se for 503/sem backend).
-- [ ] **CA-F07.18** Dado a janela com menos de 600 px (ex.: 360 px), então a lista aparece em cartões, sem rolagem horizontal e com todos os dados de CA-03.1; e a partir de 600 px, em tabela (RNF-07, Q3).
-- [ ] **CA-F07.19** Dado filtros escolhidos, então a URL passa a ter `tipo`/`categoria_id`/`forma_pagamento` (sem nova entrada no histórico); recarregar a página mantém os filtros; valor inválido na URL é descartado; e o link "Lançamentos" do menu abre sem filtros (Q1).
-- [ ] **CA-F07.20** Dado um gasto de 42,50 e uma receita de 5.000,00, então aparecem "− R$ 42,50" e "+ R$ 5.000,00", a receita com a classe de cor de receita, e cada valor com `aria-label` que diz o tipo (Q2).
+- [x] **CA-F07.10** Dado a resposta da API, quando a página renderiza, então cada item mostra os campos de CA-03.1 formatados em pt-BR ("30/09/2026", "R$ 1.234,56"), "3/10" nas parcelas, o ícone nos recorrentes e "—" na forma não informada.
+- [x] **CA-F07.11** Dado um filtro trocado, quando a página recarrega, então a requisição leva os parâmetros certos e os cartões mostram os totais **da resposta** (o frontend não soma nada).
+- [x] **CA-F07.12** Dado saldo negativo, então o cartão Saldo aparece em destaque de erro.
+- [x] **CA-F07.13** Dado mês sem lançamentos, então "Nenhum lançamento em <mês por extenso>."; com filtros ativos e sem resultado, "Nenhum lançamento com esses filtros." e o botão "Limpar filtros" (CA-03.3).
+- [x] **CA-F07.14** Dado um lançamento registrado pelo diálogo (F-06), então a lista recarrega sozinha e o mostra (CA-01.5).
+- [x] **CA-F07.15** Dado a troca de mês pelo seletor, então a lista busca o mês novo, mantendo os filtros; e durante a recarga o conteúdo anterior continua visível.
+- [x] **CA-F07.16** Dado o tipo "Receitas" escolhido, então o filtro de categoria só oferece categorias de receita; e uma categoria de gasto escolhida antes é limpa.
+- [x] **CA-F07.17** Dado falha ao carregar, então aparece "Não foi possível carregar os lançamentos." (e o banner de F-04, se for 503/sem backend).
+- [~] **CA-F07.18** Dado a janela com menos de 600 px (ex.: 360 px), então a lista aparece em cartões, sem rolagem horizontal e com todos os dados de CA-03.1; e a partir de 600 px, em tabela (RNF-07, Q3). *(T-018: troca tabela/cartões verificada por teste, com o limite; "sem rolagem horizontal" fica na conferência visual pendente.)*
+- [x] **CA-F07.19** Dado filtros escolhidos, então a URL passa a ter `tipo`/`categoria_id`/`forma_pagamento` (sem nova entrada no histórico); recarregar a página mantém os filtros; valor inválido na URL é descartado; e o link "Lançamentos" do menu abre sem filtros (Q1).
+- [x] **CA-F07.20** Dado um gasto de 42,50 e uma receita de 5.000,00, então aparecem "− R$ 42,50" e "+ R$ 5.000,00", a receita com a classe de cor de receita, e cada valor com `aria-label` que diz o tipo (Q2).
 
 ---
 
@@ -228,6 +228,10 @@ Ordem: T-017 → T-018 (T-018 também depende de T-016, concluída).
 | Recarga mantém o conteúdo anterior esmaecido; resposta antiga é descartada. | Evita piscar e evita que uma resposta lenta de outro mês sobrescreva a atual. | Não |
 | Filtros na URL com `replaceUrl`; o menu leva só o mês (Q1). | Mesmo comportamento do `?mes=` (F-04); recarregar não perde o que o usuário escolheu, e navegar pelo menu recomeça limpo. `03` → 1.20 (§8.1). | Não |
 | Valor com sinal e receita em verde, com `aria-label` do tipo (Q2). | O tipo é o que dá direção ao valor (RN-01); cor sozinha não basta para acessibilidade. | Não |
+| `<table>` HTML comum, não `MatTable` (T-018). | Lista sem ordenação nem paginação; `<th scope="col">` basta para acessibilidade e não traz o CDK table para o pedaço da página. | Não |
+| Datas exibidas por `exibirData` (rearranjo do texto `YYYY-MM-DD`), sem `DatePipe` (T-018). | O `DatePipe` levava a formatação de datas do `@angular/common` ao pacote inicial (+11 kB, 486 kB); sem ele, 474 kB. Sem `Date`, também não há risco de fuso. | Não |
+| Filtros comparados por valor (`computed` com `equal`) (T-018). | Corrigir a URL ou mudar só o `?mes=` gerava um objeto novo e uma busca duplicada. | Não |
+| Busca com número de sequência; sem `resource`/`httpResource` (T-018). | Descarta respostas atrasadas (borda 15) sem depender de API cuja estabilidade na v22 não está clara (`02` §4). | Não |
 | Tabela a partir de 600 px, cartões abaixo (Q3). | Tabela é mais fácil de varrer no desktop; cartões garantem 360 px sem rolagem horizontal (RNF-07). Mesma quebra do shell. | Não |
 
 ---
@@ -249,3 +253,4 @@ Ordem: T-017 → T-018 (T-018 também depende de T-016, concluída).
 | 2026-09-30 | Criação (`/especificar-feature F-07`). Status `Rascunho` — 3 questões em aberto. |
 | 2026-09-30 | Q1–Q3 respondidas → status **Aprovada**. CA-F07.18 detalhado; CA-F07.19 (filtros na URL) e CA-F07.20 (sinal e cor do valor) acrescentados. `03` → 1.20. |
 | 2026-09-30 | T-017 concluída: CA-F07.1 a .9 verificados por teste (serviço em memória; API com planilha falsa, inclusive 5.000 linhas com uma leitura por aba). CA-11.2 com a parte da API. Duas decisões em §10. `02` → 1.10, `03` → 1.21. |
+| 2026-09-30 | T-018 concluída → **feature Concluída**. CA-03.1..03.3, CA-01.5, CA-11.2 e CA-F07.10 a .20 verificados por teste (menos a parte visual de CA-F07.18). Quatro decisões de implementação em §10. `03` → 1.22. |

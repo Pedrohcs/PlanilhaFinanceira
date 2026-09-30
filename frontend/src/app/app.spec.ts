@@ -1,4 +1,4 @@
-import { BreakpointObserver, BreakpointState } from '@angular/cdk/layout';
+import { BreakpointObserver } from '@angular/cdk/layout';
 import { HttpClient, provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
@@ -7,7 +7,6 @@ import { MatDialog } from '@angular/material/dialog';
 import { MatSidenav } from '@angular/material/sidenav';
 import { By } from '@angular/platform-browser';
 import { provideRouter, Router } from '@angular/router';
-import { BehaviorSubject, map, Observable } from 'rxjs';
 import { App, ITENS_DE_NAVEGACAO } from './app';
 import { routes } from './app.routes';
 import { Avisos } from './core/avisos/avisos';
@@ -15,30 +14,8 @@ import { erroInterceptor } from './core/interceptors/erro.interceptor';
 import { MENSAGEM_BACKEND_INDISPONIVEL } from './core/models/erro-api';
 import { provideVerificacaoDeConexao } from './core/state/conexao.store';
 import { AdaptadorDeDataPtBr } from './core/utils/adaptador-de-data';
+import { BreakpointsFalsos } from '../testing/breakpoints';
 import { provideMaterialParaTestes } from '../testing/material';
-
-/** `BreakpointObserver` com a largura da janela controlada pelo teste. */
-class BreakpointsFalsos {
-  readonly largura = new BehaviorSubject(1280);
-
-  observe(consulta: string): Observable<BreakpointState> {
-    return this.largura.pipe(
-      map((largura) => {
-        const atende = this.atende(consulta, largura);
-        return { matches: atende, breakpoints: { [consulta]: atende } };
-      }),
-    );
-  }
-
-  isMatched(consulta: string): boolean {
-    return this.atende(consulta, this.largura.value);
-  }
-
-  private atende(consulta: string, largura: number): boolean {
-    const minimo = Number(/min-width:\s*(\d+)px/.exec(consulta)?.[1]);
-    return largura >= minimo;
-  }
-}
 
 describe('App (shell)', () => {
   let breakpoints: BreakpointsFalsos;

@@ -45,3 +45,30 @@ describe('LancamentosApi', () => {
     controle.verify();
   });
 });
+
+describe('LancamentosApi.listar', () => {
+  it('listar_com_filtros__F07_6', async () => {
+    TestBed.configureTestingModule({
+      providers: [provideHttpClient(), provideHttpClientTesting()],
+    });
+    const api = TestBed.inject(LancamentosApi);
+    const controle = TestBed.inject(HttpTestingController);
+    const vazia = {
+      mes: '2026-09',
+      itens: [],
+      totais: { gastos: 0, receitas: 0, saldo: 0 },
+      linhas_ignoradas: 0,
+    };
+
+    const sem = firstValueFrom(api.listar('2026-09'));
+    controle.expectOne('/api/lancamentos?mes=2026-09').flush(vazia);
+    await sem;
+
+    const com = firstValueFrom(
+      api.listar('2026-09', { tipo: 'GASTO', categoria_id: 'mercado', forma_pagamento: null }),
+    );
+    controle.expectOne('/api/lancamentos?mes=2026-09&tipo=GASTO&categoria_id=mercado').flush(vazia);
+    await com;
+    controle.verify();
+  });
+});

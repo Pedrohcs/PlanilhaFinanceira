@@ -118,7 +118,7 @@ O tipo (GASTO/RECEITA) é escolhido na criação e **não muda** depois: o `PUT`
 **Herdados de `01`**
 
 - [x] **CA-11.1** Dado um nome já existente no mesmo tipo (ignorando maiúsculas/acentos), quando o usuário tenta criar/renomear, então o sistema recusa com mensagem clara.
-- [~] **CA-11.2** Dado uma categoria renomeada, então todos os lançamentos dela exibem o novo nome, inclusive os antigos. *(F-05 garante que renomear não altera `id` nem toca a aba `Lancamentos` — verificado em T-013; a exibição é verificada em F-07.)*
+- [x] **CA-11.2** Dado uma categoria renomeada, então todos os lançamentos dela exibem o novo nome, inclusive os antigos. *(F-05 garante que renomear não altera `id` nem toca a aba `Lancamentos` — verificado em T-013; a exibição foi verificada em F-07 / T-018.)*
 - [x] **CA-11.3** Dado uma categoria com lançamentos ou recorrências, quando o usuário tenta excluir, então o sistema recusa e sugere desativar. *(T-013: recusa 409 com a sugestão na mensagem e `em_uso` na listagem; T-014: "Excluir" em categoria em uso oferece desativar sem enviar `DELETE`.)*
 - [~] **CA-11.4** Dado uma categoria desativada, então ela não aparece para novos lançamentos, mas continua nos relatórios e na listagem. *(T-013: listagem padrão sem inativas; T-014: página mostra as inativas com selo e `CategoriasStore.ativasPorTipo` as exclui — os formulários de F-06 o usam; relatórios e listagem de lançamentos em F-07/F-09.)*
 

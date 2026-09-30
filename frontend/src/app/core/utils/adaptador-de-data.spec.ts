@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { DateAdapter, MAT_DATE_LOCALE, provideNativeDateAdapter } from '@angular/material/core';
-import { AdaptadorDeDataPtBr, dataParaIso, hoje } from './adaptador-de-data';
+import { AdaptadorDeDataPtBr, dataParaIso, exibirData, hoje } from './adaptador-de-data';
 
 describe('AdaptadorDeDataPtBr', () => {
   let adaptador: DateAdapter<Date>;
@@ -50,5 +50,12 @@ describe('AdaptadorDeDataPtBr', () => {
     const inicioDoDia = hoje();
     expect(inicioDoDia.getHours()).toBe(0);
     expect(dataParaIso(inicioDoDia)).toBe(dataParaIso(agora));
+  });
+});
+
+describe('exibirData', () => {
+  it('rearranja_sem_fuso__RNF_03', () => {
+    expect(exibirData('2026-09-30')).toBe('30/09/2026');
+    expect(exibirData('2027-01-01')).toBe('01/01/2027');
   });
 });
