@@ -29,7 +29,7 @@
 | M4 · Acabamento | F-14..F-15 | 5 | 5 | 0 | 0 | 0% |
 | **Total** | **15** | **35** | **15** | **0** | **20** | **57%** |
 
-**M0 e M1 concluídos (F-01 a F-08).** Próximo passo: `/especificar-feature F-12` (T-026, BE, caminho crítico). Também desbloqueadas: T-021 (BE, F-09 — sem spec) e T-028 (BE, F-13 — sem spec). Pendentes com o usuário, sem bloquear: seguir o README com a planilha real (CA-F02.13), rodar `pytest -m integracao` (CA-15.1/15.2) e a conferência visual (CA-F04.7, CA-F04.30, CA-F05.20, F-06 borda 16, CA-F07.18, menu ⋮ de F-08 em 360 px).
+**M0 e M1 concluídos (F-01 a F-08).** Próximo passo: `/implementar-tarefa T-026` (BE, F-12, caminho crítico; spec aprovada). Também desbloqueadas: T-021 (BE, F-09 — sem spec) e T-028 (BE, F-13 — sem spec). Pendentes com o usuário, sem bloquear: seguir o README com a planilha real (CA-F02.13), rodar `pytest -m integracao` (CA-15.1/15.2) e a conferência visual (CA-F04.7, CA-F04.30, CA-F05.20, F-06 borda 16, CA-F07.18, menu ⋮ de F-08 em 360 px).
 
 ---
 
@@ -48,7 +48,7 @@
 | F-09 | Resumo mensal | M2 | Não iniciada | — |
 | F-10 | Gráficos do mês | M2 | Não iniciada | — |
 | F-11 | Histórico | M2 | Não iniciada | — |
-| F-12 | Parcelamentos | M3 | Não iniciada | — |
+| F-12 | Parcelamentos | M3 | Não iniciada | [`F-12-parcelamentos.md`](features/F-12-parcelamentos.md) (Aprovada) |
 | F-13 | Recorrências | M3 | Não iniciada | — |
 | F-14 | Polimento e resiliência | M4 | Não iniciada | — |
 | F-15 | Entrega local e verificação E2E | M4 | Não iniciada | — |
@@ -157,6 +157,7 @@ Camadas: **BE** = backend · **FE** = frontend · **DOC** = documentação/infra
 
 | Data | Tarefa/Feature | Mudança | Observação |
 |---|---|---|---|
+| 2026-09-30 | F-12 | Spec da feature criada e **aprovada** | `features/F-12-parcelamentos.md`: Q1–Q3 respondidas (todas na opção recomendada). Nenhuma mudança em 01–03. Nenhum status de tarefa alterado. |
 | 2026-09-30 | M1 | **Marco concluído** | F-05 a F-08 `Concluída`. Caminho crítico segue em F-12 (sem spec). |
 | 2026-09-30 | F-08 | `Iniciada` → `Concluída` | Última tarefa (T-020) concluída; §2 e mapa (§3) atualizados. |
 | 2026-09-30 | T-020 | `Iniciada` → `Concluída` | Edição e exclusão na tela. `03` → 1.23 (§3). Nenhuma dependência nova. |
