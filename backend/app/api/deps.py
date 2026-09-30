@@ -22,6 +22,7 @@ from app.repositories.planilha import (
     RecorrenciaRepositoryPlanilha,
 )
 from app.services.categoria_service import CategoriaService
+from app.services.lancamento_service import LancamentoService
 
 
 @dataclass(frozen=True)
@@ -61,5 +62,12 @@ def obter_categoria_service(
     )
 
 
+def obter_lancamento_service(
+    repositorios: Annotated[Repositorios, Depends(obter_repositorios)],
+) -> LancamentoService:
+    return LancamentoService(repositorios.categorias, repositorios.lancamentos)
+
+
 ConexaoDep = Annotated[ConexaoPlanilha, Depends(obter_conexao)]
 CategoriaServiceDep = Annotated[CategoriaService, Depends(obter_categoria_service)]
+LancamentoServiceDep = Annotated[LancamentoService, Depends(obter_lancamento_service)]

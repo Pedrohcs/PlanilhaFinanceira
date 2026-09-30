@@ -13,8 +13,12 @@ class ErroDominio(Exception):
     codigo = "ERRO_INTERNO"
     mensagem = "Erro interno."
 
-    def __init__(self, mensagem: str | None = None) -> None:
+    def __init__(
+        self, mensagem: str | None = None, *, detalhes: list[dict[str, str]] | None = None
+    ) -> None:
         self.mensagem = mensagem or type(self).mensagem
+        # Mesmo formato de `detalhes` do corpo de erro (`SPECS/03` §6.2): {campo, mensagem}.
+        self.detalhes = detalhes or []
         super().__init__(self.mensagem)
 
 
@@ -75,6 +79,11 @@ class ErroValidacao(ErroDominio):
     codigo = "VALIDACAO"
     mensagem = "Dados inválidos."
 
+    @classmethod
+    def no_campo(cls, campo: str, mensagem: str) -> "ErroValidacao":
+        """Regra violada num campo: o formulário marca o campo certo (F-06 §3.4)."""
+        return cls(mensagem, detalhes=[{"campo": campo, "mensagem": mensagem}])
+
 
 class NaoEncontrado(ErroDominio):
     """`id` inexistente no repositório (`SPECS/03` §4.3)."""
@@ -107,3 +116,29 @@ class CategoriaEmUso(ErroDominio):
             f'A categoria "{nome}" está em uso em lançamentos ou recorrências e não pode '
             "ser excluída. Desative-a para que não apareça mais em novos lançamentos."
         )
+
+
+class CategoriaInativa(ErroDominio):
+    """Categoria desativada não recebe lançamentos novos (RN-04)."""
+
+    codigo = "CATEGORIA_INATIVA"
+    mensagem = "A categoria está desativada. Escolha uma categoria ativa."
+
+    @classmethod
+    def para(cls, nome: str) -> "CategoriaInativa":
+        return cls(f'A categoria "{nome}" está desativada. Escolha uma categoria ativa.')
+
+
+class CategoriaTipoIncompativel(ErroDominio):
+    """Categoria de receita num gasto, ou o contrário (RN-04)."""
+
+    codigo = "CATEGORIA_TIPO_INCOMPATIVEL"
+    mensagem = "A categoria não é do mesmo tipo do lançamento."
+
+    @classmethod
+    def para(
+        cls, nome: str, tipo_da_categoria: str, tipo_do_lancamento: str
+    ) -> "CategoriaTipoIncompativel":
+        categoria = "de gasto" if tipo_da_categoria == "GASTO" else "de receita"
+        lancamento = "num gasto" if tipo_do_lancamento == "GASTO" else "numa receita"
+        return cls(f'A categoria "{nome}" é {categoria} e não pode ser usada {lancamento}.')

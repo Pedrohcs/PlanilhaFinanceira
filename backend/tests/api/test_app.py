@@ -21,7 +21,8 @@ def test_rotas_da_api_sao_as_do_contrato__CA_F02_8(cliente: TestClient) -> None:
     """Guarda de fronteira: sob `/api` só existe o que `SPECS/03` §6.1 já implementou.
 
     Em T-002 este teste exigia nenhuma rota sob `/api`; T-005 aceitou só
-    `/api/health`; T-013 acrescentou as de categorias. Cada tarefa que criar
+    `/api/health`; T-013 acrescentou as de categorias; T-015, lançamentos e formas
+    de pagamento. Cada tarefa que criar
     endpoint atualiza esta lista junto com o contrato.
     """
     esquema = cliente.get("/openapi.json").json().get("paths", {})
@@ -38,6 +39,8 @@ def test_rotas_da_api_sao_as_do_contrato__CA_F02_8(cliente: TestClient) -> None:
         ("POST", "/api/categorias"),
         ("PUT", "/api/categorias/{id}"),
         ("DELETE", "/api/categorias/{id}"),
+        ("GET", "/api/formas-pagamento"),
+        ("POST", "/api/lancamentos"),
     }
 
 

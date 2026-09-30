@@ -3,7 +3,7 @@
 | Campo | Valor |
 |---|---|
 | Documento | `SPECS/03-arquitetura.md` |
-| Versão | 1.17 |
+| Versão | 1.18 |
 | Atualizado em | 2026-09-30 |
 | Status | Aprovado para início |
 | Responde | **Como** o sistema se organiza: componentes, pastas, camadas, modelo de dados na planilha, contrato da API e fluxos |
@@ -74,8 +74,8 @@ PlanilhaFinanceira/
 │   │   │   ├── dinheiro.py        # tipo Dinheiro, divisão em parcelas
 │   │   │   └── datas.py           # ajustar_dia, somar_meses, data_da_parcela, mes_de,
 │   │   │                          # proximo_mes, mes_anterior, meses_entre, mes_corrente
-│   │   ├── services/              # categoria_service.py (T-013); lancamento, parcelamento,
-│   │   │                          # recorrencia, resumo
+│   │   ├── services/              # categoria_service.py (T-013), lancamento_service.py (T-015);
+│   │   │                          # parcelamento, recorrencia, resumo
 │   │   ├── repositories/
 │   │   │   ├── base.py            # Protocols dos repositórios (`Repositorio[T]` + 3 específicos)
 │   │   │   ├── memoria/           # implementações em memória (testes), mesmo comportamento
@@ -316,6 +316,8 @@ Base: `/api`. JSON em `snake_case`. Valores monetários como número com 2 casas
 | 422 | `VALIDACAO` | Entrada inválida (inclui erros do Pydantic, convertidos para este formato) |
 | 404 | `NAO_ENCONTRADO` | `id` inexistente |
 | 409 | `CATEGORIA_DUPLICADA`, `CATEGORIA_EM_USO`, `CATEGORIA_INATIVA`, `CATEGORIA_TIPO_INCOMPATIVEL` | Conflitos de regra |
+
+Regras de negócio violadas **num campo** (ex.: categoria inexistente, gasto sem forma de pagamento) também saem como 422 `VALIDACAO`, com o campo em `detalhes` — o formulário marca o campo certo (F-06 §3.4).
 | 503 | `PLANILHA_INDISPONIVEL`, `SEM_PERMISSAO_PLANILHA`, `PLANILHA_NAO_ENCONTRADA`, `CREDENCIAIS_INVALIDAS`, `API_SHEETS_DESABILITADA`, `SCHEMA_PLANILHA_INVALIDO` | Falhas no Google e na estrutura da planilha (ver `02` §5.6) |
 | 500 | `ERRO_INTERNO` | Não previsto (mensagem genérica; detalhe só no log) |
 
@@ -486,4 +488,5 @@ Quando o **backend não responde** (status 0, ou 502/504 sem o envelope de §6.2
 | 2026-09-30 | 1.15 | §3: `services/categoria_service.py`, `deps.py` com `Repositorios`. §4.5: cache e repositórios únicos criados no lifespan (T-013). |
 | 2026-09-30 | 1.16 | §3: `categorias.api.ts`, `categorias.store.ts`, página e diálogo de categorias, `paleta.ts`; `frontend/src/testing/` (T-014). §8.1: navegação lateral com links simples, sem `mat-nav-list` (pacote inicial). |
 | 2026-09-30 | 1.17 | §8.4: marcador `TRATAMENTO_LOCAL` para formulários que mostram o 409 no campo (F-06, Q3). |
+| 2026-09-30 | 1.18 | §3: `lancamento_service.py`. §6.2: 422 de regra de negócio também traz o campo em `detalhes` (T-015). |
 | 2026-09-29 | 1.1 | Frontend em Angular 22 (zoneless); pasta `shared/grafico/` com diretiva Chart.js própria (§3, §8.2.1). |

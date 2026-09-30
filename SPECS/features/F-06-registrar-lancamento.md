@@ -121,18 +121,18 @@ Nenhuma categoria ativa do tipo (F-05 Q5) → no lugar do seletor, a mensagem "N
 - [ ] **CA-01.4** Dado que a gravação falhou, quando o erro é exibido, então os dados digitados continuam no formulário para nova tentativa.
 - [ ] **CA-01.5** Dado um gasto recém-registrado, quando o usuário vê a listagem e o resumo do mês, então o gasto já aparece e os totais já o consideram. *(F-06 garante `DadosStore.versao++`; a verificação na tela é de F-07/F-09.)*
 - [ ] **CA-02.1** Dado o formulário de receita, quando o usuário escolhe a categoria, então só categorias ativas do tipo receita são oferecidas.
-- [ ] **CA-02.2** Dado um formulário de receita válido sem forma de pagamento, quando o usuário confirma, então a receita é gravada.
+- [~] **CA-02.2** Dado um formulário de receita válido sem forma de pagamento, quando o usuário confirma, então a receita é gravada. *(T-015: API grava receita sem forma; o formulário é T-016.)*
 
 **Refinados — backend (T-015)**
 
-- [ ] **CA-F06.1** Dado um gasto válido, quando `POST /api/lancamentos`, então 201, **uma** linha nova na aba `Lancamentos` com `id` uuid hex, data ISO em texto, valor numérico, enums em maiúsculas, `criado_em = atualizado_em`, parcela/recorrência vazias; e a resposta traz `categoria_nome` e `categoria_cor`.
-- [ ] **CA-F06.2** Dado `valor` 0, negativo, com 3 casas ou acima de 12 dígitos, então 422 no campo `valor` e nada é gravado (RN-01).
-- [ ] **CA-F06.3** Dado `data` ausente ou inválida (`2026-02-30`, `30/09/2026`), então 422 no campo `data`; e datas passadas e futuras (`1999-01-01`, `2030-12-31`) são aceitas (RN-02).
-- [ ] **CA-F06.4** Dado categoria inativa, então 409 `CATEGORIA_INATIVA`; de outro tipo, 409 `CATEGORIA_TIPO_INCOMPATIVEL`; inexistente, 422 no campo `categoria_id` — em todos, nada gravado (RN-04).
-- [ ] **CA-F06.5** Dado gasto sem `forma_pagamento`, então 422 no campo `forma_pagamento`; e receita sem forma, 201 com `forma_pagamento: null` (RN-05, CA-02.2).
-- [ ] **CA-F06.6** Dado descrição vazia, só espaços ou com 101 caracteres (após aparar), ou observação com 501, então 422 no campo; e observação `""` é gravada vazia e devolvida `null` (RN-06).
-- [ ] **CA-F06.7** Dado `GET /api/formas-pagamento`, então 200 com os 6 `{codigo, nome}` na ordem de RN-05.
-- [ ] **CA-F06.8** Dado a planilha inacessível, quando `POST /api/lancamentos`, então 503 com o código da causa e nada gravado.
+- [x] **CA-F06.1** Dado um gasto válido, quando `POST /api/lancamentos`, então 201, **uma** linha nova na aba `Lancamentos` com `id` uuid hex, data ISO em texto, valor numérico, enums em maiúsculas, `criado_em = atualizado_em`, parcela/recorrência vazias; e a resposta traz `categoria_nome` e `categoria_cor`.
+- [x] **CA-F06.2** Dado `valor` 0, negativo, com 3 casas ou acima de 12 dígitos, então 422 no campo `valor` e nada é gravado (RN-01).
+- [x] **CA-F06.3** Dado `data` ausente ou inválida (`2026-02-30`, `30/09/2026`), então 422 no campo `data`; e datas passadas e futuras (`1999-01-01`, `2030-12-31`) são aceitas (RN-02).
+- [x] **CA-F06.4** Dado categoria inativa, então 409 `CATEGORIA_INATIVA`; de outro tipo, 409 `CATEGORIA_TIPO_INCOMPATIVEL`; inexistente, 422 no campo `categoria_id` — em todos, nada gravado (RN-04).
+- [x] **CA-F06.5** Dado gasto sem `forma_pagamento`, então 422 no campo `forma_pagamento`; e receita sem forma, 201 com `forma_pagamento: null` (RN-05, CA-02.2).
+- [x] **CA-F06.6** Dado descrição vazia, só espaços ou com 101 caracteres (após aparar), ou observação com 501, então 422 no campo; e observação `""` é gravada vazia e devolvida `null` (RN-06).
+- [x] **CA-F06.7** Dado `GET /api/formas-pagamento`, então 200 com os 6 `{codigo, nome}` na ordem de RN-05.
+- [x] **CA-F06.8** Dado a planilha inacessível, quando `POST /api/lancamentos`, então 503 com o código da causa e nada gravado.
 
 **Refinados — frontend (T-016)**
 
@@ -268,6 +268,10 @@ Ordem: T-015 → T-016 (`05` §4; T-016 também depende de T-014, concluída).
 | Valor em campo livre pt-BR com as regras de §3.2.1 (Q2). | Digitar "42,50" é o natural no teclado; a regra do ponto (milhar de 3 em 3, decimal com 1–2 dígitos) cobre também quem digita "42.50". | Não |
 | Marcador `TRATAMENTO_LOCAL` (`HttpContext`) para o interceptor não repetir um 409 que o formulário já mostra (Q3). | Evita a mesma frase no campo e no aviso; mantém o comportamento global para quem não trata o erro. `03` → 1.17 (§8.4). | Não |
 | Forma de pagamento nunca pré-selecionada (Q4). | Evita gravar a forma errada sem perceber; RN-05 exige escolha consciente no gasto. | Não |
+| Erro de domínio passa a carregar `detalhes`; `ErroValidacao.no_campo(campo, mensagem)` (T-015). | Categoria inexistente e gasto sem forma são regras do serviço, mas o formulário precisa do campo para marcá-lo (CA-F06.12). Cabe no formato de `03` §6.2; `03` → 1.18. | Não |
+| Ordem das checagens da categoria: existe → mesmo tipo → ativa → forma (T-015). | Tipo errado é o erro mais fundamental; uma categoria inativa de outro tipo é reportada como "de outro tipo". | Não |
+| `GET /api/formas-pagamento` não depende da planilha (T-015). | A lista é fixa (P-01) e vem do enum; o formulário pode mostrá-la mesmo com a planilha fora. | Não |
+| `valor` na entrada usa o tipo `Dinheiro`: JSON `true` e texto como `"42,50"` são recusados (T-015). | A interpretação do formato pt-BR é do frontend (§3.2.1); a API recebe número. | Não |
 
 ---
 
@@ -288,3 +292,4 @@ Ordem: T-015 → T-016 (`05` §4; T-016 também depende de T-014, concluída).
 |---|---|
 | 2026-09-30 | Criação (`/especificar-feature F-06`). Status `Rascunho` — 4 questões em aberto. |
 | 2026-09-30 | Q1–Q4 respondidas → status **Aprovada**. Regras do valor em §3.2.1; `TRATAMENTO_LOCAL` no escopo de T-016 (inclui o diálogo de categoria); CA-F06.14 detalhado e CA-F06.16 acrescentado; bordas 13a e 13b. `03` → 1.17. |
+| 2026-09-30 | T-015 concluída: CA-F06.1 a .8 verificados por teste (API com planilha falsa e em memória); CA-02.2 com a parte do backend. Quatro decisões em §10. `03` → 1.18. |

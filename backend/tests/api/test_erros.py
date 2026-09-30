@@ -8,7 +8,7 @@ import pytest
 from fastapi.testclient import TestClient
 from pydantic import BaseModel
 
-from app.domain.erros import SemPermissaoPlanilha
+from app.domain.erros import ErroValidacao, SemPermissaoPlanilha
 from app.main import criar_app
 
 EMAIL_SERVICO = "robo-financeiro@projeto-falso.iam.gserviceaccount.com"
@@ -27,6 +27,10 @@ def cliente_com_rotas_de_erro() -> TestClient:
     @app.get("/api/_teste/erro-de-planilha")
     def erro_de_planilha() -> None:
         raise SemPermissaoPlanilha.para(EMAIL_SERVICO)
+
+    @app.get("/api/_teste/regra-no-campo")
+    def regra_no_campo() -> None:
+        raise ErroValidacao.no_campo("forma_pagamento", "Informe a forma de pagamento.")
 
     @app.get("/api/_teste/defeito")
     def defeito() -> None:
@@ -92,5 +96,19 @@ def test_rota_inexistente_usa_o_envelope_padrao__CA_F02_5(
             "codigo": "NAO_ENCONTRADO",
             "mensagem": "Recurso não encontrado.",
             "detalhes": [],
+        }
+    }
+
+
+def test_erro_de_dominio_leva_detalhes__F06_3_4(cliente_com_rotas_de_erro: TestClient) -> None:
+    """Regra de negócio violada num campo: o formulário sabe qual campo marcar (T-015)."""
+    resposta = cliente_com_rotas_de_erro.get("/api/_teste/regra-no-campo")
+
+    assert resposta.status_code == 422
+    assert resposta.json() == {
+        "erro": {
+            "codigo": "VALIDACAO",
+            "mensagem": "Informe a forma de pagamento.",
+            "detalhes": [{"campo": "forma_pagamento", "mensagem": "Informe a forma de pagamento."}],
         }
     }

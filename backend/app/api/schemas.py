@@ -1,12 +1,15 @@
 """DTOs de entrada e saída da API (`SPECS/03` §6.3)."""
 
-from datetime import datetime
+from datetime import date, datetime
 from typing import Annotated, Literal
 
 from pydantic import BaseModel, BeforeValidator, Field
 
-from app.domain.enums import TipoLancamento
+from app.domain.dinheiro import Dinheiro
+from app.domain.enums import FormaPagamento, TipoLancamento
+from app.domain.modelos import Data
 from app.services.categoria_service import CategoriaComUso, normalizar_nome
+from app.services.lancamento_service import LancamentoComCategoria
 
 STATUS_OK = "ok"
 STATUS_DEGRADADO = "degradado"
@@ -86,3 +89,78 @@ class CategoriaSaida(BaseModel):
     @classmethod
     def de(cls, item: CategoriaComUso) -> "CategoriaSaida":
         return cls(**item.categoria.model_dump(), em_uso=item.em_uso)
+
+
+# Lançamentos e formas de pagamento (F-06) --------------------------------------
+
+DESCRICAO_MAXIMO = 100
+OBSERVACAO_MAXIMO = 500
+
+
+def _aparar(valor: object) -> object:
+    return valor.strip() if isinstance(valor, str) else valor
+
+
+def _aparar_ou_nulo(valor: object) -> object:
+    """Observação vazia (ou só espaços) é gravada vazia e devolvida `null` (RN-06)."""
+    if isinstance(valor, str):
+        return valor.strip() or None
+    return valor
+
+
+DescricaoEntrada = Annotated[
+    str, BeforeValidator(_aparar), Field(min_length=1, max_length=DESCRICAO_MAXIMO)
+]
+# O limite vale só para o texto: `None` (observação vazia) não tem tamanho.
+ObservacaoEntrada = Annotated[
+    Annotated[str, Field(max_length=OBSERVACAO_MAXIMO)] | None,
+    BeforeValidator(_aparar_ou_nulo),
+]
+
+
+class LancamentoEntrada(BaseModel):
+    """`POST /api/lancamentos` (`SPECS/03` §6.3). `data` não aceita número (serial/timestamp)."""
+
+    data: Data
+    tipo: TipoLancamento
+    descricao: DescricaoEntrada
+    valor: Dinheiro
+    categoria_id: Annotated[str, Field(min_length=1)]
+    forma_pagamento: FormaPagamento | None = None
+    observacao: ObservacaoEntrada = None
+
+
+class LancamentoSaida(BaseModel):
+    """Lançamento na resposta (`SPECS/03` §6.3), com nome e cor da categoria."""
+
+    id: str
+    data: date
+    tipo: TipoLancamento
+    descricao: str
+    valor: Dinheiro
+    categoria_id: str
+    categoria_nome: str
+    categoria_cor: str
+    forma_pagamento: FormaPagamento | None
+    observacao: str | None
+    parcelamento_id: str | None
+    parcela_numero: int | None
+    parcela_total: int | None
+    recorrencia_id: str | None
+    criado_em: datetime
+    atualizado_em: datetime
+
+    @classmethod
+    def de(cls, item: LancamentoComCategoria) -> "LancamentoSaida":
+        return cls(
+            **item.lancamento.model_dump(),
+            categoria_nome=item.categoria.nome,
+            categoria_cor=item.categoria.cor,
+        )
+
+
+class FormaPagamentoSaida(BaseModel):
+    """`GET /api/formas-pagamento`: código do enum e rótulo (RN-05)."""
+
+    codigo: FormaPagamento
+    nome: str
