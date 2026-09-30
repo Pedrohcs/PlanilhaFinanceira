@@ -3,7 +3,7 @@
 | Campo | Valor |
 |---|---|
 | Documento | `SPECS/02-definicoes-tecnicas.md` |
-| Versão | 1.6 |
+| Versão | 1.7 |
 | Atualizado em | 2026-09-29 |
 | Status | Aprovado para início |
 | Responde | **Com o quê** o sistema é construído: linguagens, bibliotecas, versões, integração com Google, convenções |
@@ -196,6 +196,7 @@ Limites da Sheets API: **60 requisições de leitura e 60 de escrita por minuto 
 | ID inexistente | `SpreadsheetNotFound` / 404 | `PlanilhaNaoEncontrada` | 503 | "Planilha não encontrada. Confira SPREADSHEET_ID." |
 | Cota / instabilidade | 429 / 5xx após retries | `PlanilhaIndisponivel` | 503 | "Google Sheets indisponível no momento. Tente novamente." |
 | Sem internet | `requests.ConnectionError`/`TransportError` | `PlanilhaIndisponivel` | 503 | idem |
+| Cabeçalho da planilha divergente, ou `versao_schema` maior que a do app | Comparação feita pelo `bootstrap` (`03` §5) | `SchemaPlanilhaInvalido` | 503 | "A estrutura da planilha não corresponde ao esperado: <aba>, <problema>." |
 
 ---
 
@@ -292,3 +293,4 @@ Novas decisões: acrescente uma linha com o próximo ID. Decisões substituídas
 | 2026-09-29 | 1.4 | ADR-13 e §4: convenção de nomes de arquivo do frontend (style guide 2025). |
 | 2026-09-29 | 1.5 | ADR-14 e §1: prettier (e `jsdom`) registrados como dependências de desenvolvimento trazidas pelo CLI 22 em T-003. |
 | 2026-09-29 | 1.6 | §5.6: 403 desambiguado — nova exceção `ApiSheetsDesabilitada` para Sheets API desativada no projeto (decidido em F-02). |
+| 2026-09-29 | 1.7 | §5.6: `SchemaPlanilhaInvalido` para cabeçalho divergente e `versao_schema` à frente do app (decidido em F-03). |

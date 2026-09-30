@@ -3,8 +3,8 @@
 | Campo | Valor |
 |---|---|
 | Documento | `SPECS/03-arquitetura.md` |
-| Versão | 1.5 |
-| Atualizado em | 2026-09-29 |
+| Versão | 1.7 |
+| Atualizado em | 2026-09-30 |
 | Status | Aprovado para início |
 | Responde | **Como** o sistema se organiza: componentes, pastas, camadas, modelo de dados na planilha, contrato da API e fluxos |
 | Depende de | `01-requisitos.md`, `02-definicoes-tecnicas.md` |
@@ -72,7 +72,8 @@ PlanilhaFinanceira/
 │   │   │   ├── enums.py           # TipoLancamento, FormaPagamento, StatusRecorrencia
 │   │   │   ├── erros.py           # exceções de domínio
 │   │   │   ├── dinheiro.py        # tipo Dinheiro, divisão em parcelas
-│   │   │   └── datas.py           # somar_meses, ajustar_dia, mes_referencia
+│   │   │   └── datas.py           # ajustar_dia, somar_meses, data_da_parcela, mes_de,
+│   │   │                          # proximo_mes, mes_anterior, meses_entre, mes_corrente
 │   │   ├── services/              # categoria, lancamento, parcelamento, recorrencia, resumo
 │   │   ├── repositories/
 │   │   │   ├── base.py            # Protocols dos repositórios
@@ -135,7 +136,7 @@ flowchart TB
 
 | Módulo | Pode importar | Não pode importar |
 |---|---|---|
-| `domain` | apenas biblioteca padrão e pydantic | qualquer outro módulo do app |
+| `domain` | apenas biblioteca padrão, pydantic e os próprios módulos de `domain` | qualquer outro módulo do app |
 | `services` | `domain`, `repositories.base` | `fastapi`, `gspread`, `infra`, `repositories.planilha` |
 | `repositories.planilha` | `domain`, `infra` | `services`, `api` |
 | `infra` | `domain`, `gspread`, `google-auth` | `services`, `api` |
@@ -306,7 +307,7 @@ Base: `/api`. JSON em `snake_case`. Valores monetários como número com 2 casas
 | 422 | `VALIDACAO` | Entrada inválida (inclui erros do Pydantic, convertidos para este formato) |
 | 404 | `NAO_ENCONTRADO` | `id` inexistente |
 | 409 | `CATEGORIA_DUPLICADA`, `CATEGORIA_EM_USO`, `CATEGORIA_INATIVA`, `CATEGORIA_TIPO_INCOMPATIVEL` | Conflitos de regra |
-| 503 | `PLANILHA_INDISPONIVEL`, `SEM_PERMISSAO_PLANILHA`, `PLANILHA_NAO_ENCONTRADA`, `CREDENCIAIS_INVALIDAS`, `API_SHEETS_DESABILITADA` | Falhas no Google (ver `02` §5.6) |
+| 503 | `PLANILHA_INDISPONIVEL`, `SEM_PERMISSAO_PLANILHA`, `PLANILHA_NAO_ENCONTRADA`, `CREDENCIAIS_INVALIDAS`, `API_SHEETS_DESABILITADA`, `SCHEMA_PLANILHA_INVALIDO` | Falhas no Google e na estrutura da planilha (ver `02` §5.6) |
 | 500 | `ERRO_INTERNO` | Não previsto (mensagem genérica; detalhe só no log) |
 
 Erros do próprio framework também saem neste envelope: rota inexistente vira 404 `NAO_ENCONTRADO` e os demais `HTTPException` viram `ERRO_INTERNO` com o status original — assim o `erro.interceptor.ts` (§8.4) tem uma única forma para interpretar. O handler é registrado para a `HTTPException` do **Starlette**, classe-mãe da do FastAPI, porque o 404 de roteamento levanta a mãe.
@@ -456,4 +457,6 @@ Um único componente `lancamento-form.dialog` atende: novo gasto, nova receita, 
 | 2026-09-29 | 1.3 | §6.2: código `API_SHEETS_DESABILITADA`. §6.3: esquema do `GET /api/health` (sempre 200, `status` `ok`/`degradado`) — ambos decididos em F-02. |
 | 2026-09-29 | 1.4 | §6.2: erros do framework passam pelo mesmo envelope. §3: `ConexaoPlanilha` em `sheets_client.py` (T-005). |
 | 2026-09-29 | 1.5 | §3: `README.md` na raiz (T-006). |
+| 2026-09-29 | 1.6 | §6.2: código `SCHEMA_PLANILHA_INVALIDO` (decidido em F-03). |
+| 2026-09-30 | 1.7 | §3: funções reais de `domain/datas.py`. §4.2: explicitado que módulos de `domain` importam uns aos outros (T-007). |
 | 2026-09-29 | 1.1 | Frontend em Angular 22 (zoneless); pasta `shared/grafico/` com diretiva Chart.js própria (§3, §8.2.1). |

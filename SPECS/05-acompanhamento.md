@@ -3,7 +3,7 @@
 | Campo | Valor |
 |---|---|
 | Documento | `SPECS/05-acompanhamento.md` |
-| Atualizado em | 2026-09-29 |
+| Atualizado em | 2026-09-30 |
 | Responde | **Onde estamos:** status de cada tarefa e feature |
 | Depende de | `04-roadmap.md` (plano) |
 
@@ -22,14 +22,14 @@
 
 | Marco | Features | Tarefas | Não iniciada | Iniciada | Concluída | Progresso |
 |---|---|---|---|---|---|---|
-| M0 · Fundação | F-01..F-04 | 12 | 6 | 0 | 6 | 50% |
+| M0 · Fundação | F-01..F-04 | 12 | 5 | 0 | 7 | 58% |
 | M1 · Registro e consulta | F-05..F-08 | 8 | 8 | 0 | 0 | 0% |
 | M2 · Visão financeira | F-09..F-11 | 5 | 5 | 0 | 0 | 0% |
 | M3 · Automação | F-12..F-13 | 5 | 5 | 0 | 0 | 0% |
 | M4 · Acabamento | F-14..F-15 | 5 | 5 | 0 | 0 | 0% |
-| **Total** | **15** | **35** | **29** | **0** | **6** | **17%** |
+| **Total** | **15** | **35** | **28** | **0** | **7** | **20%** |
 
-**F-01 e F-02 concluídas.** Próxima tarefa disponível: **T-007** (BE, início de F-03, caminho crítico) — F-03 ainda sem spec de feature, então o ciclo pede `/especificar-feature F-03` antes.
+**F-01 e F-02 concluídas; F-03 iniciada.** Próxima tarefa disponível: **T-008** (BE, F-03, caminho crítico) — antes dela, fazer a verificação pendente de CA-F02.13 com a planilha real (Log de 2026-09-29). Também desbloqueada: T-010 (FE, F-04).
 
 ---
 
@@ -39,7 +39,7 @@
 |---|---|---|---|---|
 | F-01 | Fundação do repositório | M0 | Concluída | [`F-01-fundacao-do-repositorio.md`](features/F-01-fundacao-do-repositorio.md) (Aprovada) |
 | F-02 | Conexão com Google Sheets | M0 | Concluída | [`F-02-conexao-google-sheets.md`](features/F-02-conexao-google-sheets.md) (Aprovada) |
-| F-03 | Esquema e repositórios da planilha | M0 | Não iniciada | — |
+| F-03 | Esquema e repositórios da planilha | M0 | Iniciada | [`F-03-esquema-e-repositorios.md`](features/F-03-esquema-e-repositorios.md) (Aprovada) |
 | F-04 | Shell do frontend | M0 | Não iniciada | — |
 | F-05 | Categorias | M1 | Não iniciada | — |
 | F-06 | Registrar lançamento | M1 | Não iniciada | — |
@@ -81,7 +81,8 @@ flowchart LR
     classDef naoIniciada fill:#eeeeee,stroke:#9e9e9e,color:#424242;
     classDef iniciada fill:#fff3cd,stroke:#f0ad4e,color:#5c4400;
     classDef concluida fill:#d4edda,stroke:#28a745,color:#155724;
-    class F03,F04,F05,F06,F07,F08,F09,F10,F11,F12,F13,F14,F15 naoIniciada;
+    class F04,F05,F06,F07,F08,F09,F10,F11,F12,F13,F14,F15 naoIniciada;
+    class F03 iniciada;
     class F01,F02 concluida;
 ```
 
@@ -101,7 +102,7 @@ Camadas: **BE** = backend · **FE** = frontend · **DOC** = documentação/infra
 | T-004 | `domain/erros.py` (exceções de conexão) e `infra/sheets_client.py`: carregar credenciais (`from_service_account_file`, escopos corretos), `open_by_key`, retry com backoff (429/5xx), mapear erros para exceções de domínio (`02` §5.6, incluindo o 403 de API desativada). Testes com cliente falso. | F-02 | BE | T-002 | Concluída | 2026-09-29 | 2026-09-29 | `domain/erros.py` (5 exceções de conexão + base) e `infra/sheets_client.py` (escopos, `open_by_key`, retry 2/4/8 s, tradução de §5.6 com 403 desambiguado). 20 testes novos, 29 no total; `ruff` limpo. CA-F02.1/.2/.3/.4/.11/.14 e a parte de domínio de CA-16.1. |
 | T-005 | `api/erros.py` (handlers no formato `03` §6.2, incluindo erros do Pydantic → `VALIDACAO`), `api/deps.py`, lifespan que conecta sem derrubar o servidor (uma tentativa), `GET /api/health` que reconecta sob demanda. Testes de API. | F-02 | BE | T-004 | Concluída | 2026-09-29 | 2026-09-29 | Handlers de `03` §6.2 (inclusive erros do framework), `api/deps.py`, `ConexaoPlanilha`, lifespan tolerante e `GET /api/health` sempre 200 com nova tentativa. Logging INFO de `02` §3. 17 testes novos (46 no total); `ruff` limpo; fumaça com uvicorn real. CA-16.1, CA-16.2, CA-F02.5..10 e .12. |
 | T-006 | `README.md` na raiz: pré-requisitos, preparação única da planilha (compartilhar com `client_email`, obter ID), configuração do `.env`, como rodar. | F-02 | DOC | T-004 | Concluída | 2026-09-29 | 2026-09-29 | `README.md` com pré-requisitos, preparação única da planilha (inclusive descobrir o `client_email` pelo próprio `/api/health`), `.env`, execução, testes, tabela dos 5 erros e seção de segurança. 6 testes guardam a documentação (52 no total). CA-F02.13 — falta só a leitura do usuário. |
-| T-007 | Domínio base: `enums.py`, `dinheiro.py` (tipo `Dinheiro`, divisão em parcelas RN-07), `datas.py` (`somar_meses`, `ajustar_dia`, iteração de meses `YYYY-MM`), `modelos.py`. Testes cobrindo RN-07 e fim de mês/ano bissexto. | F-03 | BE | T-002 | Não iniciada | | | |
+| T-007 | Domínio base: `enums.py`, `dinheiro.py` (tipo `Dinheiro`, divisão em parcelas RN-07), `datas.py` (`somar_meses`, `ajustar_dia`, iteração de meses `YYYY-MM`), `modelos.py`. Testes cobrindo RN-07 e fim de mês/ano bissexto. | F-03 | BE | T-002 | Concluída | 2026-09-30 | 2026-09-30 | `enums`, `dinheiro` (tipo `Dinheiro`, `valor_da_planilha`, `dividir_em_parcelas` em centavos inteiros), `datas` (inclui `data_da_parcela` a partir da compra) e `modelos` (linha válida de `03` §5, com regras entre campos, e `ListagemComAvisos[T]`); `NaoEncontrado` e `ErroValidacao` em `erros.py`. 431 testes novos (483 no total, maioria parametrização N=2..48); `ruff` limpo. CA-F03.1 a .8. |
 | T-008 | `infra/schema_planilha.py` (abas/colunas de `03` §5) e `infra/bootstrap.py` idempotente: cria abas e cabeçalhos, valida cabeçalhos, grava `versao_schema`, seed de categorias RN-15. Chamado no lifespan. Testes com planilha falsa. | F-03 | BE | T-005, T-007 | Não iniciada | | | |
 | T-009 | `infra/cache.py` (TTL + invalidação), `repositories/base.py` (Protocols), `repositories/planilha/` (leitura UNFORMATTED, validação de linhas → `linhas_ignoradas`, `append_rows` RAW em lote, atualizar/remover localizando por `id`), `repositories/memoria/`. Testes unitários + 1 teste `@integracao`. | F-03 | BE | T-008 | Não iniciada | | | |
 | T-010 | Shell: `app.ts` (classe `App`) com barra superior (botões "Registrar gasto"/"Registrar receita" ainda sem ação), navegação lateral, rotas lazy das 5 páginas (placeholders), `GraficoDirective` + `grafico.config.ts` em `shared/grafico/` (Chart.js direto, `02` §4) com teste unitário. | F-04 | FE | T-003 | Não iniciada | | | |
@@ -157,6 +158,10 @@ Camadas: **BE** = backend · **FE** = frontend · **DOC** = documentação/infra
 
 | Data | Tarefa/Feature | Mudança | Observação |
 |---|---|---|---|
+| 2026-09-30 | T-007 | `Iniciada` → `Concluída` | Domínio base de F-03. `03` → 1.7 (funções de `datas.py`; `domain` importa o próprio `domain`, e `test_camadas` passou a checar também bibliotecas externas). Decisões em F-03 §10. |
+| 2026-09-30 | T-007 | Sugestões anotadas | (1) **T-009**: antes de `model_validate`, tirar espaços das células, trocar `""` por `None` e passar `valor` por `valor_da_planilha` — o modelo recusa `42.500000000000004` (mais de 2 casas); daí em diante a validação de linha é só `ValidationError` → ignorada. (2) **Serviços (T-013 em diante)**: `model_copy(update=...)` do Pydantic **não valida**; para editar, usar `Modelo.model_validate({**item.model_dump(), ...})`. |
+| 2026-09-30 | T-007 | `Não iniciada` → `Iniciada` | Dependência T-002 `Concluída`; spec F-03 `Aprovada`. F-03 passa a `Iniciada` (§2) e o mapa (§3) foi atualizado. |
+| 2026-09-29 | F-03 | Spec da feature criada e **aprovada** | Q1–Q4 decididas. **P-03 confirmada** (`01` → 1.1). Paleta das 15 categorias padrão definida; total mínimo `N × R$ 0,01` para parcelar; `SchemaPlanilhaInvalido` → `02` → 1.7 e `03` → 1.6. Nenhum status de tarefa alterado. |
 | 2026-09-29 | T-006 / F-02 | `Iniciada` → `Concluída` | README da raiz. **F-02 concluída** (§2 e §3 atualizados). `03` → 1.5 (`README.md` na árvore). |
 | 2026-09-29 | F-02 | PENDÊNCIA de verificação | CA-F02.13 depende de o usuário seguir o README do zero com a planilha real (criar, compartilhar, `.env`, subir). Não bloqueia T-007, mas **deve ser feito antes de T-008**, que exige planilha acessível. |
 | 2026-09-29 | T-006 | `Não iniciada` → `Iniciada` | Dependência T-004 `Concluída`. Última tarefa de F-02. |

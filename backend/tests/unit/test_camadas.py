@@ -1,6 +1,7 @@
 """Regras de dependência entre camadas (`SPECS/03` §4.2, CA-F02.12)."""
 
 import ast
+import sys
 from pathlib import Path
 
 RAIZ_APP = Path(__file__).resolve().parents[2] / "app"
@@ -34,10 +35,15 @@ def test_router_nao_importa_infra__CA_F02_12() -> None:
 
 
 def test_domain_importa_apenas_biblioteca_padrao__CA_F02_12() -> None:
-    """`domain` não conhece nenhum outro módulo do app (`SPECS/03` §4.2)."""
+    """`domain` só usa biblioteca padrão, pydantic e o próprio `domain` (`SPECS/03` §4.2)."""
     for arquivo in sorted((RAIZ_APP / "domain").glob("*.py")):
-        internos = {mod for mod in imports_de(arquivo) if mod.startswith("app.")}
-        assert not internos, f"{arquivo.name} importa {internos}"
+        proibidos = {
+            mod
+            for mod in imports_de(arquivo)
+            if not mod.startswith("app.domain")
+            and mod.split(".")[0] not in sys.stdlib_module_names | {"pydantic"}
+        }
+        assert not proibidos, f"{arquivo.name} importa {proibidos}"
 
 
 def test_infra_nao_importa_api_nem_services__CA_F02_12() -> None:

@@ -55,3 +55,17 @@ class PlanilhaNaoEncontrada(ErroPlanilha):
 class PlanilhaIndisponivel(ErroPlanilha):
     codigo = "PLANILHA_INDISPONIVEL"
     mensagem = "Google Sheets indisponível no momento. Tente novamente."
+
+
+class ErroValidacao(ErroDominio):
+    """Entrada que viola uma regra de negócio (ex.: RN-07), vista como 422."""
+
+    codigo = "VALIDACAO"
+    mensagem = "Dados inválidos."
+
+
+class NaoEncontrado(ErroDominio):
+    """`id` inexistente no repositório (`SPECS/03` §4.3)."""
+
+    codigo = "NAO_ENCONTRADO"
+    mensagem = "Registro não encontrado."
