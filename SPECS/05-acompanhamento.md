@@ -29,7 +29,7 @@
 | M4 · Acabamento | F-14..F-15 | 5 | 5 | 0 | 0 | 0% |
 | **Total** | **15** | **35** | **13** | **0** | **22** | **63%** |
 
-**M0 e M1 concluídos (F-01 a F-08); F-12 concluída.** O caminho crítico (F-14) agora espera F-10, F-11 e F-13. Desbloqueadas: **T-021** (BE, F-09 — sem spec; próximo passo: `/especificar-feature F-09`) e T-028 (BE, F-13 — sem spec). Pendentes com o usuário, sem bloquear: seguir o README com a planilha real (CA-F02.13), rodar `pytest -m integracao` (CA-15.1/15.2) e a conferência visual (CA-F04.7, CA-F04.30, CA-F05.20, F-06 borda 16, CA-F07.18, menu ⋮ de F-08 em 360 px).
+**M0 e M1 concluídos (F-01 a F-08); F-12 concluída.** O caminho crítico (F-14) agora espera F-10, F-11 e F-13. Desbloqueadas: **T-021** (BE, F-09 — spec aprovada; próximo passo: `/implementar-tarefa T-021`) e T-028 (BE, F-13 — sem spec). Pendentes com o usuário, sem bloquear: seguir o README com a planilha real (CA-F02.13), rodar `pytest -m integracao` (CA-15.1/15.2) e a conferência visual (CA-F04.7, CA-F04.30, CA-F05.20, F-06 borda 16, CA-F07.18, menu ⋮ de F-08 em 360 px).
 
 ---
 
@@ -45,7 +45,7 @@
 | F-06 | Registrar lançamento | M1 | Concluída | [`F-06-registrar-lancamento.md`](features/F-06-registrar-lancamento.md) (Concluída) |
 | F-07 | Listagem mensal | M1 | Concluída | [`F-07-listagem-mensal.md`](features/F-07-listagem-mensal.md) (Concluída) |
 | F-08 | Editar e excluir lançamentos | M1 | Concluída | [`F-08-editar-excluir-lancamentos.md`](features/F-08-editar-excluir-lancamentos.md) (Concluída) |
-| F-09 | Resumo mensal | M2 | Não iniciada | — |
+| F-09 | Resumo mensal | M2 | Não iniciada | [`F-09-resumo-mensal.md`](features/F-09-resumo-mensal.md) (Aprovada) |
 | F-10 | Gráficos do mês | M2 | Não iniciada | — |
 | F-11 | Histórico | M2 | Não iniciada | — |
 | F-12 | Parcelamentos | M3 | Concluída | [`F-12-parcelamentos.md`](features/F-12-parcelamentos.md) (Concluída) |
@@ -157,6 +157,7 @@ Camadas: **BE** = backend · **FE** = frontend · **DOC** = documentação/infra
 
 | Data | Tarefa/Feature | Mudança | Observação |
 |---|---|---|---|
+| 2026-09-30 | F-09 | Spec da feature criada e **aprovada** | `features/F-09-resumo-mensal.md`: Q1–Q2 respondidas (ambas na opção recomendada). Única precisão sobre `03`: `mes` obrigatório em `GET /api/resumo/mensal` (T-021 marca em §6.1). Nenhum status de tarefa alterado. |
 | 2026-09-30 | F-12 | `Iniciada` → `Concluída` | Última tarefa (T-027) concluída; §2 e mapa (§3) atualizados. |
 | 2026-09-30 | T-027 | `Iniciada` → `Concluída` | Parcelamentos na tela. `03` → 1.25 (§3). Nenhuma dependência nova. Pacote inicial de 474,24 para 475,94 kB: o `mat-checkbox` usa `_MatInternalFormField`, de `@angular/material/core`, que já está no pacote inicial (mesmo caso do `MatOption` em T-016); abaixo do orçamento de 500 kB. |
 | 2026-09-30 | T-027 | `Não iniciada` → `Iniciada` | Dependências T-026 e T-020 `Concluída`. Última tarefa de F-12. |
