@@ -4,7 +4,8 @@ import { MatDialog } from '@angular/material/dialog';
 import { of } from 'rxjs';
 import { Avisos } from '../../core/avisos/avisos';
 import { DadosStore } from '../../core/state/dados.store';
-import { abrirLancamento } from './abrir-lancamento';
+import { Lancamento } from '../../core/models/lancamento';
+import { abrirLancamento, editarLancamento } from './abrir-lancamento';
 import { LancamentoFormDialog } from './lancamento-form.dialog';
 
 describe('abrirLancamento', () => {
@@ -47,5 +48,31 @@ describe('abrirLancamento', () => {
 
     expect(avisos.mostrar).not.toHaveBeenCalled();
     expect(TestBed.inject(DadosStore).versao()).toBe(0);
+  });
+
+  it('edicao_avisa_e_incrementa__CA_F08_17', async () => {
+    const original = { id: 'g1', tipo: 'GASTO', data: '2026-09-30' } as Lancamento;
+    resultado = { ...original, data: '2026-09-12' };
+
+    await editarLancamento(TestBed.inject(Injector), original);
+
+    expect(abrir).toHaveBeenCalledWith(
+      LancamentoFormDialog,
+      expect.objectContaining({ data: { tipo: 'GASTO', lancamento: original } }),
+    );
+    expect(avisos.mostrar).toHaveBeenLastCalledWith('Lançamento atualizado.');
+    expect(TestBed.inject(DadosStore).versao()).toBe(1);
+
+    resultado = { ...original, data: '2026-10-01' }; // mudou de mês (Q3)
+    await editarLancamento(TestBed.inject(Injector), original);
+    expect(avisos.mostrar).toHaveBeenLastCalledWith(
+      'Lançamento atualizado. Agora ele está em outubro de 2026.',
+    );
+    expect(TestBed.inject(DadosStore).versao()).toBe(2);
+
+    resultado = undefined; // cancelou
+    await editarLancamento(TestBed.inject(Injector), original);
+    expect(avisos.mostrar).toHaveBeenCalledTimes(2);
+    expect(TestBed.inject(DadosStore).versao()).toBe(2);
   });
 });

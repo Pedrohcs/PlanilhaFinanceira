@@ -108,6 +108,7 @@
             <th scope="col">Categoria</th>
             <th scope="col">Forma</th>
             <th scope="col" class="coluna-valor">Valor</th>
+            <th scope="col" class="coluna-acoes"><span class="so-leitor">Ações</span></th>
           </tr>
         </thead>
         <tbody>
@@ -133,6 +134,12 @@
                   >{{ valor(item) }}</span
                 >
               </td>
+              <td class="coluna-acoes">
+                <ng-container
+                  [ngTemplateOutlet]="acoes"
+                  [ngTemplateOutletContext]="{ $implicit: item }"
+                />
+              </td>
             </tr>
           }
         </tbody>
@@ -146,12 +153,18 @@
                 [ngTemplateOutlet]="descricao"
                 [ngTemplateOutletContext]="{ $implicit: item }"
               />
-              <span
-                class="valor"
-                [class.receita]="item.tipo === 'RECEITA'"
-                [attr.aria-label]="rotuloDoValor(item)"
-                >{{ valor(item) }}</span
-              >
+              <span class="valor-e-acoes">
+                <span
+                  class="valor"
+                  [class.receita]="item.tipo === 'RECEITA'"
+                  [attr.aria-label]="rotuloDoValor(item)"
+                  >{{ valor(item) }}</span
+                >
+                <ng-container
+                  [ngTemplateOutlet]="acoes"
+                  [ngTemplateOutletContext]="{ $implicit: item }"
+                />
+              </span>
             </div>
             <div class="linha secundaria">
               <span class="data">{{ data(item.data) }}</span>
@@ -183,4 +196,26 @@
       <span class="observacao">{{ item.observacao }}</span>
     }
   </span>
+</ng-template>
+
+<ng-template #acoes let-item>
+  <button
+    matIconButton
+    type="button"
+    class="botao-acoes"
+    [matMenuTriggerFor]="menu"
+    [attr.aria-label]="'Ações de ' + item.descricao"
+  >
+    <mat-icon>more_vert</mat-icon>
+  </button>
+  <mat-menu #menu="matMenu">
+    <button mat-menu-item type="button" (click)="editar(item)">
+      <mat-icon>edit</mat-icon>
+      Editar
+    </button>
+    <button mat-menu-item type="button" (click)="excluir(item)">
+      <mat-icon>delete</mat-icon>
+      Excluir
+    </button>
+  </mat-menu>
 </ng-template>

@@ -4,7 +4,7 @@
 |---|---|
 | Feature | F-08 |
 | Marco | M1 |
-| Status | Aprovada |
+| Status | Concluída |
 | Requisitos | REQ-05 (CA-05.1 a CA-05.3), REQ-06 (CA-06.1, CA-06.2) |
 | Regras | RN-01..06 (mesmas do registro), RN-03, RN-08, RN-10, RN-14 |
 | Depende de | F-07 (**Concluída**) |
@@ -85,11 +85,11 @@ Corrigir ou remover um lançamento direto da listagem, com a certeza de que só 
 
 **Herdados de `01`**
 
-- [ ] **CA-05.1** Dado um lançamento na listagem, quando o usuário escolhe editar, então o formulário abre com os dados atuais.
+- [x] **CA-05.1** Dado um lançamento na listagem, quando o usuário escolhe editar, então o formulário abre com os dados atuais.
 - [x] **CA-05.2** Dado uma edição válida confirmada, então a linha correspondente na planilha é atualizada (e nenhuma outra).
 - [x] **CA-05.3** Dado que a data foi alterada para outro mês, então o lançamento passa a contar no novo mês.
-- [ ] **CA-06.1** Dado um lançamento, quando o usuário escolhe excluir, então o sistema pede confirmação mostrando descrição e valor.
-- [~] **CA-06.2** Dado a confirmação, então a linha é removida da planilha e os totais são recalculados. *(T-019: remoção da linha certa e totais recalculados na API; a tela é T-020.)*
+- [x] **CA-06.1** Dado um lançamento, quando o usuário escolhe excluir, então o sistema pede confirmação mostrando descrição e valor.
+- [x] **CA-06.2** Dado a confirmação, então a linha é removida da planilha e os totais são recalculados. *(T-019: remoção da linha certa e totais recalculados na API; T-020: a tela recarrega lista e totais.)*
 
 **Refinados — backend (T-019)**
 
@@ -105,14 +105,14 @@ Corrigir ou remover um lançamento direto da listagem, com a certeza de que só 
 
 **Refinados — frontend (T-020)**
 
-- [ ] **CA-F08.10** Dado "Editar" num gasto, então o diálogo abre com título "Editar gasto" e todos os campos preenchidos (valor como `42,50`, data `dd/mm/aaaa`), e o campo Tipo presente (CA-05.1).
-- [ ] **CA-F08.11** Dado a troca de tipo para Receita no modo edição, então a lista de categorias passa a ser de receita, a categoria de gasto é limpa e a forma ganha "Não informar".
-- [ ] **CA-F08.12** Dado a edição salva, então sai `PUT /api/lancamentos/{id}` com o corpo completo, o diálogo fecha, aparece o aviso e `DadosStore.versao` aumenta; num erro 422/409, o diálogo fica aberto com os dados.
-- [ ] **CA-F08.13** Dado "Excluir", então a confirmação mostra descrição, valor com sinal e data (CA-06.1), e os textos extras de parcela ou recorrência quando for o caso; "Cancelar" não envia nada; "Excluir" envia o `DELETE`, avisa "Lançamento excluído." e a lista recarrega (CA-06.2).
-- [ ] **CA-F08.14** Dado um 404 ao editar ou excluir, então o diálogo de edição fecha e a lista recarrega (a mensagem vem do interceptor).
-- [ ] **CA-F08.15** Dado a categoria atual inativa, então o diálogo de edição a mostra selecionada e marcada "(inativa)" entre as ativas do tipo, e salvar sem trocá-la envia o `PUT` normalmente (Q1).
-- [ ] **CA-F08.16** Dado a janela de 360 px (cartões) e a de 1280 px (tabela), então cada lançamento tem o menu ⋮ com Editar e Excluir, com `aria-label` "Ações de <descrição>" (RNF-07, Q2).
-- [ ] **CA-F08.17** Dado a data editada de 30/09/2026 para 02/10/2026, então o aviso é "Lançamento atualizado. Agora ele está em outubro de 2026."; e sem mudança de mês, "Lançamento atualizado." (Q3).
+- [x] **CA-F08.10** Dado "Editar" num gasto, então o diálogo abre com título "Editar gasto" e todos os campos preenchidos (valor como `42,50`, data `dd/mm/aaaa`), e o campo Tipo presente (CA-05.1).
+- [x] **CA-F08.11** Dado a troca de tipo para Receita no modo edição, então a lista de categorias passa a ser de receita, a categoria de gasto é limpa e a forma ganha "Não informar".
+- [x] **CA-F08.12** Dado a edição salva, então sai `PUT /api/lancamentos/{id}` com o corpo completo, o diálogo fecha, aparece o aviso e `DadosStore.versao` aumenta; num erro 422/409, o diálogo fica aberto com os dados.
+- [x] **CA-F08.13** Dado "Excluir", então a confirmação mostra descrição, valor com sinal e data (CA-06.1), e os textos extras de parcela ou recorrência quando for o caso; "Cancelar" não envia nada; "Excluir" envia o `DELETE`, avisa "Lançamento excluído." e a lista recarrega (CA-06.2).
+- [x] **CA-F08.14** Dado um 404 ao editar ou excluir, então o diálogo de edição fecha e a lista recarrega (a mensagem vem do interceptor).
+- [x] **CA-F08.15** Dado a categoria atual inativa, então o diálogo de edição a mostra selecionada e marcada "(inativa)" entre as ativas do tipo, e salvar sem trocá-la envia o `PUT` normalmente (Q1).
+- [x] **CA-F08.16** Dado a janela de 360 px (cartões) e a de 1280 px (tabela), então cada lançamento tem o menu ⋮ com Editar e Excluir, com `aria-label` "Ações de <descrição>" (RNF-07, Q2).
+- [x] **CA-F08.17** Dado a data editada de 30/09/2026 para 02/10/2026, então o aviso é "Lançamento atualizado. Agora ele está em outubro de 2026."; e sem mudança de mês, "Lançamento atualizado." (Q3).
 
 ---
 
@@ -179,11 +179,16 @@ Corrigir ou remover um lançamento direto da listagem, com a certeza de que só 
 | `frontend/…/core/api/lancamentos.api.spec.ts` › `atualizar_e_excluir` | unitário FE | §6 |
 | `…/features/lancamentos/lancamento-form.dialog.spec.ts` › `edicao_pre_preenchida__CA_05_1` | unitário FE | CA-05.1, CA-F08.10 |
 | `…` › `troca_de_tipo__CA_F08_11` | unitário FE | CA-F08.11, bordas 4–5 |
-| `…` › `salva_edicao_com_put__CA_F08_12` e `erro_mantem_dados_na_edicao` | unitário FE | CA-F08.12 |
+| `…` › `salva_edicao_com_put__CA_F08_12` e `erro_mantem_dados_na_edicao__CA_01_4` | unitário FE | CA-F08.12 |
+| `…` › `volta_para_gasto_exige_forma__RN_05` | unitário FE | borda 5 |
+| `…` › `recorrente_mostra_vinculo__F08` e `registro_nao_mostra_tipo_nem_vinculo` | unitário FE | §3.4 |
+| `…` › `404_fecha_o_dialogo__CA_F08_14` | unitário FE | CA-F08.14, borda 2 |
 | `…` › `categoria_inativa_na_edicao__CA_F08_15` | unitário FE | CA-F08.15 |
 | `…/features/lancamentos/lancamentos.page.spec.ts` › `acoes_em_tabela_e_cartoes__CA_F08_16` | unitário FE | CA-F08.16 |
 | `…` › `excluir_confirma_e_recarrega__CA_06_1` (inclui parcela e recorrência; cancelar) | unitário FE | CA-06.1, CA-06.2, CA-F08.13 |
-| `…` › `404_fecha_e_recarrega__CA_F08_14` | unitário FE | CA-F08.14 |
+| `…` › `404_ao_excluir_recarrega__CA_F08_14` | unitário FE | CA-F08.14 |
+| `…` › `planilha_fora_ao_excluir_mantem_a_lista__borda_12` | unitário FE | borda 12 |
+| `…` › `editar_abre_o_dialogo_pre_preenchido__CA_05_1` | unitário FE | CA-05.1 |
 | `…/features/lancamentos/abrir-lancamento.spec.ts` › `edicao_avisa_e_incrementa__CA_F08_17` (com e sem mudança de mês) | unitário FE | CA-F08.12, CA-F08.17, borda 6 |
 
 ---
@@ -213,6 +218,8 @@ Ordem: T-019 → T-020 (T-020 também depende de T-018, concluída).
 | Aviso diz o mês novo quando a edição muda o mês (Q3). | Explica por que o lançamento sumiu da lista aberta. | Não |
 | O serviço troca a mensagem do `NaoEncontrado` do repositório ("Registro <id> não encontrado.") por "Lançamento não encontrado." (T-019). | O `id` não diz nada ao usuário; vale também quando a linha some entre a leitura e a escrita (borda 2). | Não |
 | Validação de categoria e forma compartilhada entre criar e editar (`_validar`), com a exceção da categoria atual inativa só na edição (T-019). | Uma regra só para RN-04/RN-05; a exceção de Q1 fica explícita num parâmetro. | Não |
+| A exclusão recarrega a lista no sucesso e no 404; com a planilha ou o backend fora, não recarrega (T-020). | Borda 12: "a lista continua" — recarregar trocaria a lista pela mensagem de erro de carga. | Não |
+| `editarLancamento` fica em `abrir-lancamento.ts`, ao lado de `abrirLancamento`; a página (já carregada sob demanda) o importa direto, o shell continua com o import dinâmico (T-020). | Um só lugar abre o diálogo e decide aviso + recarga; o pacote inicial não muda (474 kB). | Não |
 
 ---
 
@@ -233,3 +240,4 @@ Ordem: T-019 → T-020 (T-020 também depende de T-018, concluída).
 | 2026-09-30 | Criação (`/especificar-feature F-08`). Status `Rascunho` — 3 questões em aberto. |
 | 2026-09-30 | Q1–Q3 respondidas → status **Aprovada**. CA-F08.5, .15 e .16 fechados; CA-F08.17 acrescentado; borda 14. |
 | 2026-09-30 | T-019 concluída: CA-05.2, CA-05.3 e CA-F08.1 a .9 verificados por teste (inclui planilha reordenada à mão antes do `PUT` e do `DELETE`); CA-06.2 com a parte da API. Duas decisões em §10. |
+| 2026-09-30 | T-020 concluída → feature **Concluída**. CA-05.1, CA-06.1, CA-06.2 e CA-F08.10 a .17 verificados por teste; plano de testes com os nomes finais e testes extras (bordas 5 e 12, vínculos). Duas decisões em §10. |

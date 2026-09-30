@@ -7,6 +7,7 @@ import {
 } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { DateAdapter, MAT_DATE_LOCALE, provideNativeDateAdapter } from '@angular/material/core';
+import { MatDialog } from '@angular/material/dialog';
 import { provideRouter, Router } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { BreakpointsFalsos } from '../../../testing/breakpoints';
@@ -88,9 +89,11 @@ describe('LancamentosPage', () => {
   let harness: RouterTestingHarness;
   let controle: HttpTestingController;
   let breakpoints: BreakpointsFalsos;
+  let avisos: { mostrar: ReturnType<typeof vi.fn> };
 
   beforeEach(async () => {
     breakpoints = new BreakpointsFalsos();
+    avisos = { mostrar: vi.fn() };
     TestBed.configureTestingModule({
       providers: [
         provideRouter(routes),
@@ -101,11 +104,15 @@ describe('LancamentosPage', () => {
         { provide: DateAdapter, useClass: AdaptadorDeDataPtBr },
         { provide: MAT_DATE_LOCALE, useValue: 'pt-BR' },
         { provide: BreakpointObserver, useValue: breakpoints },
-        { provide: Avisos, useValue: { mostrar: vi.fn() } },
+        { provide: Avisos, useValue: avisos },
       ],
     });
     controle = TestBed.inject(HttpTestingController);
     harness = await RouterTestingHarness.create();
+  });
+
+  afterEach(() => {
+    TestBed.inject(MatDialog).closeAll();
   });
 
   async function estabilizar(): Promise<void> {
@@ -176,6 +183,34 @@ describe('LancamentosPage', () => {
     document.querySelector<HTMLElement>('.cdk-overlay-transparent-backdrop')?.click();
     await estabilizar();
     return textos;
+  }
+
+  /** Abre o menu ⋮ do lançamento e escolhe a ação. */
+  async function acao(descricao: string, texto: 'Editar' | 'Excluir'): Promise<void> {
+    pagina()
+      .querySelector<HTMLButtonElement>(`button[aria-label="Ações de ${descricao}"]`)!
+      .click();
+    await estabilizar();
+    const item = Array.from(document.querySelectorAll<HTMLElement>('.mat-mdc-menu-item')).find(
+      (opcao) => opcao.textContent?.includes(texto),
+    )!;
+    item.click();
+    await estabilizar();
+  }
+
+  function confirmacao(): HTMLElement | null {
+    return document.querySelector<HTMLElement>('app-confirmacao-dialog');
+  }
+
+  async function responderConfirmacao(texto: 'Cancelar' | 'Excluir'): Promise<void> {
+    Array.from(confirmacao()!.querySelectorAll<HTMLButtonElement>('button'))
+      .find((botao) => botao.textContent?.trim() === texto)!
+      .click();
+    await estabilizar();
+  }
+
+  function semNbsp(texto: string | null | undefined): string {
+    return (texto ?? '').replace(/\u00a0/g, ' ').trim();
   }
 
   function totais(): string[] {
@@ -346,7 +381,7 @@ describe('LancamentosPage', () => {
   it('tabela_ou_cartoes_por_largura__CA_F07_18', async () => {
     await abrir('/lancamentos?mes=2026-09');
     expect(pagina().querySelector('table.tabela')).not.toBeNull();
-    expect(pagina().querySelectorAll('th[scope="col"]')).toHaveLength(5);
+    expect(pagina().querySelectorAll('th[scope="col"]')).toHaveLength(6); // + Ações (F-08)
 
     breakpoints.largura.next(360);
     await estabilizar();
@@ -371,5 +406,109 @@ describe('LancamentosPage', () => {
 
     expect(pagina().textContent).toContain('Não foi possível carregar os lançamentos.');
     expect(pagina().querySelector('.totais')).toBeNull();
+  });
+
+  it('acoes_em_tabela_e_cartoes__CA_F08_16', async () => {
+    await abrir('/lancamentos?mes=2026-09');
+    expect(pagina().querySelector('th.coluna-acoes')?.textContent?.trim()).toBe('Ações');
+    for (const linha of linhas()) {
+      expect(linha.querySelector('button.botao-acoes')).not.toBeNull();
+    }
+
+    breakpoints.largura.next(360);
+    await estabilizar();
+    const botoes = pagina().querySelectorAll('li.cartao button.botao-acoes');
+    expect(Array.from(botoes).map((b) => b.getAttribute('aria-label'))).toEqual([
+      'Ações de Compra g1',
+      'Ações de Geladeira',
+      'Ações de Salário',
+    ]);
+
+    (botoes[0] as HTMLButtonElement).click();
+    await estabilizar();
+    const itens = Array.from(document.querySelectorAll('.mat-mdc-menu-item')).map((item) =>
+      item.textContent?.replace(/edit|delete/, '').trim(),
+    );
+    expect(itens).toEqual(['Editar', 'Excluir']);
+  });
+
+  it('excluir_confirma_e_recarrega__CA_06_1', async () => {
+    await abrir('/lancamentos?mes=2026-09');
+
+    await acao('Geladeira', 'Excluir');
+    expect(confirmacao()?.querySelector('h2')?.textContent).toBe('Excluir lançamento?');
+    expect(semNbsp(confirmacao()?.querySelector('mat-dialog-content')?.textContent)).toBe(
+      '"Geladeira" — − R$ 333,34 em 15/09/2026 será excluído. ' +
+        'Só esta parcela (3/10) será excluída; as demais continuam.',
+    );
+    await responderConfirmacao('Cancelar');
+    controle.expectNone('/api/lancamentos/p3'); // cancelar não exclui
+
+    await acao('Salário', 'Excluir');
+    expect(semNbsp(confirmacao()?.querySelector('mat-dialog-content')?.textContent)).toBe(
+      '"Salário" — + R$ 5.000,00 em 05/09/2026 será excluído. ' +
+        'A recorrência não gera este lançamento de novo.',
+    );
+    await responderConfirmacao('Excluir');
+
+    const del = controle.expectOne('/api/lancamentos/r1');
+    expect(del.request.method).toBe('DELETE');
+    del.flush(null, { status: 204, statusText: 'No Content' });
+    await estabilizar();
+
+    expect(avisos.mostrar).toHaveBeenCalledWith('Lançamento excluído.');
+    await responder(lista(ITENS.slice(0, 2))); // lista e totais recalculados (CA-06.2)
+    expect(linhas()).toHaveLength(2);
+  });
+
+  it('404_ao_excluir_recarrega__CA_F08_14', async () => {
+    await abrir('/lancamentos?mes=2026-09');
+
+    await acao('Compra g1', 'Excluir');
+    await responderConfirmacao('Excluir');
+    controle.expectOne('/api/lancamentos/g1').flush(
+      {
+        erro: { codigo: 'NAO_ENCONTRADO', mensagem: 'Lançamento não encontrado.', detalhes: [] },
+      },
+      { status: 404, statusText: 'x' },
+    );
+    await estabilizar();
+
+    expect(avisos.mostrar).toHaveBeenCalledWith('Lançamento não encontrado.');
+    expect(avisos.mostrar).not.toHaveBeenCalledWith('Lançamento excluído.');
+    await responder(lista(ITENS.slice(1))); // já não estava lá: a lista se atualiza
+    expect(linhas()).toHaveLength(2);
+  });
+
+  it('planilha_fora_ao_excluir_mantem_a_lista__borda_12', async () => {
+    await abrir('/lancamentos?mes=2026-09');
+
+    await acao('Compra g1', 'Excluir');
+    await responderConfirmacao('Excluir');
+    controle
+      .expectOne('/api/lancamentos/g1')
+      .flush(
+        { erro: { codigo: 'PLANILHA_INDISPONIVEL', mensagem: 'Indisponível.', detalhes: [] } },
+        { status: 503, statusText: 'x' },
+      );
+    await estabilizar();
+
+    expect(pedidosDeLista()).toHaveLength(0); // não recarrega
+    expect(linhas()).toHaveLength(3);
+    expect(avisos.mostrar).not.toHaveBeenCalledWith('Lançamento excluído.');
+  });
+
+  it('editar_abre_o_dialogo_pre_preenchido__CA_05_1', async () => {
+    await abrir('/lancamentos?mes=2026-09');
+
+    await acao('Geladeira', 'Editar');
+
+    const dialogo = document.querySelector('mat-dialog-container')!;
+    expect(dialogo.querySelector('h2')?.textContent).toBe('Editar gasto');
+    expect(dialogo.querySelector<HTMLInputElement>('[formcontrolname="descricao"]')?.value).toBe(
+      'Geladeira',
+    );
+    expect(dialogo.querySelector('.vinculo')?.textContent?.trim()).toBe('Parcela 3/10');
+    controle.expectNone('/api/lancamentos/p3'); // nada salvo só por abrir
   });
 });

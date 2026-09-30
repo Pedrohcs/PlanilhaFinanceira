@@ -72,3 +72,33 @@ describe('LancamentosApi.listar', () => {
     controle.verify();
   });
 });
+
+describe('LancamentosApi.atualizar e excluir', () => {
+  it('atualizar_e_excluir__F08', async () => {
+    TestBed.configureTestingModule({
+      providers: [
+        provideHttpClient(withInterceptors([erroInterceptor])),
+        provideHttpClientTesting(),
+        { provide: Avisos, useValue: { mostrar: vi.fn() } },
+      ],
+    });
+    const api = TestBed.inject(LancamentosApi);
+    const controle = TestBed.inject(HttpTestingController);
+
+    const atualizado = firstValueFrom(api.atualizar('g 1', ENTRADA, { tratamentoLocal: true }));
+    const put = controle.expectOne('/api/lancamentos/g%201');
+    expect(put.request.method).toBe('PUT');
+    expect(put.request.body).toEqual(ENTRADA);
+    expect(put.request.context.get(TRATAMENTO_LOCAL)).toBe(true);
+    put.flush({ ...ENTRADA, id: 'g 1' });
+    expect((await atualizado).id).toBe('g 1');
+
+    const excluido = firstValueFrom(api.excluir('g1'), { defaultValue: undefined });
+    const del = controle.expectOne('/api/lancamentos/g1');
+    expect(del.request.method).toBe('DELETE');
+    expect(del.request.context.get(TRATAMENTO_LOCAL)).toBe(false);
+    del.flush(null, { status: 204, statusText: 'No Content' });
+    await excluido;
+    controle.verify();
+  });
+});

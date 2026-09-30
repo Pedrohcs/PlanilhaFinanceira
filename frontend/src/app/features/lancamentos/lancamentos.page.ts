@@ -6,16 +6,21 @@ import {
   computed,
   effect,
   inject,
+  Injector,
   signal,
   untracked,
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
+import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
+import { MatMenuModule } from '@angular/material/menu';
 import { MatSelectModule } from '@angular/material/select';
 import { ActivatedRoute, Router } from '@angular/router';
 import { firstValueFrom, map } from 'rxjs';
 import { LancamentosApi } from '../../core/api/lancamentos.api';
+import { Avisos } from '../../core/avisos/avisos';
+import { ErroApi } from '../../core/models/erro-api';
 import { Categoria } from '../../core/models/categoria';
 import { FormaPagamento, TipoLancamento } from '../../core/models/enums';
 import { FiltrosLancamentos, Lancamento, ListaLancamentos } from '../../core/models/lancamento';
@@ -28,7 +33,9 @@ import { mesPorExtenso } from '../../core/utils/mes';
 import { formatarValor } from '../../core/utils/valor';
 import { Carregando } from '../../shared/components/carregando/carregando';
 import { EstadoVazio } from '../../shared/components/estado-vazio/estado-vazio';
+import { confirmar } from '../../shared/components/confirmacao-dialog/confirmacao.dialog';
 import { SeletorMes } from '../../shared/components/seletor-mes/seletor-mes';
+import { editarLancamento } from './abrir-lancamento';
 import { filtrosParaParams, lerFiltros, temFiltro } from './filtros';
 
 /** Mesma quebra do shell (F-04 Q1): tabela a partir daqui, cartões abaixo (F-07 Q3). */
@@ -44,6 +51,7 @@ interface GrupoDeCategorias {
  * Lançamentos do mês (REQ-03, REQ-04; F-07 §3.2). Filtros na URL (Q1), totais
  * prontos do backend (o frontend não soma — `02` §4), tabela ou cartões
  * conforme a largura (Q3). Recarrega quando mês, filtro ou `versao` mudam.
+ * Cada lançamento tem o menu ⋮ com Editar e Excluir (F-08 §3.3).
  */
 @Component({
   selector: 'app-lancamentos-page',
@@ -52,6 +60,7 @@ interface GrupoDeCategorias {
     NgTemplateOutlet,
     MatButtonModule,
     MatIconModule,
+    MatMenuModule,
     MatSelectModule,
     SeletorMes,
     Carregando,
@@ -69,6 +78,9 @@ export class LancamentosPage {
   private readonly categoriasStore = inject(CategoriasStore);
   private readonly formasStore = inject(FormasPagamentoStore);
   private readonly breakpoints = inject(BreakpointObserver);
+  private readonly dialog = inject(MatDialog);
+  private readonly avisos = inject(Avisos);
+  private readonly injetor = inject(Injector);
 
   private readonly parametros = toSignal(this.rota.queryParams, { initialValue: {} });
   private readonly leitura = computed(() => lerFiltros(this.parametros()));
@@ -179,6 +191,48 @@ export class LancamentosPage {
 
   protected data(iso: string): string {
     return exibirData(iso);
+  }
+
+  /** Editar (REQ-05): diálogo de F-06 em modo edição. */
+  protected editar(lancamento: Lancamento): void {
+    void editarLancamento(this.injetor, lancamento);
+  }
+
+  /**
+   * Excluir (REQ-06): confirma mostrando descrição, valor e data (CA-06.1),
+   * com aviso extra para parcela (RN-08) e recorrência (RN-10).
+   */
+  protected async excluir(lancamento: Lancamento): Promise<void> {
+    const extras = [
+      lancamento.parcela_numero
+        ? `Só esta parcela (${lancamento.parcela_numero}/${lancamento.parcela_total}) será excluída; as demais continuam.`
+        : null,
+      lancamento.recorrencia_id ? 'A recorrência não gera este lançamento de novo.' : null,
+    ].filter((texto) => texto !== null);
+    const confirmado = await firstValueFrom(
+      confirmar(this.dialog, {
+        titulo: 'Excluir lançamento?',
+        mensagem: [
+          `"${lancamento.descricao}" — ${this.valor(lancamento)} em ${exibirData(lancamento.data)} será excluído.`,
+          ...extras,
+        ].join(' '),
+        textoConfirmar: 'Excluir',
+      }),
+    );
+    if (!confirmado) {
+      return;
+    }
+    try {
+      await firstValueFrom(this.api.excluir(lancamento.id));
+      void this.avisos.mostrar('Lançamento excluído.');
+    } catch (erro: unknown) {
+      // A mensagem já veio do interceptor. No 404 o lançamento já não existe:
+      // recarrega (F-08 §3.3.4). Planilha fora: a lista continua (borda 12).
+      if ((erro as ErroApi).status !== 404) {
+        return;
+      }
+    }
+    this.dados.incrementar(); // lista e totais recalculados (CA-06.2)
   }
 
   protected mesPorExtenso(mes: string): string {

@@ -23,13 +23,13 @@
 | Marco | Features | Tarefas | Não iniciada | Iniciada | Concluída | Progresso |
 |---|---|---|---|---|---|---|
 | M0 · Fundação | F-01..F-04 | 12 | 0 | 0 | 12 | 100% |
-| M1 · Registro e consulta | F-05..F-08 | 8 | 1 | 0 | 7 | 88% |
+| M1 · Registro e consulta | F-05..F-08 | 8 | 0 | 0 | 8 | 100% |
 | M2 · Visão financeira | F-09..F-11 | 5 | 5 | 0 | 0 | 0% |
 | M3 · Automação | F-12..F-13 | 5 | 5 | 0 | 0 | 0% |
 | M4 · Acabamento | F-14..F-15 | 5 | 5 | 0 | 0 | 0% |
-| **Total** | **15** | **35** | **16** | **0** | **19** | **54%** |
+| **Total** | **15** | **35** | **15** | **0** | **20** | **57%** |
 
-**M0 concluído (F-01 a F-04); F-05, F-06 e F-07 concluídas.** Próxima tarefa disponível: **T-020** (FE, última de F-08 e do M1). Também desbloqueadas: T-021 (BE, F-09 — sem spec), T-026 (BE, F-12 — sem spec). Também desbloqueada: T-021 (BE, F-09 — sem spec). Pendentes com o usuário, sem bloquear: seguir o README com a planilha real (CA-F02.13), rodar `pytest -m integracao` (CA-15.1/15.2) e a conferência visual (CA-F04.7, CA-F04.30, CA-F05.20, F-06 borda 16, CA-F07.18).
+**M0 e M1 concluídos (F-01 a F-08).** Próximo passo: `/especificar-feature F-12` (T-026, BE, caminho crítico). Também desbloqueadas: T-021 (BE, F-09 — sem spec) e T-028 (BE, F-13 — sem spec). Pendentes com o usuário, sem bloquear: seguir o README com a planilha real (CA-F02.13), rodar `pytest -m integracao` (CA-15.1/15.2) e a conferência visual (CA-F04.7, CA-F04.30, CA-F05.20, F-06 borda 16, CA-F07.18, menu ⋮ de F-08 em 360 px).
 
 ---
 
@@ -44,7 +44,7 @@
 | F-05 | Categorias | M1 | Concluída | [`F-05-categorias.md`](features/F-05-categorias.md) (Concluída) |
 | F-06 | Registrar lançamento | M1 | Concluída | [`F-06-registrar-lancamento.md`](features/F-06-registrar-lancamento.md) (Concluída) |
 | F-07 | Listagem mensal | M1 | Concluída | [`F-07-listagem-mensal.md`](features/F-07-listagem-mensal.md) (Concluída) |
-| F-08 | Editar e excluir lançamentos | M1 | Iniciada | [`F-08-editar-excluir-lancamentos.md`](features/F-08-editar-excluir-lancamentos.md) (Aprovada) |
+| F-08 | Editar e excluir lançamentos | M1 | Concluída | [`F-08-editar-excluir-lancamentos.md`](features/F-08-editar-excluir-lancamentos.md) (Concluída) |
 | F-09 | Resumo mensal | M2 | Não iniciada | — |
 | F-10 | Gráficos do mês | M2 | Não iniciada | — |
 | F-11 | Histórico | M2 | Não iniciada | — |
@@ -82,8 +82,7 @@ flowchart LR
     classDef iniciada fill:#fff3cd,stroke:#f0ad4e,color:#5c4400;
     classDef concluida fill:#d4edda,stroke:#28a745,color:#155724;
     class F09,F10,F11,F12,F13,F14,F15 naoIniciada;
-    class F08 iniciada;
-    class F01,F02,F03,F04,F05,F06,F07 concluida;
+    class F01,F02,F03,F04,F05,F06,F07,F08 concluida;
 ```
 
 ---
@@ -120,7 +119,7 @@ Camadas: **BE** = backend · **FE** = frontend · **DOC** = documentação/infra
 | T-017 | `lancamento_service.listar(mes, filtros)` com totais e `linhas_ignoradas` + `GET /api/lancamentos`. Testes CA-03.x. | F-07 | BE | T-015 | Concluída | 2026-09-30 | 2026-09-30 | `lancamento_service.listar` (mês de referência, filtros E, ordem data→criado_em→id desc, totais `Decimal` do filtrado, nome/cor atuais ou "Categoria não encontrada", `linhas_ignoradas`), tipo `Montante`, `ListaLancamentosSaida`, `GET /api/lancamentos` (`mes` obrigatório `YYYY-MM`). 25 testes novos (708 no total); 5.000 linhas com uma leitura por aba; `ruff` limpo. CA-F07.1..9. |
 | T-018 | Página `/lancamentos`: tabela (data, descrição, categoria, forma, valor, "k/N"/ícone de recorrência), filtros, totais do backend, seletor de mês, estado vazio. | F-07 | FE | T-017, T-016 | Concluída | 2026-09-30 | 2026-09-30 | Página `/lancamentos`: seletor de mês, filtros tipo/categoria/forma na URL (`replaceUrl`, inválidos descartados, categoria dependente do tipo, inativas incluídas), cartões de totais da API (saldo negativo em destaque), tabela ≥ 600 px / cartões abaixo, valor "− R$"/"+ R$" verde com `aria-label`, "3/10", ícone de recorrência, observação, estados carregando/recarga esmaecida/vazio/erro, busca com sequência (descarta resposta atrasada) e recarga por `versao`. `exibirData` no lugar do `DatePipe` (pacote 486→474 kB). 14 testes novos (153 no total); build sem avisos. CA-03.1..03.3, CA-01.5, CA-11.2, CA-F07.10..20. |
 | T-019 | `lancamento_service.editar/excluir` + `PUT`/`DELETE /api/lancamentos/{id}` (404). Teste garantindo que só a linha certa muda após reordenação manual. | F-08 | BE | T-017 | Concluída | 2026-09-30 | 2026-09-30 | `lancamento_service.editar` (404 antes das regras; qualquer campo, inclusive tipo; categoria atual inativa permitida — Q1; preserva id/parcela/recorrência/criado_em; `atualizado_em` novo) e `excluir` (só a linha do `id`), validação compartilhada `_validar`, mensagem "Lançamento não encontrado.", `PUT`/`DELETE /api/lancamentos/{id}`. 21 testes novos (729 no total), inclusive com a planilha reordenada à mão; `ruff` limpo. CA-05.2, CA-05.3, CA-F08.1..9 (+ parte BE de CA-06.2). |
-| T-020 | Ações editar (reusa o diálogo) e excluir (com `confirmacao-dialog`) na listagem. | F-08 | FE | T-019, T-018 | Não iniciada | | | |
+| T-020 | Ações editar (reusa o diálogo) e excluir (com `confirmacao-dialog`) na listagem. | F-08 | FE | T-019, T-018 | Concluída | 2026-09-30 | 2026-09-30 | `LancamentosApi.atualizar/excluir`; diálogo em modo edição (título "Editar gasto/receita", campo Tipo com troca que limpa a categoria do outro tipo e ajusta a forma, categoria atual inativa "(inativa)" — Q1, linha de parcela/recorrência, `PUT`, 404 fecha e recarrega); `editarLancamento` com aviso do mês novo (Q3); menu ⋮ na tabela (coluna "Ações") e nos cartões (Q2); confirmação com descrição, valor, data e extras de parcela/recorrência; recarga no sucesso e no 404, não com a planilha fora (borda 12). 16 testes novos (169 no total); build 474,24 kB inicial. CA-05.1, CA-06.1, CA-06.2, CA-F08.10..17. |
 
 ### M2 · Visão financeira
 
@@ -158,6 +157,10 @@ Camadas: **BE** = backend · **FE** = frontend · **DOC** = documentação/infra
 
 | Data | Tarefa/Feature | Mudança | Observação |
 |---|---|---|---|
+| 2026-09-30 | M1 | **Marco concluído** | F-05 a F-08 `Concluída`. Caminho crítico segue em F-12 (sem spec). |
+| 2026-09-30 | F-08 | `Iniciada` → `Concluída` | Última tarefa (T-020) concluída; §2 e mapa (§3) atualizados. |
+| 2026-09-30 | T-020 | `Iniciada` → `Concluída` | Edição e exclusão na tela. `03` → 1.23 (§3). Nenhuma dependência nova. |
+| 2026-09-30 | T-020 | `Não iniciada` → `Iniciada` | Dependências T-019 e T-018 `Concluída`. Última tarefa de F-08 e do M1. |
 | 2026-09-30 | T-019 | `Iniciada` → `Concluída` | Edição e exclusão no backend. Nenhuma mudança em 01–03 (contrato já previsto). Guarda de rotas com `PUT` e `DELETE /api/lancamentos/{id}`. |
 | 2026-09-30 | T-019 | `Não iniciada` → `Iniciada` | Dependência T-017 `Concluída`; spec F-08 `Aprovada`. F-08 passa a `Iniciada` (§2) e o mapa (§3) foi atualizado. |
 | 2026-09-30 | F-08 | Spec da feature criada e **aprovada** | `features/F-08-editar-excluir-lancamentos.md`: Q1–Q3 respondidas (todas na opção recomendada). Nenhuma mudança em 01–03. Nenhum status de tarefa alterado. |

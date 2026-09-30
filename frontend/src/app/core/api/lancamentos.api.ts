@@ -12,7 +12,7 @@ import {
 
 const URL = '/api/lancamentos';
 
-/** `/api/lancamentos` (SPECS/03 §6.1). Editar/excluir chegam em F-08. */
+/** `/api/lancamentos` (SPECS/03 §6.1). */
 @Injectable({ providedIn: 'root' })
 export class LancamentosApi {
   private readonly http = inject(HttpClient);
@@ -32,5 +32,20 @@ export class LancamentosApi {
     return this.http.post<Lancamento>(URL, entrada, {
       context: contextoDeErro(opcoes.tratamentoLocal),
     });
+  }
+
+  /** Qualquer campo (REQ-05); o backend preserva parcela, recorrência e criação. */
+  atualizar(
+    id: string,
+    entrada: LancamentoEntrada,
+    opcoes: OpcoesDeEscrita = {},
+  ): Observable<Lancamento> {
+    return this.http.put<Lancamento>(`${URL}/${encodeURIComponent(id)}`, entrada, {
+      context: contextoDeErro(opcoes.tratamentoLocal),
+    });
+  }
+
+  excluir(id: string): Observable<void> {
+    return this.http.delete<void>(`${URL}/${encodeURIComponent(id)}`);
   }
 }

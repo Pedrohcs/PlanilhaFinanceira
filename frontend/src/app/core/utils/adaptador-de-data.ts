@@ -57,3 +57,9 @@ export function exibirData(iso: string): string {
   const [ano, mes, dia] = iso.split('-');
   return `${dia}/${mes}/${ano}`;
 }
+
+/** `2026-09-30` → data local à meia-noite (valor inicial do campo data na edição). */
+export function isoParaData(iso: string): Date {
+  const [ano, mes, dia] = iso.split('-').map(Number);
+  return new Date(ano, mes - 1, dia);
+}

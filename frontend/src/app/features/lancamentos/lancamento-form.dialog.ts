@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import {
   AbstractControl,
   NonNullableFormBuilder,
@@ -27,12 +27,15 @@ import {
   OBSERVACAO_MAXIMO,
 } from '../../core/models/lancamento';
 import { CategoriasStore } from '../../core/state/categorias.store';
+import { DadosStore } from '../../core/state/dados.store';
 import { FormasPagamentoStore } from '../../core/state/formas-pagamento.store';
-import { dataParaIso, hoje } from '../../core/utils/adaptador-de-data';
+import { dataParaIso, hoje, isoParaData } from '../../core/utils/adaptador-de-data';
 import { formatarValor, interpretarValor } from '../../core/utils/valor';
 
 export interface DadosFormularioLancamento {
   tipo: TipoLancamento;
+  /** Presente no modo edição (F-08 §3.4). */
+  lancamento?: Lancamento;
 }
 
 type Campo = 'data' | 'valor' | 'descricao' | 'categoria_id' | 'forma_pagamento' | 'observacao';
@@ -85,9 +88,11 @@ function textoAparado(maximo: number, obrigatorio: boolean): ValidatorFn {
 }
 
 /**
- * Registrar gasto/receita (REQ-01, REQ-02; F-06 §3). O tipo vem do botão que
- * abriu o diálogo. O próprio diálogo salva, para continuar aberto com tudo o
- * que foi digitado quando algo falha (CA-01.4).
+ * Registrar gasto/receita (REQ-01, REQ-02; F-06 §3) e editar lançamento
+ * (REQ-05; F-08 §3.4). No registro o tipo vem do botão que abriu o diálogo;
+ * na edição ele é um campo (REQ-05: "qualquer campo"). O próprio diálogo
+ * salva, para continuar aberto com tudo o que foi digitado quando algo falha
+ * (CA-01.4).
  */
 @Component({
   selector: 'app-lancamento-form-dialog',
@@ -103,9 +108,27 @@ function textoAparado(maximo: number, obrigatorio: boolean): ValidatorFn {
     MatSelectModule,
   ],
   template: `
-    <h2 mat-dialog-title>{{ titulo }}</h2>
+    <h2 mat-dialog-title>{{ titulo() }}</h2>
     <form [formGroup]="formulario" (ngSubmit)="salvar()">
       <mat-dialog-content class="campos">
+        @if (edicao; as original) {
+          @if (original.parcela_numero) {
+            <p class="vinculo largo">
+              Parcela {{ original.parcela_numero }}/{{ original.parcela_total }}
+            </p>
+          }
+          @if (original.recorrencia_id) {
+            <p class="vinculo largo">Gerado por recorrência</p>
+          }
+          <mat-form-field class="largo">
+            <mat-label>Tipo</mat-label>
+            <mat-select formControlName="tipo">
+              <mat-option value="GASTO">Gasto</mat-option>
+              <mat-option value="RECEITA">Receita</mat-option>
+            </mat-select>
+          </mat-form-field>
+        }
+
         <mat-form-field>
           <mat-label>Valor</mat-label>
           <span matTextPrefix>R$&nbsp;</span>
@@ -144,7 +167,7 @@ function textoAparado(maximo: number, obrigatorio: boolean): ValidatorFn {
 
         @if (semCategorias()) {
           <p class="sem-categorias largo" role="alert">
-            Nenhuma categoria de {{ rotuloDoTipo }} ativa. Crie ou reative uma em
+            Nenhuma categoria de {{ rotuloDoTipo() }} ativa. Crie ou reative uma em
             <a routerLink="/categorias" (click)="fechar()">Categorias</a>.
           </p>
         } @else {
@@ -154,7 +177,7 @@ function textoAparado(maximo: number, obrigatorio: boolean): ValidatorFn {
               @for (categoria of categorias(); track categoria.id) {
                 <mat-option [value]="categoria.id">
                   <span class="cor" [style.background-color]="categoria.cor"></span>
-                  {{ categoria.nome }}
+                  {{ categoria.nome }}{{ categoria.ativa ? '' : ' (inativa)' }}
                 </mat-option>
               }
             </mat-select>
@@ -165,9 +188,9 @@ function textoAparado(maximo: number, obrigatorio: boolean): ValidatorFn {
         }
 
         <mat-form-field class="largo">
-          <mat-label>Forma de pagamento{{ gasto ? '' : ' (opcional)' }}</mat-label>
+          <mat-label>Forma de pagamento{{ gasto() ? '' : ' (opcional)' }}</mat-label>
           <mat-select formControlName="forma_pagamento">
-            @if (!gasto) {
+            @if (!gasto()) {
               <mat-option value="">Não informar</mat-option>
             }
             @for (forma of formas(); track forma.codigo) {
@@ -214,6 +237,10 @@ function textoAparado(maximo: number, obrigatorio: boolean): ValidatorFn {
       border-radius: 50%;
       vertical-align: middle;
     }
+    .vinculo {
+      margin: 0 0 8px;
+      color: var(--mat-sys-on-surface-variant);
+    }
     .sem-categorias {
       margin: 0 0 16px;
       color: var(--mat-sys-error);
@@ -228,29 +255,39 @@ export class LancamentoFormDialog {
   private readonly avisos = inject(Avisos);
   private readonly categoriasStore = inject(CategoriasStore);
   private readonly formasStore = inject(FormasPagamentoStore);
+  private readonly dadosStore = inject(DadosStore);
   private readonly fb = inject(NonNullableFormBuilder);
 
-  protected readonly gasto = this.dados.tipo === 'GASTO';
-  protected readonly titulo = this.gasto ? 'Registrar gasto' : 'Registrar receita';
-  protected readonly rotuloDoTipo = this.gasto ? 'gasto' : 'receita';
+  /** O lançamento em edição, ou `undefined` no registro. */
+  protected readonly edicao = this.dados.lancamento;
   protected readonly descricaoMaximo = DESCRICAO_MAXIMO;
   protected readonly observacaoMaximo = OBSERVACAO_MAXIMO;
   protected readonly salvando = signal(false);
 
-  protected readonly formulario = this.fb.group({
-    data: this.fb.control<Date | null>(hoje(), [Validators.required]),
-    valor: ['', [valorValido]],
-    descricao: ['', [textoAparado(DESCRICAO_MAXIMO, true)]],
-    categoria_id: ['', [Validators.required]],
-    // '' = "Não informar" (só na receita — RN-05, CA-02.2). Nunca pré-selecionada (Q4).
-    forma_pagamento: ['' as FormaPagamento | '', this.gasto ? [Validators.required] : []],
-    observacao: ['', [textoAparado(OBSERVACAO_MAXIMO, false)]],
+  protected readonly formulario = this.construirFormulario(this.edicao?.tipo ?? this.dados.tipo);
+
+  private readonly tipo = toSignal(this.formulario.controls.tipo.valueChanges, {
+    initialValue: this.formulario.controls.tipo.value,
+  });
+  protected readonly gasto = computed(() => this.tipo() === 'GASTO');
+  protected readonly rotuloDoTipo = computed(() => (this.gasto() ? 'gasto' : 'receita'));
+  protected readonly titulo = computed(() => {
+    const acao = this.edicao ? 'Editar' : 'Registrar';
+    return `${acao} ${this.gasto() ? 'gasto' : 'receita'}`;
   });
 
-  /** Só ativas do tipo, na ordem da API (RN-04, CA-02.1). */
-  protected readonly categorias = computed(() =>
-    this.categoriasStore.ativasPorTipo(this.dados.tipo),
-  );
+  /**
+   * Ativas do tipo, na ordem da API (RN-04, CA-02.1). Na edição, mais a
+   * categoria atual do lançamento se ela estiver inativa e for do tipo (F-08 Q1).
+   */
+  protected readonly categorias = computed(() => {
+    const tipo = this.tipo();
+    const ativas = this.categoriasStore.ativasPorTipo(tipo);
+    const atual = this.categoriasStore
+      .todas()
+      .find((categoria) => categoria.id === this.edicao?.categoria_id);
+    return atual && !atual.ativa && atual.tipo === tipo ? [...ativas, atual] : ativas;
+  });
   protected readonly semCategorias = computed(
     () => !this.categoriasStore.carregando() && this.categorias().length === 0,
   );
@@ -268,6 +305,11 @@ export class LancamentoFormDialog {
   constructor() {
     void this.categoriasStore.garantirCarga();
     void this.formasStore.garantirCarga();
+    // Na edição o tipo muda: forma obrigatória só no gasto (RN-05) e categoria
+    // de outro tipo é limpa (RN-04; F-08 §3.4.3).
+    this.formulario.controls.tipo.valueChanges
+      .pipe(takeUntilDestroyed())
+      .subscribe((tipo) => this.aoTrocarTipo(tipo));
   }
 
   /** Mensagem do primeiro erro do campo, só depois de tocado (ou vinda do backend). */
@@ -303,8 +345,12 @@ export class LancamentoFormDialog {
     }
     this.salvando.set(true);
     try {
+      const entrada = this.montarEntrada();
+      const opcoes = { tratamentoLocal: true };
       const salvo = await firstValueFrom(
-        this.api.criar(this.montarEntrada(), { tratamentoLocal: true }),
+        this.edicao
+          ? this.api.atualizar(this.edicao.id, entrada, opcoes)
+          : this.api.criar(entrada, opcoes),
       );
       this.referencia.close(salvo);
     } catch (erro: unknown) {
@@ -319,7 +365,7 @@ export class LancamentoFormDialog {
     const valor = interpretarValor(valores.valor) as { valor: number };
     return {
       data: dataParaIso(valores.data as Date),
-      tipo: this.dados.tipo,
+      tipo: valores.tipo,
       descricao: valores.descricao.trim(),
       valor: valor.valor,
       categoria_id: valores.categoria_id,
@@ -334,6 +380,13 @@ export class LancamentoFormDialog {
    * já foram para o banner. O diálogo continua aberto com os dados (CA-01.4).
    */
   private mostrarErro(erro: ErroApi): void {
+    if (erro.status === 404) {
+      // Sumiu da planilha no meio tempo: nada a salvar. O aviso vem do
+      // interceptor; a lista recarrega (F-08 §3.3.4).
+      this.dadosStore.incrementar();
+      this.referencia.close();
+      return;
+    }
     if (erro.status === 409 && erro.codigo.startsWith('CATEGORIA_')) {
       this.marcar('categoria_id', erro.mensagem);
       void this.categoriasStore.recarregar();
@@ -355,5 +408,34 @@ export class LancamentoFormDialog {
     const controle = this.formulario.controls[campo];
     controle.setErrors({ ...(controle.errors ?? {}), servidor: mensagem });
     controle.markAsTouched();
+  }
+
+  private construirFormulario(tipo: TipoLancamento) {
+    const original = this.edicao;
+    return this.fb.group({
+      tipo: [tipo],
+      data: this.fb.control<Date | null>(original ? isoParaData(original.data) : hoje(), [
+        Validators.required,
+      ]),
+      valor: [original ? formatarValor(original.valor) : '', [valorValido]],
+      descricao: [original?.descricao ?? '', [textoAparado(DESCRICAO_MAXIMO, true)]],
+      categoria_id: [original?.categoria_id ?? '', [Validators.required]],
+      // '' = "Não informar" (só na receita — RN-05, CA-02.2). Nunca pré-selecionada (F-06 Q4).
+      forma_pagamento: [
+        (original?.forma_pagamento ?? '') as FormaPagamento | '',
+        tipo === 'GASTO' ? [Validators.required] : [],
+      ],
+      observacao: [original?.observacao ?? '', [textoAparado(OBSERVACAO_MAXIMO, false)]],
+    });
+  }
+
+  private aoTrocarTipo(tipo: TipoLancamento): void {
+    const { categoria_id: categoria, forma_pagamento: forma } = this.formulario.controls;
+    const escolhida = this.categoriasStore.todas().find((c) => c.id === categoria.value);
+    if (escolhida && escolhida.tipo !== tipo) {
+      categoria.setValue('');
+    }
+    forma.setValidators(tipo === 'GASTO' ? [Validators.required] : []);
+    forma.updateValueAndValidity();
   }
 }

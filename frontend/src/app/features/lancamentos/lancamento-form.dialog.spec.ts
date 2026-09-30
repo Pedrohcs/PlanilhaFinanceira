@@ -14,6 +14,7 @@ import { Categoria } from '../../core/models/categoria';
 import { MENSAGEM_BACKEND_INDISPONIVEL } from '../../core/models/erro-api';
 import { Lancamento } from '../../core/models/lancamento';
 import { ConexaoStore } from '../../core/state/conexao.store';
+import { DadosStore } from '../../core/state/dados.store';
 import { AdaptadorDeDataPtBr, dataParaIso, hoje } from '../../core/utils/adaptador-de-data';
 import { DadosFormularioLancamento, LancamentoFormDialog } from './lancamento-form.dialog';
 
@@ -27,6 +28,34 @@ const FORMAS = [
   { codigo: 'PIX', nome: 'Pix' },
   { codigo: 'CREDITO', nome: 'Cartão de crédito' },
 ];
+const ORIGINAL: Lancamento = {
+  id: 'p3',
+  data: '2026-09-30',
+  tipo: 'GASTO',
+  descricao: 'Geladeira',
+  valor: 333.34,
+  categoria_id: 'mercado',
+  categoria_nome: 'Mercado',
+  categoria_cor: '#E57373',
+  forma_pagamento: 'CREDITO',
+  observacao: 'loja do centro',
+  parcelamento_id: 'par',
+  parcela_numero: 3,
+  parcela_total: 10,
+  recorrencia_id: null,
+  criado_em: '2026-09-01T10:00:00',
+  atualizado_em: '2026-09-01T10:00:00',
+};
+/** Corpo do `PUT` sem mudanças: o que o formulário pré-preenchido envia. */
+const CORPO_ORIGINAL = {
+  data: '2026-09-30',
+  tipo: 'GASTO',
+  descricao: 'Geladeira',
+  valor: 333.34,
+  categoria_id: 'mercado',
+  forma_pagamento: 'CREDITO',
+  observacao: 'loja do centro',
+};
 
 describe('LancamentoFormDialog', () => {
   let controle: HttpTestingController;
@@ -62,10 +91,14 @@ describe('LancamentoFormDialog', () => {
     await TestBed.inject(ApplicationRef).whenStable();
   }
 
-  async function abrir(tipo: 'GASTO' | 'RECEITA', categorias = CATEGORIAS): Promise<void> {
+  async function abrir(
+    tipo: 'GASTO' | 'RECEITA',
+    categorias = CATEGORIAS,
+    lancamento?: Lancamento,
+  ): Promise<void> {
     const referencia: MatDialogRef<LancamentoFormDialog, Lancamento> = dialog.open(
       LancamentoFormDialog,
-      { data: { tipo } satisfies DadosFormularioLancamento },
+      { data: { tipo, lancamento } satisfies DadosFormularioLancamento },
     );
     resultado = firstValueFrom(referencia.afterClosed());
     await estabilizar();
@@ -117,6 +150,14 @@ describe('LancamentoFormDialog', () => {
     }
     opcao.click();
     await estabilizar();
+  }
+
+  async function abrirEdicao(lancamento = ORIGINAL, categorias = CATEGORIAS): Promise<void> {
+    await abrir(lancamento.tipo, categorias, lancamento);
+  }
+
+  function selecionado(nome: string): string {
+    return campo(nome).querySelector('.mat-mdc-select-value')?.textContent?.trim() ?? '';
   }
 
   function botao(texto: string): HTMLButtonElement {
@@ -317,5 +358,155 @@ describe('LancamentoFormDialog', () => {
     expect(container().querySelector<HTMLButtonElement>('button[type="submit"]')!.disabled).toBe(
       true,
     );
+  });
+
+  it('edicao_pre_preenchida__CA_05_1', async () => {
+    await abrirEdicao();
+
+    expect(container().querySelector('h2')?.textContent).toBe('Editar gasto');
+    expect(campo('data').value).toBe('30/09/2026');
+    expect(campo('valor').value).toBe('333,34');
+    expect(campo('descricao').value).toBe('Geladeira');
+    expect(campo('observacao').value).toBe('loja do centro');
+    expect(selecionado('tipo')).toBe('Gasto');
+    expect(selecionado('categoria_id')).toBe('Mercado');
+    expect(await opcoes('categoria_id')).toEqual(['Mercado']); // inativa de outro lançamento, não
+    expect(selecionado('forma_pagamento')).toBe('Cartão de crédito');
+    expect(container().querySelector('.vinculo')?.textContent?.trim()).toBe('Parcela 3/10');
+  });
+
+  it('registro_nao_mostra_tipo_nem_vinculo', async () => {
+    await abrir('GASTO');
+
+    expect(container().querySelector('[formcontrolname="tipo"]')).toBeNull();
+    expect(container().querySelector('.vinculo')).toBeNull();
+  });
+
+  it('recorrente_mostra_vinculo__F08', async () => {
+    await abrirEdicao({
+      ...ORIGINAL,
+      parcelamento_id: null,
+      parcela_numero: null,
+      parcela_total: null,
+      recorrencia_id: 'rec',
+    });
+
+    expect(container().querySelector('.vinculo')?.textContent?.trim()).toBe(
+      'Gerado por recorrência',
+    );
+  });
+
+  it('salva_edicao_com_put__CA_F08_12', async () => {
+    await abrirEdicao();
+    await digitar('descricao', 'Geladeira nova');
+
+    await salvar();
+
+    const put = controle.expectOne('/api/lancamentos/p3');
+    expect(put.request.method).toBe('PUT');
+    expect(put.request.body).toEqual({ ...CORPO_ORIGINAL, descricao: 'Geladeira nova' });
+    put.flush({ ...ORIGINAL, descricao: 'Geladeira nova' });
+    await estabilizar();
+
+    expect((await resultado)?.descricao).toBe('Geladeira nova');
+    expect(dialog.openDialogs).toHaveLength(0);
+    controle.expectNone('/api/lancamentos');
+  });
+
+  it('troca_de_tipo__CA_F08_11', async () => {
+    await abrirEdicao();
+
+    await escolher('tipo', 'Receita');
+
+    expect(container().querySelector('h2')?.textContent).toBe('Editar receita');
+    expect(selecionado('categoria_id')).toBe(''); // categoria de gasto limpa (RN-04)
+    expect(await opcoes('categoria_id')).toEqual(['Salário']);
+    await salvar();
+    expect(erros()).toEqual(['Escolha uma categoria.']);
+    controle.expectNone('/api/lancamentos/p3');
+
+    await escolher('categoria_id', 'Salário');
+    await escolher('forma_pagamento', 'Não informar');
+    await salvar();
+
+    const put = controle.expectOne('/api/lancamentos/p3');
+    expect(put.request.body).toEqual({
+      ...CORPO_ORIGINAL,
+      tipo: 'RECEITA',
+      categoria_id: 'salario',
+      forma_pagamento: null,
+    });
+    put.flush({ ...ORIGINAL, ...put.request.body });
+    await estabilizar();
+  });
+
+  it('volta_para_gasto_exige_forma__RN_05', async () => {
+    await abrirEdicao({
+      ...ORIGINAL,
+      tipo: 'RECEITA',
+      categoria_id: 'salario',
+      forma_pagamento: null,
+    });
+
+    await escolher('tipo', 'Gasto');
+    await escolher('categoria_id', 'Mercado');
+    await salvar();
+
+    expect(erros()).toEqual(['Escolha a forma de pagamento.']);
+    controle.expectNone('/api/lancamentos/p3');
+  });
+
+  it('categoria_inativa_na_edicao__CA_F08_15', async () => {
+    await abrirEdicao({ ...ORIGINAL, categoria_id: 'velha' });
+
+    expect(selecionado('categoria_id')).toBe('Velha (inativa)');
+    expect(await opcoes('categoria_id')).toEqual(['Mercado', 'Velha (inativa)']);
+    await salvar();
+
+    const put = controle.expectOne('/api/lancamentos/p3');
+    expect(put.request.body.categoria_id).toBe('velha'); // mantida (Q1)
+    put.flush({ ...ORIGINAL, categoria_id: 'velha' });
+    await estabilizar();
+  });
+
+  it('erro_mantem_dados_na_edicao__CA_01_4', async () => {
+    await abrirEdicao();
+    await digitar('valor', '350');
+    await salvar();
+
+    controle.expectOne('/api/lancamentos/p3').flush(
+      {
+        erro: {
+          codigo: 'VALIDACAO',
+          mensagem: 'Dados inválidos.',
+          detalhes: [{ campo: 'valor', mensagem: 'valor recusado' }],
+        },
+      },
+      { status: 422, statusText: 'x' },
+    );
+    await estabilizar();
+
+    expect(dialog.openDialogs).toHaveLength(1);
+    expect(erros()).toEqual(['valor recusado']);
+    expect(campo('valor').value).toBe('350,00');
+  });
+
+  it('404_fecha_o_dialogo__CA_F08_14', async () => {
+    await abrirEdicao();
+    await salvar();
+
+    controle.expectOne('/api/lancamentos/p3').flush(
+      {
+        erro: { codigo: 'NAO_ENCONTRADO', mensagem: 'Lançamento não encontrado.', detalhes: [] },
+      },
+      { status: 404, statusText: 'x' },
+    );
+    await estabilizar();
+
+    expect(avisos.mostrar).toHaveBeenCalledWith('Lançamento não encontrado.');
+    expect(dialog.openDialogs).toHaveLength(0);
+    expect(await resultado).toBeUndefined();
+    expect(TestBed.inject(DadosStore).versao()).toBe(1); // a lista recarrega
+    controle.expectOne(URL_CATEGORIAS).flush(CATEGORIAS); // e as categorias também
   });
 });
