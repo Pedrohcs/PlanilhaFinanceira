@@ -2,7 +2,8 @@ import { BreakpointObserver, BreakpointState } from '@angular/cdk/layout';
 import { HttpClient, provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { MAT_DATE_LOCALE, provideNativeDateAdapter } from '@angular/material/core';
+import { DateAdapter, MAT_DATE_LOCALE, provideNativeDateAdapter } from '@angular/material/core';
+import { MatDialog } from '@angular/material/dialog';
 import { MatSidenav } from '@angular/material/sidenav';
 import { By } from '@angular/platform-browser';
 import { provideRouter, Router } from '@angular/router';
@@ -13,6 +14,8 @@ import { Avisos } from './core/avisos/avisos';
 import { erroInterceptor } from './core/interceptors/erro.interceptor';
 import { MENSAGEM_BACKEND_INDISPONIVEL } from './core/models/erro-api';
 import { provideVerificacaoDeConexao } from './core/state/conexao.store';
+import { AdaptadorDeDataPtBr } from './core/utils/adaptador-de-data';
+import { provideMaterialParaTestes } from '../testing/material';
 
 /** `BreakpointObserver` com a largura da janela controlada pelo teste. */
 class BreakpointsFalsos {
@@ -79,6 +82,8 @@ describe('App (shell)', () => {
         provideRouter(routes),
         provideNativeDateAdapter(),
         { provide: MAT_DATE_LOCALE, useValue: 'pt-BR' },
+        { provide: DateAdapter, useClass: AdaptadorDeDataPtBr },
+        provideMaterialParaTestes(),
         { provide: BreakpointObserver, useValue: breakpoints },
         provideHttpClient(withInterceptors([erroInterceptor])),
         provideHttpClientTesting(),
@@ -272,5 +277,25 @@ describe('App (shell)', () => {
     await fixture.whenStable();
 
     expect(banner()?.textContent).toContain('Google Sheets indisponível.');
+  });
+
+  it('botoes_abrem_o_dialogo_do_tipo__CA_01_1', async () => {
+    await criar(1280);
+
+    for (const [rotulo, titulo] of [
+      ['Registrar gasto', 'Registrar gasto'],
+      ['Registrar receita', 'Registrar receita'],
+    ]) {
+      botao(rotulo)?.click();
+      // O código do diálogo é baixado sob demanda (`import()`): espera ele aparecer.
+      await vi.waitFor(() => {
+        expect(document.querySelector('mat-dialog-container h2')?.textContent).toBe(titulo);
+      });
+      TestBed.inject(MatDialog).closeAll();
+      await vi.waitFor(() => {
+        expect(TestBed.inject(MatDialog).openDialogs).toHaveLength(0);
+      });
+      await fixture.whenStable();
+    }
   });
 });

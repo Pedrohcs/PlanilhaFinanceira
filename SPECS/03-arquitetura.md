@@ -3,7 +3,7 @@
 | Campo | Valor |
 |---|---|
 | Documento | `SPECS/03-arquitetura.md` |
-| Versão | 1.18 |
+| Versão | 1.19 |
 | Atualizado em | 2026-09-30 |
 | Status | Aprovado para início |
 | Responde | **Como** o sistema se organiza: componentes, pastas, camadas, modelo de dados na planilha, contrato da API e fluxos |
@@ -97,11 +97,13 @@ PlanilhaFinanceira/
         ├── app.config.ts  app.routes.ts  app.ts (classe `App`)  # shell
         ├── core/
         │   ├── models/        # interfaces espelhando o JSON da API
-        │   ├── api/           # um serviço HTTP por recurso (health, categorias…)
-        │   ├── state/         # mes-selecionado, conexao, dados, categorias .store.ts
+        │   ├── api/           # um serviço HTTP por recurso (health, categorias, lancamentos,
+        │   │                  # formas-pagamento)
+        │   ├── state/         # mes-selecionado, conexao, dados, categorias, formas-pagamento .store.ts
         │   ├── interceptors/  # erro.interceptor.ts
         │   ├── avisos/        # avisos.ts: snackbar carregado sob demanda
-        │   └── utils/         # mes.ts (YYYY-MM), formatação
+        │   └── utils/         # mes.ts (YYYY-MM), valor.ts (valor pt-BR), adaptador-de-data.ts
+        │                      # (DateAdapter que entende dd/mm/aaaa)
         ├── shared/
         │   ├── components/    # seletor-mes, confirmacao-dialog, estado-vazio, carregando,
         │   │                  # banner-conexao
@@ -109,7 +111,8 @@ PlanilhaFinanceira/
         │                      # tokens FABRICA_GRAFICO e CORES_DO_TEMA para testes)
         └── features/          # uma pasta por tela; página em <nome>/<nome>.page.ts (classe <Nome>Page)
             ├── resumo/        # dashboard do mês (cards + gráficos)
-            ├── lancamentos/   # listagem + lancamento-form.dialog
+            ├── lancamentos/   # listagem + lancamento-form.dialog + abrir-lancamento.ts
+            │                  # (aberto pelo shell via import sob demanda)
             ├── historico/
             ├── categorias/    # categorias.page, categoria-form.dialog, paleta.ts
             └── recorrencias/
@@ -489,4 +492,5 @@ Quando o **backend não responde** (status 0, ou 502/504 sem o envelope de §6.2
 | 2026-09-30 | 1.16 | §3: `categorias.api.ts`, `categorias.store.ts`, página e diálogo de categorias, `paleta.ts`; `frontend/src/testing/` (T-014). §8.1: navegação lateral com links simples, sem `mat-nav-list` (pacote inicial). |
 | 2026-09-30 | 1.17 | §8.4: marcador `TRATAMENTO_LOCAL` para formulários que mostram o 409 no campo (F-06, Q3). |
 | 2026-09-30 | 1.18 | §3: `lancamento_service.py`. §6.2: 422 de regra de negócio também traz o campo em `detalhes` (T-015). |
+| 2026-09-30 | 1.19 | §3: `lancamentos.api`, `formas-pagamento.api`/`.store`, `utils/valor.ts`, `utils/adaptador-de-data.ts`, `abrir-lancamento.ts` (T-016). |
 | 2026-09-29 | 1.1 | Frontend em Angular 22 (zoneless); pasta `shared/grafico/` com diretiva Chart.js própria (§3, §8.2.1). |

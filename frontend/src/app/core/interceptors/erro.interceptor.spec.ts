@@ -10,7 +10,7 @@ import {
   MENSAGEM_ERRO_INTERNO,
 } from '../models/erro-api';
 import { ConexaoStore } from '../state/conexao.store';
-import { erroInterceptor } from './erro.interceptor';
+import { contextoDeErro, erroInterceptor } from './erro.interceptor';
 
 describe('erroInterceptor (SPECS/03 §8.4)', () => {
   let http: HttpClient;
@@ -163,5 +163,40 @@ describe('erroInterceptor (SPECS/03 §8.4)', () => {
     controle.expectOne('/api/qualquer').flush({ ok: true });
 
     expect(await resposta).toEqual({ ok: true });
+  });
+
+  it('409_com_tratamento_local_sem_aviso__CA_F06_16', async () => {
+    const conflito = {
+      erro: { codigo: 'CATEGORIA_DUPLICADA', mensagem: 'Já existe.', detalhes: [] },
+    };
+
+    const local = firstValueFrom(
+      http.post('/api/categorias', {}, { context: contextoDeErro(true) }),
+    ).catch((erro: unknown) => erro);
+    controle.expectOne('/api/categorias').flush(conflito, { status: 409, statusText: 'x' });
+    expect(((await local) as ErroApi).codigo).toBe('CATEGORIA_DUPLICADA');
+    expect(avisos.mostrar).not.toHaveBeenCalled();
+
+    // Sem o marcador, o 409 continua gerando aviso.
+    const global = firstValueFrom(http.post('/api/categorias', {})).catch(() => undefined);
+    controle.expectOne('/api/categorias').flush(conflito, { status: 409, statusText: 'x' });
+    await global;
+    expect(avisos.mostrar).toHaveBeenCalledWith('Já existe.');
+  });
+
+  it('tratamento_local_nao_esconde_500', async () => {
+    const resposta = firstValueFrom(
+      http.post('/api/lancamentos', {}, { context: contextoDeErro(true) }),
+    ).catch(() => undefined);
+    controle.expectOne('/api/lancamentos').flush(
+      { erro: { codigo: 'ERRO_INTERNO', mensagem: 'Falhou.', detalhes: [] } },
+      {
+        status: 500,
+        statusText: 'x',
+      },
+    );
+    await resposta;
+
+    expect(avisos.mostrar).toHaveBeenCalledWith('Falhou.');
   });
 });

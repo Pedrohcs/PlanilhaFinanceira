@@ -169,14 +169,16 @@ export class CategoriaFormDialog {
     this.salvando.set(true);
     try {
       const categoria = this.dados.categoria;
+      // O 409 (nome duplicado) aparece no campo, não como aviso (F-06 Q3).
+      const opcoes = { tratamentoLocal: true };
       const salva = await firstValueFrom(
         categoria
-          ? this.api.atualizar(categoria.id, {
-              nome: normalizarNome(nome),
-              cor,
-              ativa: categoria.ativa,
-            })
-          : this.api.criar({ nome: normalizarNome(nome), tipo: this.dados.tipo, cor }),
+          ? this.api.atualizar(
+              categoria.id,
+              { nome: normalizarNome(nome), cor, ativa: categoria.ativa },
+              opcoes,
+            )
+          : this.api.criar({ nome: normalizarNome(nome), tipo: this.dados.tipo, cor }, opcoes),
       );
       this.referencia.close(salva);
     } catch (erro: unknown) {

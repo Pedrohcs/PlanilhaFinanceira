@@ -1,6 +1,7 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
+import { contextoDeErro, OpcoesDeEscrita } from '../interceptors/erro.interceptor';
 import { Categoria, CategoriaAtualizacao, CategoriaEntrada } from '../models/categoria';
 import { TipoLancamento } from '../models/enums';
 
@@ -24,12 +25,20 @@ export class CategoriasApi {
     return this.http.get<Categoria[]>(URL, { params });
   }
 
-  criar(entrada: CategoriaEntrada): Observable<Categoria> {
-    return this.http.post<Categoria>(URL, entrada);
+  criar(entrada: CategoriaEntrada, opcoes: OpcoesDeEscrita = {}): Observable<Categoria> {
+    return this.http.post<Categoria>(URL, entrada, {
+      context: contextoDeErro(opcoes.tratamentoLocal),
+    });
   }
 
-  atualizar(id: string, dados: CategoriaAtualizacao): Observable<Categoria> {
-    return this.http.put<Categoria>(`${URL}/${encodeURIComponent(id)}`, dados);
+  atualizar(
+    id: string,
+    dados: CategoriaAtualizacao,
+    opcoes: OpcoesDeEscrita = {},
+  ): Observable<Categoria> {
+    return this.http.put<Categoria>(`${URL}/${encodeURIComponent(id)}`, dados, {
+      context: contextoDeErro(opcoes.tratamentoLocal),
+    });
   }
 
   excluir(id: string): Observable<void> {

@@ -125,6 +125,23 @@ describe('CategoriaFormDialog', () => {
     expect(textoDoDialogo()).toContain('Salvar');
   });
 
+  it('duplicada_so_no_campo__CA_F06_16', async () => {
+    await abrir({ tipo: 'GASTO', corInicial: '#E57373' });
+    digitar('mercado');
+    await salvar();
+
+    controle
+      .expectOne('/api/categorias')
+      .flush(
+        { erro: { codigo: 'CATEGORIA_DUPLICADA', mensagem: 'Duplicada.', detalhes: [] } },
+        { status: 409, statusText: 'Conflict' },
+      );
+    await estabilizar();
+
+    expect(document.querySelector('mat-error')?.textContent).toContain('Duplicada.');
+    expect(TestBed.inject(Avisos).mostrar).not.toHaveBeenCalled(); // só no campo (F-06 Q3)
+  });
+
   it('422_marca_o_campo', async () => {
     await abrir({ tipo: 'GASTO', corInicial: '#E57373' });
     digitar('Pet');

@@ -1,4 +1,9 @@
-import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
+import {
+  HttpContext,
+  HttpContextToken,
+  HttpErrorResponse,
+  HttpInterceptorFn,
+} from '@angular/common/http';
 import { inject } from '@angular/core';
 import { catchError, throwError } from 'rxjs';
 import { Avisos } from '../avisos/avisos';
@@ -16,11 +21,29 @@ import { ConexaoStore } from '../state/conexao.store';
 const SEM_BACKEND = new Set([0, 502, 504]);
 
 /**
+ * Marcador de requisição: "este 409 eu mostro no campo" (F-06 Q3). Usado por
+ * formulários que exibem o erro no próprio campo, para a mesma frase não
+ * aparecer também como aviso.
+ */
+export const TRATAMENTO_LOCAL = new HttpContextToken<boolean>(() => false);
+
+/** Opção das APIs de escrita: `tratamentoLocal` = quem chama mostra o 409 no campo. */
+export interface OpcoesDeEscrita {
+  tratamentoLocal?: boolean;
+}
+
+/** `HttpContext` com `TRATAMENTO_LOCAL` ligado, quando pedido. */
+export function contextoDeErro(tratamentoLocal = false): HttpContext {
+  return new HttpContext().set(TRATAMENTO_LOCAL, tratamentoLocal);
+}
+
+/**
  * Converte toda resposta de erro em `ErroApi` e a repassa a quem chamou
  * (SPECS/03 §8.4; F-04 §3.3):
  *
  * - 503 ou backend fora do ar → `ConexaoStore` (banner), sem snackbar;
  * - 422 → nada global: o formulário marca os campos por `detalhes`;
+ * - 409 com `TRATAMENTO_LOCAL` → nada global: o formulário mostra no campo;
  * - demais → snackbar com a mensagem do backend.
  */
 export const erroInterceptor: HttpInterceptorFn = (requisicao, proximo) => {
@@ -33,9 +56,10 @@ export const erroInterceptor: HttpInterceptorFn = (requisicao, proximo) => {
         return throwError(() => resposta);
       }
       const erro = paraErroApi(resposta);
+      const mostradoNoCampo = erro.status === 409 && requisicao.context.get(TRATAMENTO_LOCAL);
       if (erro.codigo === BACKEND_INDISPONIVEL || erro.status === 503) {
         conexao.registrarFalha(erro);
-      } else if (erro.status !== 422) {
+      } else if (erro.status !== 422 && !mostradoNoCampo) {
         void avisos.mostrar(erro.mensagem);
       }
       return throwError(() => erro);

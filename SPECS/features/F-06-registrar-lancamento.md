@@ -4,7 +4,7 @@
 |---|---|
 | Feature | F-06 |
 | Marco | M1 |
-| Status | Aprovada |
+| Status | Concluída |
 | Requisitos | REQ-01 (CA-01.1 a CA-01.5), REQ-02 (CA-02.1, CA-02.2) |
 | Regras | RN-01, RN-02, RN-03, RN-04, RN-05, RN-06 |
 | Depende de | F-05 (**Concluída**) |
@@ -115,13 +115,13 @@ Nenhuma categoria ativa do tipo (F-05 Q5) → no lugar do seletor, a mensagem "N
 
 **Herdados de `01`**
 
-- [ ] **CA-01.1** Dado qualquer tela aberta, quando o usuário aciona "Registrar gasto", então um formulário abre com a data de hoje já preenchida.
-- [ ] **CA-01.2** Dado um formulário válido, quando o usuário confirma, então o gasto é gravado na planilha, o formulário fecha e uma confirmação é exibida.
-- [ ] **CA-01.3** Dado um campo obrigatório vazio ou valor ≤ 0, quando o usuário tenta confirmar, então o sistema indica o campo inválido e não grava nada.
-- [ ] **CA-01.4** Dado que a gravação falhou, quando o erro é exibido, então os dados digitados continuam no formulário para nova tentativa.
-- [ ] **CA-01.5** Dado um gasto recém-registrado, quando o usuário vê a listagem e o resumo do mês, então o gasto já aparece e os totais já o consideram. *(F-06 garante `DadosStore.versao++`; a verificação na tela é de F-07/F-09.)*
-- [ ] **CA-02.1** Dado o formulário de receita, quando o usuário escolhe a categoria, então só categorias ativas do tipo receita são oferecidas.
-- [~] **CA-02.2** Dado um formulário de receita válido sem forma de pagamento, quando o usuário confirma, então a receita é gravada. *(T-015: API grava receita sem forma; o formulário é T-016.)*
+- [x] **CA-01.1** Dado qualquer tela aberta, quando o usuário aciona "Registrar gasto", então um formulário abre com a data de hoje já preenchida.
+- [x] **CA-01.2** Dado um formulário válido, quando o usuário confirma, então o gasto é gravado na planilha, o formulário fecha e uma confirmação é exibida.
+- [x] **CA-01.3** Dado um campo obrigatório vazio ou valor ≤ 0, quando o usuário tenta confirmar, então o sistema indica o campo inválido e não grava nada.
+- [x] **CA-01.4** Dado que a gravação falhou, quando o erro é exibido, então os dados digitados continuam no formulário para nova tentativa.
+- [~] **CA-01.5** Dado um gasto recém-registrado, quando o usuário vê a listagem e o resumo do mês, então o gasto já aparece e os totais já o consideram. *(F-06 garante `DadosStore.versao++`; a verificação na tela é de F-07/F-09.)*
+- [x] **CA-02.1** Dado o formulário de receita, quando o usuário escolhe a categoria, então só categorias ativas do tipo receita são oferecidas.
+- [x] **CA-02.2** Dado um formulário de receita válido sem forma de pagamento, quando o usuário confirma, então a receita é gravada. *(T-015: API grava receita sem forma; T-016: formulário com "Não informar" envia `null`.)*
 
 **Refinados — backend (T-015)**
 
@@ -136,14 +136,14 @@ Nenhuma categoria ativa do tipo (F-05 Q5) → no lugar do seletor, a mensagem "N
 
 **Refinados — frontend (T-016)**
 
-- [ ] **CA-F06.9** Dado "Registrar receita", quando o diálogo abre, então o título é "Registrar receita", a data é hoje, o seletor mostra só categorias **ativas de receita** (com a cor) e a forma de pagamento tem "Não informar".
-- [ ] **CA-F06.10** Dado o formulário com valor, descrição, categoria ou (em gasto) forma vazios, quando "Salvar", então esses campos mostram a mensagem de §3.2 e **nenhuma** requisição sai (CA-01.3).
-- [ ] **CA-F06.11** Dado um gasto válido, quando "Salvar", então sai `POST` com o corpo de `03` §6.3 (valor como número, data `YYYY-MM-DD`), o botão mostra "Salvando…", e no 201 o diálogo fecha, aparece "Gasto registrado." e `DadosStore.versao` aumenta 1 (CA-01.2, CA-01.5).
-- [ ] **CA-F06.12** Dado um 422 com `detalhes`, um 409 de categoria, um 503 ou o backend fora do ar, então o diálogo continua aberto com **todos** os valores digitados e a mensagem aparece no lugar certo (campo, ou banner) (CA-01.4, RNF-06); no 409 de categoria, a lista de categorias é recarregada.
-- [ ] **CA-F06.13** Dado nenhuma categoria ativa do tipo, então aparece a orientação de §3.2 com link para Categorias e "Salvar" fica desabilitado (F-05 Q5).
-- [ ] **CA-F06.14** Dado o texto digitado no valor, então a interpretação segue §3.2.1: `42,5` → 42.50, `1.234,56` → 1234.56, `1.234` → 1234, `42.50` → 42.50, `R$ 10` → 10; `0,001` → "Use no máximo 2 casas decimais."; `abc` e `1,2,3` → "Valor inválido. Ex.: 1.234,56"; e ao sair do campo `1234.5` aparece como `1.234,50` (Q2).
-- [ ] **CA-F06.16** Dado um 409 numa chamada com `TRATAMENTO_LOCAL` (diálogo de lançamento ou de categoria), então a mensagem aparece só no campo, sem aviso do interceptor; e sem o marcador, o 409 continua gerando aviso (Q3).
-- [ ] **CA-F06.15** Dado o app recém-aberto, quando o pacote inicial é medido no build, então o código do diálogo **não** está nele (carga sob demanda).
+- [x] **CA-F06.9** Dado "Registrar receita", quando o diálogo abre, então o título é "Registrar receita", a data é hoje, o seletor mostra só categorias **ativas de receita** (com a cor) e a forma de pagamento tem "Não informar".
+- [x] **CA-F06.10** Dado o formulário com valor, descrição, categoria ou (em gasto) forma vazios, quando "Salvar", então esses campos mostram a mensagem de §3.2 e **nenhuma** requisição sai (CA-01.3).
+- [x] **CA-F06.11** Dado um gasto válido, quando "Salvar", então sai `POST` com o corpo de `03` §6.3 (valor como número, data `YYYY-MM-DD`), o botão mostra "Salvando…", e no 201 o diálogo fecha, aparece "Gasto registrado." e `DadosStore.versao` aumenta 1 (CA-01.2, CA-01.5).
+- [x] **CA-F06.12** Dado um 422 com `detalhes`, um 409 de categoria, um 503 ou o backend fora do ar, então o diálogo continua aberto com **todos** os valores digitados e a mensagem aparece no lugar certo (campo, ou banner) (CA-01.4, RNF-06); no 409 de categoria, a lista de categorias é recarregada.
+- [x] **CA-F06.13** Dado nenhuma categoria ativa do tipo, então aparece a orientação de §3.2 com link para Categorias e "Salvar" fica desabilitado (F-05 Q5).
+- [x] **CA-F06.14** Dado o texto digitado no valor, então a interpretação segue §3.2.1: `42,5` → 42.50, `1.234,56` → 1234.56, `1.234` → 1234, `42.50` → 42.50, `R$ 10` → 10; `0,001` → "Use no máximo 2 casas decimais."; `abc` e `1,2,3` → "Valor inválido. Ex.: 1.234,56"; e ao sair do campo `1234.5` aparece como `1.234,50` (Q2).
+- [x] **CA-F06.16** Dado um 409 numa chamada com `TRATAMENTO_LOCAL` (diálogo de lançamento ou de categoria), então a mensagem aparece só no campo, sem aviso do interceptor; e sem o marcador, o 409 continua gerando aviso (Q3).
+- [x] **CA-F06.15** Dado o app recém-aberto, quando o pacote inicial é medido no build, então o código do diálogo **não** está nele (carga sob demanda).
 
 ---
 
@@ -272,6 +272,9 @@ Ordem: T-015 → T-016 (`05` §4; T-016 também depende de T-014, concluída).
 | Ordem das checagens da categoria: existe → mesmo tipo → ativa → forma (T-015). | Tipo errado é o erro mais fundamental; uma categoria inativa de outro tipo é reportada como "de outro tipo". | Não |
 | `GET /api/formas-pagamento` não depende da planilha (T-015). | A lista é fixa (P-01) e vem do enum; o formulário pode mostrá-la mesmo com a planilha fora. | Não |
 | `valor` na entrada usa o tipo `Dinheiro`: JSON `true` e texto como `"42,50"` são recusados (T-015). | A interpretação do formato pt-BR é do frontend (§3.2.1); a API recebe número. | Não |
+| `AdaptadorDeDataPtBr` (estende o `NativeDateAdapter`) registrado em `app.config.ts` (T-016). | O nativo exibe em pt-BR mas interpreta o texto digitado no formato americano (`30/09/2026` inválido, `05/09` = 9 de maio). Só a interpretação muda; recusa dia inexistente (29/02/2025). | Não |
+| O shell abre o diálogo por `import()` de `abrir-lancamento.ts`, que obtém o `MatDialog` pelo `Injector` (T-016). | Injetar `MatDialog` no shell levaria o overlay do CDK ao pacote inicial; o diálogo fica num pedaço de 39 kB (CA-F06.15). | Não |
+| 422 sem nenhum campo conhecido vira aviso (T-016). | O interceptor não avisa 422; sem isso o usuário não veria nada. | Não |
 
 ---
 
@@ -293,3 +296,4 @@ Ordem: T-015 → T-016 (`05` §4; T-016 também depende de T-014, concluída).
 | 2026-09-30 | Criação (`/especificar-feature F-06`). Status `Rascunho` — 4 questões em aberto. |
 | 2026-09-30 | Q1–Q4 respondidas → status **Aprovada**. Regras do valor em §3.2.1; `TRATAMENTO_LOCAL` no escopo de T-016 (inclui o diálogo de categoria); CA-F06.14 detalhado e CA-F06.16 acrescentado; bordas 13a e 13b. `03` → 1.17. |
 | 2026-09-30 | T-015 concluída: CA-F06.1 a .8 verificados por teste (API com planilha falsa e em memória); CA-02.2 com a parte do backend. Quatro decisões em §10. `03` → 1.18. |
+| 2026-09-30 | T-016 concluída → **feature Concluída**. CA-01.1..01.4, CA-02.1, CA-02.2 e CA-F06.9 a .16 verificados por teste (CA-F06.15 pelo build: `abrir-lancamento` em pedaço próprio); CA-01.5 com a parte de F-06 (`versao++`), a exibição é de F-07/F-09; borda 16 (360 px) na conferência visual pendente. Três decisões em §10. `03` → 1.19. |

@@ -9,14 +9,25 @@
   }
   <span class="espaco"></span>
 
-  <!-- Sem ação até T-016 (F-04 §2). -->
-  <button matButton="filled" type="button" class="registrar" aria-label="Registrar gasto">
+  <button
+    matButton="filled"
+    type="button"
+    class="registrar"
+    aria-label="Registrar gasto"
+    (click)="registrar('GASTO')"
+  >
     @if (!barraCompleta()) {
       <mat-icon>add</mat-icon>
     }
     {{ barraCompleta() ? 'Registrar gasto' : 'Gasto' }}
   </button>
-  <button matButton="outlined" type="button" class="registrar" aria-label="Registrar receita">
+  <button
+    matButton="outlined"
+    type="button"
+    class="registrar"
+    aria-label="Registrar receita"
+    (click)="registrar('RECEITA')"
+  >
     @if (!barraCompleta()) {
       <mat-icon>add</mat-icon>
     }

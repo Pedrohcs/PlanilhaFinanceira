@@ -10,12 +10,13 @@ import {
   provideEnvironmentInitializer,
   provideZonelessChangeDetection,
 } from '@angular/core';
-import { MAT_DATE_LOCALE, provideNativeDateAdapter } from '@angular/material/core';
+import { DateAdapter, MAT_DATE_LOCALE, provideNativeDateAdapter } from '@angular/material/core';
 import { MatIconRegistry } from '@angular/material/icon';
 import { provideRouter } from '@angular/router';
 import { routes } from './app.routes';
 import { erroInterceptor } from './core/interceptors/erro.interceptor';
 import { provideVerificacaoDeConexao } from './core/state/conexao.store';
+import { AdaptadorDeDataPtBr } from './core/utils/adaptador-de-data';
 
 // Dados de pt-BR para CurrencyPipe, DatePipe e DecimalPipe (RNF-03).
 registerLocaleData(localePt);
@@ -34,6 +35,8 @@ export const appConfig: ApplicationConfig = {
     { provide: DEFAULT_CURRENCY_CODE, useValue: 'BRL' },
     // Datepicker (seletor de mês, F-04 Q7; formulários em F-06), em pt-BR.
     provideNativeDateAdapter(),
+    // Entende `dd/mm/aaaa` digitado; o nativo usa o formato americano (F-06, T-016).
+    { provide: DateAdapter, useClass: AdaptadorDeDataPtBr },
     { provide: MAT_DATE_LOCALE, useValue: 'pt-BR' },
     // O `index.html` carrega a fonte Material Symbols; sem isto o `<mat-icon>`
     // procuraria a antiga "Material Icons" e mostraria o nome do ícone em texto.
