@@ -3,7 +3,7 @@
 | Campo | Valor |
 |---|---|
 | Documento | `SPECS/03-arquitetura.md` |
-| Versão | 1.13 |
+| Versão | 1.14 |
 | Atualizado em | 2026-09-30 |
 | Status | Aprovado para início |
 | Responde | **Como** o sistema se organiza: componentes, pastas, camadas, modelo de dados na planilha, contrato da API e fluxos |
@@ -331,6 +331,12 @@ Erros do próprio framework também saem neste envelope: rota inexistente vira 4
 ```
 
 ```jsonc
+// Categoria (GET/POST/PUT /api/categorias) — F-05
+{ "id": "contas-da-casa", "nome": "Contas da casa", "tipo": "GASTO", "cor": "#4FC3F7",
+  "ativa": true, "criado_em": "2026-09-29T10:15:00",
+  "em_uso": true }   // calculado: há lançamento ou recorrência com este categoria_id (não é coluna)
+// Listagem: ativas antes das inativas, alfabética sem acento/caixa; sem filtro, GASTO antes de RECEITA.
+
 // LancamentoEntrada
 { "data": "2026-09-29", "tipo": "GASTO", "descricao": "Almoço", "valor": 42.50,
   "categoria_id": "alimentacao", "forma_pagamento": "PIX", "observacao": null }
@@ -474,4 +480,5 @@ Quando o **backend não responde** (status 0, ou 502/504 sem o envelope de §6.2
 | 2026-09-30 | 1.11 | §3: páginas em `features/<nome>/<nome>.page.ts` e tokens de `shared/grafico/`. §8.1: layout por largura, título da aba e rota desconhecida (T-010, F-04). |
 | 2026-09-30 | 1.12 | §3: `core/avisos/`, stores reais de `core/state/`, `banner-conexao`. §8.4: snackbar sob demanda (T-011, F-04). |
 | 2026-09-30 | 1.13 | §7.2: inicializador sem espera e comportamento do "Tentar novamente". §8.4: status real do proxy com o backend desligado (502), conferido em T-012. |
+| 2026-09-30 | 1.14 | §6.3: esquema `Categoria` com `em_uso` calculado e a ordem da listagem (F-05, Q3/Q4). |
 | 2026-09-29 | 1.1 | Frontend em Angular 22 (zoneless); pasta `shared/grafico/` com diretiva Chart.js própria (§3, §8.2.1). |

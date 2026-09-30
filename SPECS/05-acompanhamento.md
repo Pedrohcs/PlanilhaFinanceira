@@ -29,7 +29,7 @@
 | M4 · Acabamento | F-14..F-15 | 5 | 5 | 0 | 0 | 0% |
 | **Total** | **15** | **35** | **23** | **0** | **12** | **34%** |
 
-**M0 concluído (F-01 a F-04).** Próximo passo: `/especificar-feature F-05` (Categorias, caminho crítico) — depois T-013 (BE) e T-014 (FE). Pendentes com o usuário, sem bloquear: seguir o README com a planilha real (CA-F02.13), rodar `pytest -m integracao` (CA-15.1/15.2) e a conferência visual do shell (CA-F04.7, CA-F04.30).
+**M0 concluído (F-01 a F-04).** Próxima tarefa disponível: **T-013** (BE, F-05, caminho crítico; spec aprovada) — depois T-014 (FE). Pendentes com o usuário, sem bloquear: seguir o README com a planilha real (CA-F02.13), rodar `pytest -m integracao` (CA-15.1/15.2) e a conferência visual do shell (CA-F04.7, CA-F04.30).
 
 ---
 
@@ -41,7 +41,7 @@
 | F-02 | Conexão com Google Sheets | M0 | Concluída | [`F-02-conexao-google-sheets.md`](features/F-02-conexao-google-sheets.md) (Aprovada) |
 | F-03 | Esquema e repositórios da planilha | M0 | Concluída | [`F-03-esquema-e-repositorios.md`](features/F-03-esquema-e-repositorios.md) (Concluída) |
 | F-04 | Shell do frontend | M0 | Concluída | [`F-04-shell-do-frontend.md`](features/F-04-shell-do-frontend.md) (Concluída) |
-| F-05 | Categorias | M1 | Não iniciada | — |
+| F-05 | Categorias | M1 | Não iniciada | [`F-05-categorias.md`](features/F-05-categorias.md) (Aprovada) |
 | F-06 | Registrar lançamento | M1 | Não iniciada | — |
 | F-07 | Listagem mensal | M1 | Não iniciada | — |
 | F-08 | Editar e excluir lançamentos | M1 | Não iniciada | — |
@@ -157,6 +157,7 @@ Camadas: **BE** = backend · **FE** = frontend · **DOC** = documentação/infra
 
 | Data | Tarefa/Feature | Mudança | Observação |
 |---|---|---|---|
+| 2026-09-30 | F-05 | Spec da feature criada e **aprovada** | `features/F-05-categorias.md`: Q1–Q5 respondidas (todas na opção recomendada); pendência cruzada anotada para F-13 (recorrência com categoria desativada). `03` → 1.14 (esquema `Categoria` com `em_uso`). Nenhum status de tarefa alterado. |
 | 2026-09-30 | M0 | **Marco concluído** | F-01 a F-04 concluídas (12/12 tarefas). Verificações que dependem do usuário e não bloqueiam M1: CA-F02.13 (README com a planilha real), CA-15.1/15.2 (`pytest -m integracao` na planilha de teste), CA-F04.7 e CA-F04.30 (conferência visual). |
 | 2026-09-30 | T-012 / F-04 | `Iniciada` → `Concluída` | Verificação na abertura e "Tentar novamente". **F-04 concluída** (§2 e §3 atualizados). `03` → 1.13 (§7.2; §8.4 com o 502 real do proxy). Conferência sem navegador: uvicorn com credencial inexistente e ID falso (nenhum acesso ao Google) + `ng serve` na porta 4299; ambos encerrados ao fim. |
 | 2026-09-30 | T-012 | `Não iniciada` → `Iniciada` | Dependências T-011 e T-005 `Concluída`. Última tarefa de F-04. |
