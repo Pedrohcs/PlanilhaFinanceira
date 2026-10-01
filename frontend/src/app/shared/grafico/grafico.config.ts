@@ -48,7 +48,18 @@ export interface CoresDoTema {
   grade: string;
   /** Cor de destaque (`--mat-sys-primary`): barras e linhas sem cor própria (F-10). */
   destaque: string;
+  /** Gastos ao lado de receitas no mesmo gráfico (`--mat-sys-error`; F-11). */
+  gasto: string;
+  /** Receitas: o verde de F-07 (`--cor-receita`, token global; F-11). */
+  receita: string;
 }
+
+/**
+ * Dados prontos ou montados a partir das cores do tema — para séries do mesmo
+ * gráfico com cores do tema diferentes entre si (F-11 §3.2.4). A diretiva
+ * reavalia a função quando o tema muda.
+ */
+export type DadosDoGrafico = ChartData | ((cores: CoresDoTema) => ChartData);
 
 /** O que a diretiva usa de um `Chart` — permite trocar por um dublê nos testes. */
 export interface GraficoCriado {
@@ -109,6 +120,8 @@ export function lerCoresDoTema(documento: Document): CoresDoTema {
       texto: ler('--mat-sys-on-surface', '#1b1b1f'),
       grade: ler('--mat-sys-outline-variant', '#c4c6d0'),
       destaque: ler('--mat-sys-primary', '#415f91'),
+      gasto: ler('--mat-sys-error', '#ba1a1a'),
+      receita: ler('--cor-receita', '#2e7d32'),
     };
   } finally {
     sonda.remove();

@@ -1,0 +1,96 @@
+<header class="cabecalho">
+  <h1>Histórico</h1>
+  @if (periodo(); as atual) {
+    <app-seletor-intervalo [periodo]="atual" (mudou)="escolher($event)" (ultimos12)="ultimos12()" />
+  }
+</header>
+
+@if (historico() === null && carregando()) {
+  <app-carregando texto="Carregando histórico…" />
+} @else if (erro()) {
+  <app-estado-vazio icone="cloud_off" mensagem="Não foi possível carregar o histórico." />
+} @else if (historico(); as dados) {
+  <div class="conteudo" [class.recarregando]="carregando()">
+    <section class="totais" aria-label="Totais do período">
+      <div class="total">
+        <span class="rotulo">Total gasto no período</span>
+        <span class="numero">{{ montante(dados.total_gastos_periodo) }}</span>
+      </div>
+      <div class="total">
+        <span class="rotulo">Média mensal de gastos</span>
+        <span class="numero">{{ montante(dados.media_mensal_gastos) }}</span>
+      </div>
+      <p class="legenda">{{ legendaDoPeriodo() }}</p>
+    </section>
+
+    @if (semLancamentos()) {
+      <app-estado-vazio [mensagem]="'Nenhum lançamento ' + periodoPorExtenso() + '.'" />
+    } @else {
+      <section class="grupo mes-a-mes" aria-labelledby="titulo-mes-a-mes">
+        <h2 id="titulo-mes-a-mes">Gastos e receitas por mês</h2>
+        <div class="grafico">
+          <canvas
+            appGrafico
+            tipo="bar"
+            role="img"
+            [attr.aria-label]="
+              'Gráfico de barras dos gastos e receitas por mês, com a linha do saldo, ' +
+              periodoPorExtenso() +
+              '. Os valores estão na tabela abaixo.'
+            "
+            [dados]="dadosMesAMes()"
+            [opcoes]="opcoesMesAMes()"
+          ></canvas>
+        </div>
+      </section>
+
+      <section class="grupo por-categoria" aria-labelledby="titulo-por-categoria">
+        <h2 id="titulo-por-categoria">Gastos por categoria ao longo dos meses</h2>
+        @if (dados.por_categoria.length === 0) {
+          <app-estado-vazio mensagem="Nenhum gasto no período." />
+        } @else {
+          <div class="grafico">
+            <canvas
+              appGrafico
+              tipo="bar"
+              role="img"
+              [attr.aria-label]="
+                'Gráfico de barras empilhadas dos gastos por categoria em cada mês, ' +
+                periodoPorExtenso() +
+                '.'
+              "
+              [dados]="dadosPorCategoria()"
+              [opcoes]="opcoesPorCategoria()"
+            ></canvas>
+          </div>
+        }
+      </section>
+
+      <section class="grupo tabela-meses" aria-labelledby="titulo-tabela">
+        <h2 id="titulo-tabela">Mês a mês</h2>
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">Mês</th>
+              <th scope="col" class="numero">Gastos</th>
+              <th scope="col" class="numero">Receitas</th>
+              <th scope="col" class="numero">Saldo</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of dados.meses; track item.mes) {
+              <tr>
+                <td class="mes">{{ mesPorExtenso(item.mes) }}</td>
+                <td class="numero">{{ montante(item.total_gastos) }}</td>
+                <td class="numero">{{ montante(item.total_receitas) }}</td>
+                <td class="numero saldo" [class.negativo]="item.saldo < 0">
+                  {{ montante(item.saldo) }}
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </section>
+    }
+  </div>
+}

@@ -8,6 +8,21 @@ const PADRAO_MES = /^(\d{4})-(0[1-9]|1[0-2])$/;
 
 const EXTENSO = new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'numeric' });
 
+const ABREVIADOS = [
+  'jan',
+  'fev',
+  'mar',
+  'abr',
+  'mai',
+  'jun',
+  'jul',
+  'ago',
+  'set',
+  'out',
+  'nov',
+  'dez',
+];
+
 export function mesValido(mes: string | null | undefined): mes is string {
   return typeof mes === 'string' && PADRAO_MES.test(mes);
 }
@@ -30,6 +45,25 @@ export function mesPorExtenso(mes: string): string {
   return EXTENSO.format(mesParaData(mes));
 }
 
+/** `2025-10` → `out/25`: rótulo do eixo dos gráficos do histórico (F-11 §3.2.4). */
+export function mesAbreviado(mes: string): string {
+  const [ano, numero] = partes(mes);
+  return `${ABREVIADOS[numero - 1]}/${String(ano % 100).padStart(2, '0')}`;
+}
+
+/** Meses de `inicio` a `fim`, inclusive nas pontas (0 ou menos se `fim` vem antes). */
+export function mesesNoPeriodo(inicio: string, fim: string): number {
+  const [anoInicio, numeroInicio] = partes(inicio);
+  const [anoFim, numeroFim] = partes(fim);
+  return (anoFim - anoInicio) * 12 + (numeroFim - numeroInicio) + 1;
+}
+
+/** Soma (ou subtrai) meses de um `YYYY-MM`. */
+export function somarMeses(mes: string, quantidade: number): string {
+  const [ano, numero] = partes(mes);
+  return dataParaMes(new Date(ano, numero - 1 + quantidade, 1));
+}
+
 /** Primeiro dia do mês, à meia-noite local — o que o datepicker usa. */
 export function mesParaData(mes: string): Date {
   const [ano, numero] = partes(mes);
@@ -39,11 +73,6 @@ export function mesParaData(mes: string): Date {
 export function dataParaMes(data: Date): string {
   const numero = String(data.getMonth() + 1).padStart(2, '0');
   return `${String(data.getFullYear()).padStart(4, '0')}-${numero}`;
-}
-
-function somarMeses(mes: string, quantidade: number): string {
-  const [ano, numero] = partes(mes);
-  return dataParaMes(new Date(ano, numero - 1 + quantidade, 1));
 }
 
 function partes(mes: string): [number, number] {

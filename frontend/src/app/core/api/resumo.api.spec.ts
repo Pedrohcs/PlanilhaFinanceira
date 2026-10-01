@@ -19,4 +19,27 @@ describe('ResumoApi (SPECS/03 §6.1)', () => {
     expect((await resumo).mes).toBe('2026-09');
     controle.verify();
   });
+
+  it('historico_com_e_sem_periodo__F11', async () => {
+    TestBed.configureTestingModule({
+      providers: [provideHttpClient(), provideHttpClientTesting()],
+    });
+    const controle = TestBed.inject(HttpTestingController);
+    const api = TestBed.inject(ResumoApi);
+
+    const padrao = firstValueFrom(api.historico());
+    const semPeriodo = controle.expectOne('/api/resumo/historico');
+    expect(semPeriodo.request.method).toBe('GET');
+    expect(semPeriodo.request.params.keys()).toEqual([]);
+    semPeriodo.flush({ inicio: '2025-11', fim: '2026-10' });
+    expect((await padrao).inicio).toBe('2025-11');
+
+    const escolhido = firstValueFrom(api.historico({ inicio: '2026-01', fim: '2026-06' }));
+    controle.expectOne('/api/resumo/historico?inicio=2026-01&fim=2026-06').flush({
+      inicio: '2026-01',
+      fim: '2026-06',
+    });
+    expect((await escolhido).fim).toBe('2026-06');
+    controle.verify();
+  });
 });

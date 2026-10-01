@@ -1,11 +1,14 @@
 import {
   dataParaMes,
+  mesAbreviado,
   mesAnterior,
   mesCorrente,
+  mesesNoPeriodo,
   mesParaData,
   mesPorExtenso,
   mesValido,
   proximoMes,
+  somarMeses,
 } from './mes';
 
 describe('utils/mes', () => {
@@ -38,6 +41,21 @@ describe('utils/mes', () => {
     ]) {
       expect(mesValido(invalido)).toBe(false);
     }
+  });
+
+  it('mes_abreviado__F11', () => {
+    expect(mesAbreviado('2025-10')).toBe('out/25');
+    expect(mesAbreviado('2026-01')).toBe('jan/26');
+    expect(mesAbreviado('2000-12')).toBe('dez/00');
+  });
+
+  it('meses_no_periodo_e_somar_meses__F11', () => {
+    expect(mesesNoPeriodo('2025-11', '2026-10')).toBe(12);
+    expect(mesesNoPeriodo('2026-09', '2026-09')).toBe(1);
+    expect(mesesNoPeriodo('2024-01', '2026-12')).toBe(36);
+    expect(mesesNoPeriodo('2026-09', '2026-01')).toBeLessThan(1);
+    expect(somarMeses('2026-10', -11)).toBe('2025-11');
+    expect(somarMeses('2024-01', 35)).toBe('2026-12');
   });
 
   it('mes_corrente_e_conversoes_com_date', () => {

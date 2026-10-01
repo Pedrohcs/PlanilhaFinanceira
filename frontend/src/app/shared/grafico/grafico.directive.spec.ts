@@ -4,6 +4,7 @@ import { ChartConfiguration, ChartData, ChartOptions } from 'chart.js';
 import {
   CORES_DO_TEMA,
   CoresDoTema,
+  DadosDoGrafico,
   FABRICA_GRAFICO,
   GraficoCriado,
   TipoGrafico,
@@ -52,7 +53,7 @@ class ConsultaDeTemaFalsa {
 class Hospedeiro {
   readonly visivel = signal(true);
   readonly tipo = signal<TipoGrafico>('bar');
-  readonly dados = signal<ChartData>({ labels: ['Pix'], datasets: [{ data: [10] }] });
+  readonly dados = signal<DadosDoGrafico>({ labels: ['Pix'], datasets: [{ data: [10] }] });
   readonly opcoes = signal<ChartOptions | undefined>(undefined);
 }
 
@@ -65,7 +66,13 @@ describe('GraficoDirective', () => {
 
   beforeEach(() => {
     criados = [];
-    cores = { texto: 'rgb(0, 0, 0)', grade: 'rgb(200, 200, 200)', destaque: 'rgb(0, 0, 255)' };
+    cores = {
+      texto: 'rgb(0, 0, 0)',
+      grade: 'rgb(200, 200, 200)',
+      destaque: 'rgb(0, 0, 255)',
+      gasto: 'rgb(255, 0, 0)',
+      receita: 'rgb(0, 128, 0)',
+    };
     consulta = new ConsultaDeTemaFalsa();
     matchMediaOriginal = Object.getOwnPropertyDescriptor(window, 'matchMedia');
     Object.defineProperty(window, 'matchMedia', {
@@ -172,6 +179,8 @@ describe('GraficoDirective', () => {
       texto: 'rgb(230, 230, 230)',
       grade: 'rgb(60, 60, 60)',
       destaque: 'rgb(170, 199, 255)',
+      gasto: 'rgb(255, 180, 171)',
+      receita: 'rgb(129, 199, 132)',
     };
     consulta.trocar();
 
@@ -181,6 +190,30 @@ describe('GraficoDirective', () => {
     const escalas = grafico.options.scales as Record<string, { grid: { color: string } }>;
     expect(escalas['x'].grid.color).toBe('rgb(60, 60, 60)');
     expect(grafico.options.elements?.bar?.backgroundColor).toBe('rgb(170, 199, 255)'); // F-10
+  });
+
+  it('dados_em_funcao_das_cores_do_tema__F11', async () => {
+    const montar = (tema: CoresDoTema): ChartData => ({
+      labels: ['out/25'],
+      datasets: [
+        { label: 'Gastos', data: [10], backgroundColor: tema.gasto },
+        { label: 'Receitas', data: [20], backgroundColor: tema.receita },
+      ],
+    });
+    fixture.componentInstance.dados.set(montar);
+    await fixture.whenStable();
+    const [grafico] = criados;
+    const cor = (indice: number) => grafico.data.datasets[indice].backgroundColor;
+    expect(cor(0)).toBe('rgb(255, 0, 0)');
+    expect(cor(1)).toBe('rgb(0, 128, 0)');
+
+    cores = { ...cores, gasto: 'rgb(255, 180, 171)', receita: 'rgb(129, 199, 132)' };
+    consulta.trocar();
+
+    expect(criados).toHaveLength(1); // mesma instância, dados refeitos com as cores novas
+    expect(grafico.update).toHaveBeenCalledTimes(1);
+    expect(cor(0)).toBe('rgb(255, 180, 171)');
+    expect(cor(1)).toBe('rgb(129, 199, 132)');
   });
 
   it('opcoes_da_pagina_sobrepoem_os_padroes', async () => {

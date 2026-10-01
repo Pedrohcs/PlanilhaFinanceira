@@ -11,6 +11,8 @@ const CORES: CoresDoTema = {
   texto: 'rgb(1, 2, 3)',
   grade: 'rgb(4, 5, 6)',
   destaque: 'rgb(7, 8, 9)',
+  gasto: 'rgb(10, 11, 12)',
+  receita: 'rgb(13, 14, 15)',
 };
 
 /** O `Intl` de pt-BR separa `R$` do número com espaço não-quebrável. */
@@ -120,8 +122,15 @@ describe('grafico.config', () => {
     expect(opcoesPadrao('doughnut', CORES).elements).toBeUndefined();
 
     const lidas = lerCoresDoTema(document);
-    expect(Object.keys(lidas).sort()).toEqual(['destaque', 'grade', 'texto']);
+    expect(Object.keys(lidas).sort()).toEqual(['destaque', 'gasto', 'grade', 'receita', 'texto']);
     expect(lidas.destaque).not.toBe('');
     expect(document.body.children).toHaveLength(0); // a sonda foi removida
+  });
+
+  it('cores_de_gasto_e_receita_do_tema__F11', () => {
+    // O jsdom não resolve `var()`: devolve o valor aplicado, o que mostra qual variável é lida.
+    const lidas = lerCoresDoTema(document);
+    expect(lidas.gasto).toContain('--mat-sys-error');
+    expect(lidas.receita).toContain('--cor-receita'); // token global de `styles.scss`
   });
 });

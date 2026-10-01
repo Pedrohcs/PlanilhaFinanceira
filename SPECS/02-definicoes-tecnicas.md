@@ -3,8 +3,8 @@
 | Campo | Valor |
 |---|---|
 | Documento | `SPECS/02-definicoes-tecnicas.md` |
-| Versão | 1.10 |
-| Atualizado em | 2026-09-30 |
+| Versão | 1.11 |
+| Atualizado em | 2026-10-01 |
 | Status | Aprovado para início |
 | Responde | **Com o quê** o sistema é construído: linguagens, bibliotecas, versões, integração com Google, convenções |
 | Depende de | `01-requisitos.md` (RNF-xx) |
@@ -115,7 +115,7 @@ Padrões obrigatórios (estilo "Angular moderno", padrão do CLI na v22):
 - **Locale:** `registerLocaleData(localePt)` + `{ provide: LOCALE_ID, useValue: 'pt-BR' }` + `{ provide: DEFAULT_CURRENCY_CODE, useValue: 'BRL' }`. Datas exibidas com `DatePipe` (`dd/MM/yyyy`), valores com `CurrencyPipe`.
 - **Datas no Material:** `provideNativeDateAdapter()` + `MAT_DATE_LOCALE = 'pt-BR'`.
 - **Gráficos:** diretiva standalone própria `GraficoDirective` (`shared/grafico/grafico.directive.ts`) aplicada a um `<canvas>`:
-  - entradas via `input()`: `tipo` (`'doughnut' | 'bar' | 'line'`), `dados` (`ChartData`), `opcoes` (`ChartOptions`, opcional);
+  - entradas via `input()`: `tipo` (`'doughnut' | 'bar' | 'line'`), `dados` (`ChartData`, ou uma função `(cores do tema) => ChartData` quando as séries precisam de cores do tema diferentes entre si — reavaliada na troca claro/escuro), `opcoes` (`ChartOptions`, opcional);
   - cria o `Chart` em `afterNextRender`, atualiza com `chart.update()` via `effect` quando as entradas mudam e chama `chart.destroy()` no `DestroyRef`;
   - registra apenas os componentes do Chart.js usados (controllers/elementos/escalas de rosca, barra e linha + `Tooltip` e `Legend`) em `grafico.config.ts`, para manter o bundle pequeno;
   - padrões globais pt-BR (formatação `R$` em tooltips/eixos) ficam no mesmo arquivo de configuração.
@@ -301,3 +301,4 @@ Novas decisões: acrescente uma linha com o próximo ID. Decisões substituídas
 | 2026-09-30 | 1.8 | §5.4: inserções com `INSERT_ROWS`, para um append nunca sobrescrever linhas abaixo de uma linha em branco (T-009). |
 | 2026-09-30 | 1.9 | §8: padrões da suíte do frontend (`src/testing/`, `provideMaterialParaTestes`) (T-014). |
 | 2026-09-30 | 1.10 | §3: tipo `Montante` para totais e saldo (T-017). |
+| 2026-10-01 | 1.11 | §4: `dados` da `GraficoDirective` também como função das cores do tema (séries com cores do tema diferentes entre si; F-11, T-025). |

@@ -3,7 +3,7 @@
 | Campo | Valor |
 |---|---|
 | Documento | `SPECS/03-arquitetura.md` |
-| Versão | 1.29 |
+| Versão | 1.30 |
 | Atualizado em | 2026-10-01 |
 | Status | Aprovado para início |
 | Responde | **Como** o sistema se organiza: componentes, pastas, camadas, modelo de dados na planilha, contrato da API e fluxos |
@@ -110,14 +110,17 @@ PlanilhaFinanceira/
         │   ├── components/    # seletor-mes, confirmacao-dialog, estado-vazio, carregando,
         │   │                  # banner-conexao, totais (cards Gastos/Receitas/Saldo)
         │   └── grafico/       # grafico.directive.ts + grafico.config.ts (Chart.js, ADR-11;
-        │                      # tokens FABRICA_GRAFICO e CORES_DO_TEMA para testes)
+        │                      # tokens FABRICA_GRAFICO e CORES_DO_TEMA para testes; `dados`
+        │                      # também como função das cores do tema, F-11)
         └── features/          # uma pasta por tela; página em <nome>/<nome>.page.ts (classe <Nome>Page)
             ├── resumo/        # resumo.page: cards (totais), tabelas por categoria e por forma
             │                  # (F-09); rosca, barras e linha do acumulado acima das tabelas (F-10)
             ├── lancamentos/   # lancamentos.page (listagem, filtros.ts, menu ⋮ editar/excluir)
             │                  # + lancamento-form.dialog (registro e edição) + abrir-lancamento.ts
             │                  # (abrirLancamento: shell via import sob demanda; editarLancamento: página)
-            ├── historico/
+            ├── historico/     # historico.page: cards de total e média, gastos × receitas com a linha
+            │                  # do saldo, empilhado por categoria e tabela mês a mês (F-11);
+            │                  # seletor-intervalo.ts (De/Até) e periodo.ts (regras do período na URL)
             ├── categorias/    # categorias.page, categoria-form.dialog, paleta.ts
             └── recorrencias/
 ```
@@ -465,7 +468,7 @@ A aplicação é **zoneless**: toda mudança de estado que deve refletir na tela
 
 ### 8.2.1 Gráficos
 
-Todos os gráficos usam a `GraficoDirective` de `shared/grafico/` sobre um `<canvas>`. As páginas só montam `ChartData` a partir das respostas da API (cores vindas de `categoria_cor`/`cor`), sem calcular totais. Séries sem cor própria (barras, linhas) usam a **cor de destaque** do tema (`--mat-sys-primary`), posta nas opções padrão de `grafico.config.ts` para acompanhar a troca claro/escuro (F-10). O Chart.js só entra no pedaço da página que o usa, nunca no pacote inicial.
+Todos os gráficos usam a `GraficoDirective` de `shared/grafico/` sobre um `<canvas>`. As páginas só montam `ChartData` a partir das respostas da API (cores vindas de `categoria_cor`/`cor`), sem calcular totais. Séries sem cor própria (barras, linhas) usam a **cor de destaque** do tema (`--mat-sys-primary`), posta nas opções padrão de `grafico.config.ts` para acompanhar a troca claro/escuro (F-10). Quando séries do mesmo gráfico precisam de cores do tema **diferentes** entre si (Gastos × Receitas no histórico), a página passa `dados` como função das cores do tema (`CoresDoTema` tem também `gasto` = `--mat-sys-error` e `receita` = `--cor-receita`, token global de `styles.scss`), e a diretiva a reavalia na troca de tema (F-11, T-025). O Chart.js só entra no pedaço da página que o usa, nunca no pacote inicial.
 
 ### 8.3 Formulário de lançamento
 
@@ -512,4 +515,5 @@ Quando o **backend não responde** (status 0, ou 502/504 sem o envelope de §6.2
 | 2026-09-30 | 1.27 | §3: `resumo.api`, componente compartilhado `totais` e página de resumo (T-022). |
 | 2026-09-30 | 1.28 | §3 e §8.2.1: gráficos do resumo e cor de destaque do tema nos padrões de `grafico.config.ts` (T-023). |
 | 2026-10-01 | 1.29 | §6.1: parâmetros do histórico (os dois ou nenhum, até 36 meses); §6.3: `linhas_ignoradas` no `ResumoHistorico` e regras de meses, ordem e média (T-024; F-11 Q2, Q3, Q6). |
+| 2026-10-01 | 1.30 | §3: página do histórico (`seletor-intervalo.ts`, `periodo.ts`) e `dados` da diretiva como função das cores do tema; §8.2.1: cores de gasto e receita do tema, `--cor-receita` global (T-025). |
 | 2026-09-29 | 1.1 | Frontend em Angular 22 (zoneless); pasta `shared/grafico/` com diretiva Chart.js própria (§3, §8.2.1). |

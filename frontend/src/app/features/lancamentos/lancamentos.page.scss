@@ -1,6 +1,5 @@
-// Listagem mensal (F-07 §3.2). Cor de receita legível nos temas claro e escuro (Q2).
+// Listagem mensal (F-07 §3.2). A cor de receita (`--cor-receita`, Q2) é global: `styles.scss`.
 :host {
-  --cor-receita: light-dark(#2e7d32, #81c784);
   display: block;
 }
 

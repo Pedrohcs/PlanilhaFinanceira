@@ -4,7 +4,7 @@
 |---|---|
 | Feature | F-11 |
 | Marco | M2 |
-| Status | Aprovada |
+| Status | Concluída |
 | Requisitos | REQ-14 (CA-14.1, CA-14.2, CA-14.3) |
 | Regras | RN-03, RN-13, RN-14, RN-16; RNF-04, RNF-07 |
 | Depende de | F-09 (**Concluída**); T-025 também usa o núcleo de F-04 (T-011, **Concluída**) e a `GraficoDirective` com a cor de destaque de F-10 (**Concluída**) |
@@ -74,7 +74,7 @@ Ver como o dinheiro evoluiu mês a mês num intervalo (por padrão, os últimos 
 3. **Cards** "Total gasto no período" e "Média mensal de gastos", com os números da API, formatados como os demais valores (`R$ 1.234,56`, `formatarMontante` de `core/utils/valor.ts`). Abaixo dos cards, o período por extenso: "De outubro de 2025 a setembro de 2026 (12 meses)." (a contagem é o tamanho de `meses`, não conta de valores).
 4. **Gastos e receitas por mês** (CA-14.1): gráfico misto com **duas barras por mês** (Gastos e Receitas) e a **linha do saldo** sobre elas.
    - Rótulos do eixo: mês abreviado com ano, "out/25", "nov/25"… (todos os meses do período, inclusive os com zero).
-   - Cores: Gastos = cor de erro do tema (`--mat-sys-error`); Receitas = verde de receita de F-07 (`light-dark(#2e7d32, #81c784)`), que passa a ser um token global; Saldo = cor de destaque do tema (`--mat-sys-primary`, F-10). Todas pelos padrões de `grafico.config.ts`, para acompanhar a troca claro/escuro (F-10 §10).
+   - Cores: Gastos = cor de erro do tema (`--mat-sys-error`); Receitas = verde de receita de F-07 (`light-dark(#2e7d32, #81c784)`), que passa a ser um token global (`--cor-receita`); Saldo = cor de destaque do tema (`--mat-sys-primary`, F-10), pelos padrões de `grafico.config.ts`. Gastos e Receitas são duas séries de barras do mesmo gráfico, e os padrões dão uma só cor a todas as barras: por isso a página passa os `dados` como **função das cores do tema** (`CoresDoTema` ganha `gasto` e `receita`), que a diretiva reavalia na troca claro/escuro (T-025; `02` §4).
    - Legenda do Chart.js **visível** (três séries). Tooltip "Gastos: R$ 1.234,56", com título "outubro de 2025". Eixo de valores em reais; o saldo pode ficar negativo, então o eixo não é forçado a começar em zero.
 5. **Gastos por categoria ao longo dos meses** (REQ-14): barras **empilhadas**, um conjunto por item de `por_categoria`, na ordem da API, com a **cor da categoria** (CA-13.1 vale aqui também); mesmos rótulos de mês. Legenda visível (as categorias não têm tabela que a substitua). Tooltip "Alimentação: R$ 300,00", com título do mês.
 6. **Tabela mês a mês** **(Q5)**, abaixo dos gráficos: colunas Mês, Gastos, Receitas, Saldo (saldo negativo destacado como em CA-12.2), uma linha por item de `meses`. É a alternativa acessível e os valores exatos dos gráficos.
@@ -93,9 +93,9 @@ Ver como o dinheiro evoluiu mês a mês num intervalo (por padrão, os últimos 
 
 **Herdados de `01`**
 
-- [ ] **CA-14.1** Dado o intervalo padrão, então aparecem 12 meses, inclusive meses sem lançamentos (com zero). *(T-024: a API devolve os 12 meses com zero — CA-F11.1; falta a tela em T-025.)*
-- [ ] **CA-14.2** Dado que o usuário muda o intervalo, então gráficos e totais do período se atualizam.
-- [ ] **CA-14.3** Dado o período exibido, então são mostrados também total gasto no período e média mensal de gastos. *(T-024: a API devolve total e média — CA-F11.6; falta a tela em T-025.)*
+- [x] **CA-14.1** Dado o intervalo padrão, então aparecem 12 meses, inclusive meses sem lançamentos (com zero). *(T-024: a API devolve os 12 meses com zero — CA-F11.1; T-025: gráfico e tabela com um item por mês da resposta, inclusive os zerados.)*
+- [x] **CA-14.2** Dado que o usuário muda o intervalo, então gráficos e totais do período se atualizam.
+- [x] **CA-14.3** Dado o período exibido, então são mostrados também total gasto no período e média mensal de gastos. *(T-024: a API devolve total e média — CA-F11.6; T-025: cards com os números da API.)*
 
 **Refinados — backend (T-024)**
 
@@ -112,19 +112,19 @@ Ver como o dinheiro evoluiu mês a mês num intervalo (por padrão, os últimos 
 
 **Refinados — frontend (T-025)**
 
-- [ ] **CA-F11.11** Dado a página aberta sem parâmetros, então a API é chamada sem `inicio`/`fim` e os seletores mostram o período da resposta; dado `?inicio=2026-01&fim=2026-06`, então a API é chamada com esse período.
-- [ ] **CA-F11.12** Dado parâmetros inválidos, incompletos, invertidos ou acima do limite na URL, então eles são descartados (URL limpa com `replaceUrl`) e vale o padrão.
-- [ ] **CA-F11.13** Dado a troca de "De"/"Até" ou o botão "Últimos 12 meses", então a URL muda com `replaceUrl`, a API é chamada de novo e gráficos, cards e tabela se atualizam (CA-14.2); "De" depois do "Até" puxa o "Até" junto, e o limite de 36 meses (Q2) é respeitado.
-- [ ] **CA-F11.14** Dado a resposta, então os cards mostram total e média do período com os números da API, sem conta no frontend (CA-14.3), e o período por extenso com a quantidade de meses.
-- [ ] **CA-F11.15** Dado a resposta, então o gráfico misto tem um rótulo por item de `meses` ("out/25"…), barras Gastos e Receitas e linha Saldo com os valores da API e as cores de §3.2.4, legenda visível.
-- [ ] **CA-F11.16** Dado a resposta, então as barras empilhadas têm um conjunto por item de `por_categoria`, na ordem da API, com a cor da categoria e os `valores` alinhados aos meses, legenda visível.
-- [ ] **CA-F11.17** Dado a resposta, então a tabela mês a mês mostra Mês, Gastos, Receitas e Saldo de cada item de `meses`, com saldo negativo destacado (Q5).
-- [ ] **CA-F11.18** Dado um período sem lançamentos, então os cards mostram R$ 0,00, nenhum `<canvas>` é criado e aparece "Nenhum lançamento de <início> a <fim>."; dado um período só com receitas, o gráfico por categoria dá lugar a "Nenhum gasto no período.".
-- [ ] **CA-F11.19** Dado `DadosStore.versao` incrementada, então o histórico é buscado de novo com o mesmo período; uma resposta antiga que chega depois é descartada; os gráficos são atualizados na mesma instância.
-- [ ] **CA-F11.20** Dado um erro de carga, então aparece "Não foi possível carregar o histórico." e nenhum número ou gráfico velho.
-- [ ] **CA-F11.21** Dado os dois gráficos, então cada `<canvas>` tem `role="img"` e o `aria-label` de §7.
-- [ ] **CA-F11.22** Dado a abertura do app em outra rota, então o Chart.js não está no pacote inicial e o pacote inicial fica abaixo do orçamento de 500 kB.
-- [ ] **CA-F11.23** Dado a janela de 360 px e a de 1280 px, nos temas claro e escuro, então nada corta nem rola na horizontal e as cores acompanham o tema (conferência visual).
+- [x] **CA-F11.11** Dado a página aberta sem parâmetros, então a API é chamada sem `inicio`/`fim` e os seletores mostram o período da resposta; dado `?inicio=2026-01&fim=2026-06`, então a API é chamada com esse período.
+- [x] **CA-F11.12** Dado parâmetros inválidos, incompletos, invertidos ou acima do limite na URL, então eles são descartados (URL limpa com `replaceUrl`) e vale o padrão.
+- [x] **CA-F11.13** Dado a troca de "De"/"Até" ou o botão "Últimos 12 meses", então a URL muda com `replaceUrl`, a API é chamada de novo e gráficos, cards e tabela se atualizam (CA-14.2); "De" depois do "Até" puxa o "Até" junto, e o limite de 36 meses (Q2) é respeitado.
+- [x] **CA-F11.14** Dado a resposta, então os cards mostram total e média do período com os números da API, sem conta no frontend (CA-14.3), e o período por extenso com a quantidade de meses.
+- [x] **CA-F11.15** Dado a resposta, então o gráfico misto tem um rótulo por item de `meses` ("out/25"…), barras Gastos e Receitas e linha Saldo com os valores da API e as cores de §3.2.4, legenda visível.
+- [x] **CA-F11.16** Dado a resposta, então as barras empilhadas têm um conjunto por item de `por_categoria`, na ordem da API, com a cor da categoria e os `valores` alinhados aos meses, legenda visível.
+- [x] **CA-F11.17** Dado a resposta, então a tabela mês a mês mostra Mês, Gastos, Receitas e Saldo de cada item de `meses`, com saldo negativo destacado (Q5).
+- [x] **CA-F11.18** Dado um período sem lançamentos, então os cards mostram R$ 0,00, nenhum `<canvas>` é criado e aparece "Nenhum lançamento de <início> a <fim>."; dado um período só com receitas, o gráfico por categoria dá lugar a "Nenhum gasto no período.".
+- [x] **CA-F11.19** Dado `DadosStore.versao` incrementada, então o histórico é buscado de novo com o mesmo período; uma resposta antiga que chega depois é descartada; os gráficos são atualizados na mesma instância.
+- [x] **CA-F11.20** Dado um erro de carga, então aparece "Não foi possível carregar o histórico." e nenhum número ou gráfico velho.
+- [x] **CA-F11.21** Dado os dois gráficos, então cada `<canvas>` tem `role="img"` e o `aria-label` de §7.
+- [x] **CA-F11.22** Dado a abertura do app em outra rota, então o Chart.js não está no pacote inicial e o pacote inicial fica abaixo do orçamento de 500 kB.
+- [~] **CA-F11.23** Dado a janela de 360 px e a de 1280 px, nos temas claro e escuro, então nada corta nem rola na horizontal e as cores acompanham o tema (conferência visual).
 
 ---
 
@@ -213,8 +213,10 @@ Ver como o dinheiro evoluiu mês a mês num intervalo (por padrão, os últimos 
 | `…::test_historico_uma_leitura_por_aba__RNF_04` (planilha falsa, 5.000 linhas, 36 meses) | API BE | CA-F11.10 |
 | `tests/api/test_app.py` (guarda de rotas) | API BE | `GET /api/resumo/historico` |
 | `frontend/…/core/api/resumo.api.spec.ts` › `historico_com_e_sem_periodo__F11` | unitário FE | §6, CA-F11.11 |
-| `…/core/utils/mes.spec.ts` › `mes_abreviado__F11` | unitário FE | rótulos "out/25" |
-| `…/shared/grafico/grafico.config.spec.ts` › `cores_de_gasto_e_receita_do_tema__F11` | unitário FE | §3.2.4 |
+| `…/core/utils/mes.spec.ts` › `mes_abreviado__F11` · `meses_no_periodo_e_somar_meses__F11` | unitário FE | rótulos "out/25"; contagem e ajuste de meses |
+| `…/features/historico/periodo.spec.ts` › `sem_parametros_vale_o_padrao__CA_F11_11` · `periodo_valido_da_url__CA_F11_11` · `url_invalida_descartada__CA_F11_12` · `de_e_ate_se_ajustam__CA_F11_13` | unitário FE | CA-F11.11–13, bordas 4–7 |
+| `…/shared/grafico/grafico.directive.spec.ts` › `dados_em_funcao_das_cores_do_tema__F11` | unitário FE | §3.2.4 (troca de tema) |
+| `…/shared/grafico/grafico.config.spec.ts` › `cores_de_gasto_e_receita_do_tema__F11` (variáveis lidas: `--mat-sys-error`, `--cor-receita`) | unitário FE | §3.2.4 |
 | `…/features/historico/historico.page.spec.ts` › `periodo_da_url_ou_padrao__CA_F11_11` | unitário FE | CA-F11.11, borda 19 |
 | `…` › `url_invalida_descartada__CA_F11_12` | unitário FE | CA-F11.12, borda 7 |
 | `…` › `troca_de_intervalo_recarrega__CA_14_2` | unitário FE | CA-14.2, CA-F11.13 |
@@ -226,7 +228,7 @@ Ver como o dinheiro evoluiu mês a mês num intervalo (por padrão, os últimos 
 | `…` › `recarrega_por_versao__CA_F11_19` (inclui resposta antiga descartada) | unitário FE | CA-F11.19, bordas 17–18 |
 | `…` › `erro_de_carga__CA_F11_20` | unitário FE | CA-F11.20 |
 | `…` › `graficos_acessiveis__CA_F11_21` | unitário FE | CA-F11.21 |
-| `npm run build` (nomes dos pedaços): Chart.js só nos pedaços lazy, pacote inicial < 500 kB | build | CA-F11.22 |
+| `npm run build` (nomes dos pedaços): Chart.js só num pedaço lazy (186 kB brutos, compartilhado por resumo e histórico), pacote inicial 477,37 kB | build | CA-F11.22 |
 | Conferência visual em 360 px e 1280 px, claro e escuro, com 12 e 36 meses | manual | CA-F11.23, borda 20 |
 
 ---
@@ -252,11 +254,14 @@ Ordem: T-024 → T-025 (T-025 também depende de T-011, concluída).
 | Intervalo do histórico na URL (`inicio`/`fim`), independente do `?mes=` do resumo e da listagem. | `03` §8.1 já define a rota assim; os dois conceitos não se misturam. | Não |
 | Período sem lançamentos: cards com R$ 0,00 e estado vazio no lugar dos gráficos e da tabela; só receitas: só o gráfico por categoria some. | Mesmo padrão de F-09/F-10 (CA-13.2). | Não |
 | Gráfico misto (barras gastos/receitas + linha de saldo) num só canvas. | É o que T-025 descreve; os controladores de barra e linha já estão registrados (F-04), sem peso novo. | Não |
-| Cores: Gastos = erro do tema, Receitas = verde de F-07 (vira token global), Saldo = destaque do tema; todas pelos padrões de `grafico.config.ts`. | Gasto/receita reconhecíveis e coerentes com a listagem; acompanham claro/escuro (F-10 §10). | Não |
+| Cores: Gastos = erro do tema, Receitas = verde de F-07 (vira token global), Saldo = destaque do tema. Gastos/Receitas por `dados` em função das cores do tema (a diretiva reavalia na troca de tema); Saldo pelos padrões de `grafico.config.ts`. | Gasto/receita reconhecíveis e coerentes com a listagem; acompanham claro/escuro (F-10 §10). Os padrões dão uma só cor a todas as barras, e cor fixa nos dados não acompanharia o tema (decidido com o usuário em T-025). | Não |
 | Formato de `inicio`/`fim` validado na rota (`Query(pattern=MES_PADRAO)`, como `mes`); combinação, ordem e limite no serviço (`periodo_do_historico`), com `ErroValidacao.no_campo` (T-024). | Formato é entrada HTTP; as outras três são regras de F-11 Q2, que ficam em `services` (`03` §4.2). | Não |
 | `historico(..., hoje=None)` recebe a data de hoje opcional, como `mes_corrente(hoje)` (T-024). | O padrão "12 meses até o corrente" fica testável com data fixa, inclusive na virada do ano. | Não |
 | Lançamentos agrupados por mês uma única vez; `_nome_e_cor` compartilhado entre resumo mensal e histórico (T-024). | 36 meses × 5.000 linhas numa passada; nome/cor de categoria ausente com uma regra só. | Não |
 | Legenda visível nos dois gráficos. | Três séries no misto e N categorias no empilhado, sem tabela de categorias que faça o papel de legenda. | Não |
+| Regras do período no frontend como funções puras em `features/historico/periodo.ts` (`lerPeriodo`, `comInicio`, `comFim`); o seletor de intervalo fica na pasta da feature (T-025). | Testáveis sem datepicker; só o histórico usa o seletor. | Não |
+| Sem período na URL, o seletor só aparece quando a resposta chega (mostra o `inicio`/`fim` dela) (T-025). | O padrão é só do backend (§10); antes da resposta o período não é conhecido. | Não |
+| Tabela mês a mês com fonte menor e o nome do mês quebrando entre palavras abaixo de 600 px (T-025). | Quatro colunas com valores em reais em 360 px sem rolagem horizontal (RNF-07); conferência visual pendente. | Não |
 | Seletores "De"/"Até" + "Últimos 12 meses" (Q1). | Qualquer intervalo com dois controles já conhecidos (o datepicker de F-04); o atalho cobre o caso mais comum. | Não |
 | Intervalo com as duas pontas ou nenhuma, `inicio` ≤ `fim`, no máximo 36 meses (Q2). | Sem padrão "pela metade"; 3 anos ainda cabem legíveis em 360 px. | Não |
 | Média dividida por todos os meses do período (Q3). | Coerente com CA-14.1, que mostra os meses zerados; a média é do período exibido. | Não |
@@ -286,3 +291,5 @@ Ordem: T-024 → T-025 (T-025 também depende de T-011, concluída).
 | 2026-10-01 | Criação (`/especificar-feature F-11`). Status `Rascunho` — 6 questões em aberto. |
 | 2026-10-01 | Q1–Q6 respondidas (todas na opção recomendada) → status **Aprovada**. Seis decisões em §10. Precisões em `03` §6.1/§6.3 ficam para T-024. |
 | 2026-10-01 | T-024 concluída: CA-F11.1 a .10 verificados por teste (inclui 5.000 linhas e 36 meses com uma leitura por aba); parte da API de CA-14.1 e CA-14.3. `03` → 1.29 (§6.1, §6.3). Três decisões em §10. |
+| 2026-10-01 | T-025 (plano): cores de Gastos/Receitas por `dados` em função das cores do tema (§3.2.4, §10), aprovado pelo usuário; `02` → 1.11 (§4), `03` §8.2.1. |
+| 2026-10-01 | T-025 concluída → feature **Concluída**. CA-14.1 a 14.3 e CA-F11.11 a .22 verificados por teste/build; CA-F11.23 depende da conferência visual (360 px e 1280 px, claro e escuro, 12 e 36 meses). Três decisões em §10. `03` → 1.30. |

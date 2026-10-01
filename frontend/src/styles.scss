@@ -23,6 +23,9 @@ body {
   // Claro ou escuro conforme a preferencia do sistema do usuario (Q2 de F-01).
   color-scheme: light dark;
 
+  // Verde de receita legivel nos dois temas: listagem (F-07 Q2) e graficos do historico (F-11).
+  --cor-receita: light-dark(#2e7d32, #81c784);
+
   // Set a default background, font and text colors for the application using
   // Angular Material's system-level CSS variables. Learn more about these
   // variables at https://material.angular.dev/guide/system-variables

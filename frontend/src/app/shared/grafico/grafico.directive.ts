@@ -13,6 +13,8 @@ import { ChartData, ChartOptions } from 'chart.js';
 import { merge } from 'chart.js/helpers';
 import {
   CORES_DO_TEMA,
+  CoresDoTema,
+  DadosDoGrafico,
   FABRICA_GRAFICO,
   GraficoCriado,
   opcoesPadrao,
@@ -26,7 +28,8 @@ import {
  *
  * - cria o gráfico **uma vez**, depois da primeira renderização;
  * - `dados`/`opcoes` mudaram → atualiza a mesma instância; `tipo` mudou → recria;
- * - acompanha a troca de tema claro/escuro do sistema (F-04 Q6);
+ * - acompanha a troca de tema claro/escuro do sistema (F-04 Q6), inclusive
+ *   nos `dados` passados como função das cores do tema (F-11 §3.2.4);
  * - destrói o gráfico e o ouvinte do tema junto com a diretiva.
  *
  * As `opcoes` da página são mescladas por cima dos padrões pt-BR.
@@ -34,7 +37,7 @@ import {
 @Directive({ selector: 'canvas[appGrafico]' })
 export class GraficoDirective {
   readonly tipo = input.required<TipoGrafico>();
-  readonly dados = input.required<ChartData>();
+  readonly dados = input.required<DadosDoGrafico>();
   readonly opcoes = input<ChartOptions>();
 
   private readonly canvas = inject<ElementRef<HTMLCanvasElement>>(ElementRef);
@@ -67,15 +70,20 @@ export class GraficoDirective {
 
   private criar(): void {
     const tipo = this.tipo();
+    const cores = this.lerCores();
     this.grafico = this.fabrica(this.canvas.nativeElement, {
       type: tipo,
-      data: this.dados(),
-      options: this.montarOpcoes(tipo, this.opcoes()),
+      data: resolverDados(this.dados(), cores),
+      options: montarOpcoes(tipo, this.opcoes(), cores),
     });
     this.tipoCriado = tipo;
   }
 
-  private aplicar(tipo: TipoGrafico, dados: ChartData, opcoes: ChartOptions | undefined): void {
+  private aplicar(
+    tipo: TipoGrafico,
+    dados: DadosDoGrafico,
+    opcoes: ChartOptions | undefined,
+  ): void {
     if (!this.grafico) {
       return;
     }
@@ -84,8 +92,9 @@ export class GraficoDirective {
       this.criar();
       return;
     }
-    this.grafico.data = dados;
-    this.grafico.options = this.montarOpcoes(tipo, opcoes);
+    const cores = this.lerCores();
+    this.grafico.data = resolverDados(dados, cores);
+    this.grafico.options = montarOpcoes(tipo, opcoes, cores);
     this.grafico.update();
   }
 
@@ -93,12 +102,25 @@ export class GraficoDirective {
     if (!this.grafico || !this.tipoCriado) {
       return;
     }
-    this.grafico.options = this.montarOpcoes(this.tipoCriado, untracked(this.opcoes));
+    const cores = this.lerCores();
+    const dados = untracked(this.dados);
+    if (typeof dados === 'function') {
+      this.grafico.data = dados(cores);
+    }
+    this.grafico.options = montarOpcoes(this.tipoCriado, untracked(this.opcoes), cores);
     this.grafico.update();
   }
+}
 
-  private montarOpcoes(tipo: TipoGrafico, opcoes: ChartOptions | undefined): ChartOptions {
-    const padrao = opcoesPadrao(tipo, this.lerCores(), opcoes?.indexAxis ?? 'x');
-    return merge(padrao, opcoes ?? {}) as ChartOptions;
-  }
+function resolverDados(dados: DadosDoGrafico, cores: CoresDoTema): ChartData {
+  return typeof dados === 'function' ? dados(cores) : dados;
+}
+
+function montarOpcoes(
+  tipo: TipoGrafico,
+  opcoes: ChartOptions | undefined,
+  cores: CoresDoTema,
+): ChartOptions {
+  const padrao = opcoesPadrao(tipo, cores, opcoes?.indexAxis ?? 'x');
+  return merge(padrao, opcoes ?? {}) as ChartOptions;
 }

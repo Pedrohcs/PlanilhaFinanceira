@@ -11,7 +11,7 @@ import { routes } from './app.routes';
 const PAGINAS = [
   { url: '/resumo', titulo: 'Resumo', provisoria: false },
   { url: '/lancamentos', titulo: 'Lançamentos', provisoria: false },
-  { url: '/historico', titulo: 'Histórico', provisoria: true },
+  { url: '/historico', titulo: 'Histórico', provisoria: false },
   { url: '/categorias', titulo: 'Categorias', provisoria: false },
   { url: '/recorrencias', titulo: 'Recorrências', provisoria: true },
 ];
