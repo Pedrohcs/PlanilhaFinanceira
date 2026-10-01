@@ -29,7 +29,7 @@
 | M4 · Acabamento | F-14..F-15 | 5 | 5 | 0 | 0 | 0% |
 | **Total** | **15** | **35** | **5** | **0** | **30** | **86%** |
 
-**M0 a M3 concluídos (F-01 a F-13).** Caminho crítico em F-14. Desbloqueada: **T-031** (FE, F-14, sem spec; próximo passo: `/especificar-feature F-14`). Pendentes com o usuário, sem bloquear: seguir o README com a planilha real (CA-F02.13), rodar `pytest -m integracao` (CA-15.1/15.2) e a conferência visual (CA-F04.7, CA-F04.30, CA-F05.20, F-06 borda 16, CA-F07.18, menu ⋮ de F-08 e caixa "Compra parcelada" de F-12 em 360 px, resumo de F-09, gráficos de F-10, histórico de F-11 e recorrências de F-13 em 360 px, claro e escuro).
+**M0 a M3 concluídos (F-01 a F-13).** Caminho crítico em F-14. Desbloqueada: **T-031** (FE, F-14, spec aprovada; próximo passo: `/implementar-tarefa T-031`). Pendentes com o usuário, sem bloquear: seguir o README com a planilha real (CA-F02.13), rodar `pytest -m integracao` (CA-15.1/15.2) e a conferência visual (CA-F04.7, CA-F04.30, CA-F05.20, F-06 borda 16, CA-F07.18, menu ⋮ de F-08 e caixa "Compra parcelada" de F-12 em 360 px, resumo de F-09, gráficos de F-10, histórico de F-11 e recorrências de F-13 em 360 px, claro e escuro).
 
 ---
 
@@ -50,7 +50,7 @@
 | F-11 | Histórico | M2 | Concluída | [`F-11-historico.md`](features/F-11-historico.md) (Concluída) |
 | F-12 | Parcelamentos | M3 | Concluída | [`F-12-parcelamentos.md`](features/F-12-parcelamentos.md) (Concluída) |
 | F-13 | Recorrências | M3 | Concluída | [`F-13-recorrencias.md`](features/F-13-recorrencias.md) (Concluída) |
-| F-14 | Polimento e resiliência | M4 | Não iniciada | — |
+| F-14 | Polimento e resiliência | M4 | Não iniciada | [`F-14-polimento-e-resiliencia.md`](features/F-14-polimento-e-resiliencia.md) (Aprovada) |
 | F-15 | Entrega local e verificação E2E | M4 | Não iniciada | — |
 
 Status da feature: `Não iniciada` (nenhuma tarefa iniciada) · `Iniciada` (alguma tarefa iniciada ou concluída) · `Concluída` (todas concluídas). Na coluna *Spec da feature*, coloque o link do arquivo em `SPECS/features/` quando ele for criado.
@@ -157,6 +157,7 @@ Camadas: **BE** = backend · **FE** = frontend · **DOC** = documentação/infra
 
 | Data | Tarefa/Feature | Mudança | Observação |
 |---|---|---|---|
+| 2026-10-01 | F-14 | Spec da feature criada e **aprovada** | `features/F-14-polimento-e-resiliencia.md`: Q1–Q6 respondidas (Q1–Q4 e Q6 na opção recomendada; Q5 só com fontes locais e erro do servidor no campo). Sugestões **não** escolhidas — README da aba "Página1" (T-008) e `conftest` com credencial falsa (T-009) — seguem em aberto no Log. Nenhuma mudança em 01–03 (fontes locais terão ADR em T-031). Nenhum status de tarefa alterado. |
 | 2026-10-01 | M3 | **Marco concluído** | F-12 e F-13 `Concluída`. Caminho crítico segue em F-14 (sem spec) → F-15. |
 | 2026-10-01 | F-13 | `Iniciada` → `Concluída` | Última tarefa (T-030) concluída; §2 e mapa (§3) atualizados. |
 | 2026-10-01 | T-030 | `Iniciada` → `Concluída` | Tela de recorrências e sincronização na abertura. `03` → 1.33 (§3, §7.2, §8.2). Nenhuma dependência nova. Pacote inicial de 477,37 para 477,09 kB (os validadores saíram do diálogo de lançamento). Testes de F-04 ajustados: `/recorrencias` deixou de ser provisória e o health ok agora dispara a sincronização. |
