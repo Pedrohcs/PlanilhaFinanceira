@@ -14,6 +14,8 @@ import {
 } from './conexao.store';
 import { DadosStore } from './dados.store';
 
+const URL_SINCRONIZAR = '/api/recorrencias/sincronizar';
+
 const OK: RespostaHealth = {
   status: 'ok',
   planilha: { ok: true, titulo: 'Planilha Financeira', erro: null },
@@ -47,6 +49,14 @@ describe('ConexaoStore', () => {
       ],
     });
     controle = TestBed.inject(HttpTestingController);
+  }
+
+  /** Responde a sincronização das recorrências pendente (F-13 §3.4). */
+  async function sincronizacao(gerados: number): Promise<void> {
+    const pedido = controle.expectOne(URL_SINCRONIZAR);
+    expect(pedido.request.method).toBe('POST');
+    pedido.flush({ lancamentos_gerados: gerados, detalhes: [] });
+    await new Promise((resolver) => setTimeout(resolver));
   }
 
   /** Responde o health pendente e espera o store processar a resposta. */
@@ -88,6 +98,7 @@ describe('ConexaoStore', () => {
     pendentes[0].flush(OK);
     await new Promise((resolver) => setTimeout(resolver));
     expect(TestBed.inject(ConexaoStore).estado()).toBe('ok');
+    await sincronizacao(0); // F-13: com a planilha ok, a abertura sincroniza
   });
 
   it('health_ok_sem_banner__CA_F04_24', async () => {
@@ -153,6 +164,8 @@ describe('ConexaoStore', () => {
     expect(store.tentando()).toBe(true);
 
     pendentes[0].flush(OK);
+    await new Promise((resolver) => setTimeout(resolver));
+    await sincronizacao(0);
     await primeira;
     expect(store.tentando()).toBe(false);
   });
@@ -164,6 +177,7 @@ describe('ConexaoStore', () => {
 
     const tentativa = store.tentarNovamente();
     await responder(OK);
+    await sincronizacao(0);
     await tentativa;
 
     expect(store.estado()).toBe('ok');
@@ -194,5 +208,75 @@ describe('ConexaoStore', () => {
     expect(store.tentando()).toBe(false);
     expect(avisos.mostrar).not.toHaveBeenCalled();
     expect(TestBed.inject(DadosStore).versao()).toBe(0);
+  });
+
+  it.each([
+    [3, '3 lançamentos recorrentes gerados.'],
+    [1, '1 lançamento recorrente gerado.'],
+  ])('sincroniza_na_abertura__CA_F13_25 (%i)', async (gerados, mensagem) => {
+    configurar(true);
+    await TestBed.inject(ApplicationInitStatus).donePromise;
+
+    await responder(OK);
+    await sincronizacao(gerados);
+
+    expect(controle.match(URL_SINCRONIZAR)).toHaveLength(0); // uma vez só
+    expect(avisos.mostrar).toHaveBeenCalledExactlyOnceWith(mensagem);
+    expect(TestBed.inject(DadosStore).versao()).toBe(1);
+  });
+
+  it('abertura_sem_nada_a_gerar_fica_em_silencio__CA_F13_25', async () => {
+    configurar(true);
+    await TestBed.inject(ApplicationInitStatus).donePromise;
+
+    await responder(OK);
+    await sincronizacao(0);
+
+    expect(avisos.mostrar).not.toHaveBeenCalled();
+    expect(TestBed.inject(DadosStore).versao()).toBe(0);
+  });
+
+  it('abertura_com_planilha_fora_nao_sincroniza__CA_F13_25', async () => {
+    configurar(true);
+    await TestBed.inject(ApplicationInitStatus).donePromise;
+
+    await responder(SEM_PERMISSAO);
+
+    controle.expectNone(URL_SINCRONIZAR);
+    expect(TestBed.inject(ConexaoStore).estado()).toBe('falha');
+  });
+
+  it('falha_da_sincronizacao_nao_quebra_a_abertura__F13', async () => {
+    configurar(true);
+    await TestBed.inject(ApplicationInitStatus).donePromise;
+
+    await responder(OK);
+    controle
+      .expectOne(URL_SINCRONIZAR)
+      .flush(
+        { erro: { codigo: 'PLANILHA_INDISPONIVEL', mensagem: 'Fora do ar.', detalhes: [] } },
+        { status: 503, statusText: 'x' },
+      );
+    await new Promise((resolver) => setTimeout(resolver));
+
+    expect(TestBed.inject(ConexaoStore).mensagem()).toBe('Fora do ar.'); // banner (§3.4.3)
+    expect(TestBed.inject(DadosStore).versao()).toBe(0);
+  });
+
+  it('tentar_novamente_que_reconecta_sincroniza__F13_borda_23', async () => {
+    configurar(false);
+    const store = TestBed.inject(ConexaoStore);
+    store.registrarFalha({ status: 200, codigo: 'X', mensagem: 'sem internet', detalhes: [] });
+
+    const tentativa = store.tentarNovamente();
+    await responder(OK);
+    await sincronizacao(2);
+    await tentativa;
+
+    expect(avisos.mostrar).toHaveBeenCalledExactlyOnceWith(
+      `${MENSAGEM_CONEXAO_RESTABELECIDA} 2 lançamentos recorrentes gerados.`,
+      DURACAO_AVISO_RECONEXAO_MS,
+    );
+    expect(TestBed.inject(DadosStore).versao()).toBe(1); // uma recarga só
   });
 });

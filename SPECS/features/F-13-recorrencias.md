@@ -4,7 +4,7 @@
 |---|---|
 | Feature | F-13 |
 | Marco | M3 |
-| Status | Aprovada |
+| Status | Concluída |
 | Requisitos | REQ-09 (CA-09.1, CA-09.2), REQ-10 (CA-10.1 a CA-10.4) |
 | Regras | RN-01, RN-04, RN-05, RN-06, RN-09, RN-10, RN-11, RN-12, RN-14; premissas P-04, P-05 (confirmadas em 2026-10-01) |
 | Depende de | F-06 (**Concluída**); T-030 também usa F-04 (T-012, **Concluída**) e o diálogo/utilitários de F-06 (T-016, **Concluída**) |
@@ -91,7 +91,7 @@ Cadastrar uma vez as contas e receitas que se repetem todo mês (aluguel, assina
    - Pausar e Reativar: sem confirmação; aviso "Recorrência pausada." / "Recorrência reativada. Meses do período pausado não são gerados." (RN-11).
    - Encerrar: confirmação "Encerrar recorrência?" — `"<descrição>" deixa de gerar lançamentos. Os lançamentos já gerados continuam. Não é possível reativar depois.` — botão "Encerrar"; aviso "Recorrência encerrada.".
 4. **Diálogo** `recorrencia-form.dialog` ("Nova recorrência" / "Editar recorrência"): Tipo (Gasto/Receita, alternância; trocar limpa a categoria do outro tipo, como F-08), Descrição, Valor (pt-BR, `utils/valor.ts`), Categoria (só ativas do tipo; na edição a atual inativa aparece "(inativa)"), Forma de pagamento (obrigatória no gasto; "Não informar" na receita), Dia do mês (1–31, com a dica "Nos meses sem esse dia, usa o último dia do mês."), Mês de início (datepicker ano → mês; padrão: mês corrente), Mês de fim (opcional; "Sem fim" por padrão, com botão para limpar). Formulário reativo tipado; erros da API no campo (`TRATAMENTO_LOCAL`, F-06 Q3); em erro o diálogo fica aberto com os dados (CA-01.4).
-   - Com `mes_inicio` anterior ao mês corrente, o diálogo avisa: "Os lançamentos de julho a setembro de 2026 serão gerados ao salvar." (a contagem de meses é aritmética de calendário, não de dinheiro) **(Q5, Q6)**.
+   - Com `mes_inicio` anterior ao mês corrente, o diálogo avisa: "Os lançamentos de julho de 2026 a setembro de 2026 serão gerados ao salvar." (um mês só: "O lançamento de julho de 2026 será gerado ao salvar.") (a contagem de meses é aritmética de calendário, não de dinheiro) **(Q5, Q6)**.
 5. Estados: carregando · vazio ("Nenhuma recorrência cadastrada." + botão "Nova recorrência") · erro ("Não foi possível carregar as recorrências.") · recarga com esmaecido; resposta antiga descartada (F-07).
 6. **Depois de salvar, reativar** (ações que podem gerar meses), a página chama `POST /api/recorrencias/sincronizar` na hora, recarrega a lista e, se `n > 0`, mostra o mesmo aviso da abertura e incrementa `DadosStore.versao` **(Q5)**.
 
@@ -108,11 +108,11 @@ Cadastrar uma vez as contas e receitas que se repetem todo mês (aluguel, assina
 
 **Herdados de `01`**
 
-- [ ] **CA-09.1** Dado a tela de recorrências, então todas aparecem com seu estado (ativa/pausada/encerrada) e o próximo mês a gerar. *(T-028: a API devolve status e `proximo_mes` — CA-F13.7; falta a tela em T-030.)*
+- [x] **CA-09.1** Dado a tela de recorrências, então todas aparecem com seu estado (ativa/pausada/encerrada) e o próximo mês a gerar. *(T-028: a API devolve status e `proximo_mes` — CA-F13.7; T-030: a tela mostra — CA-F13.20.)*
 - [x] **CA-09.2** Dado uma recorrência editada, então só os lançamentos gerados **depois** da edição usam os novos dados. *(T-028: a edição não toca lançamentos e preserva a marca d'água — CA-F13.3; T-029: a geração seguinte usa os dados novos — CA-F13.15.)*
-- [ ] **CA-10.1** Dado uma recorrência ativa desde julho, e o app aberto pela primeira vez em setembro, então são gerados os lançamentos de julho, agosto e setembro. *(T-029: verificado na API — CA-F13.9 a .12; falta o disparo na abertura do app, T-030.)*
-- [ ] **CA-10.2** Dado que o app é aberto várias vezes no mesmo mês, então nenhum lançamento é duplicado. *(T-029: verificado na API — CA-F13.9 a .12; falta o disparo na abertura do app, T-030.)*
-- [ ] **CA-10.3** Dado que o usuário excluiu um lançamento gerado, quando o app é reaberto, então ele **não** é gerado de novo. *(T-029: verificado na API — CA-F13.9 a .12; falta o disparo na abertura do app, T-030.)*
+- [x] **CA-10.1** Dado uma recorrência ativa desde julho, e o app aberto pela primeira vez em setembro, então são gerados os lançamentos de julho, agosto e setembro. *(T-029: verificado na API — CA-F13.9 a .12; T-030: a abertura do app chama a sincronização uma vez — CA-F13.25.)*
+- [x] **CA-10.2** Dado que o app é aberto várias vezes no mesmo mês, então nenhum lançamento é duplicado. *(T-029: verificado na API — CA-F13.9 a .12; T-030: a abertura do app chama a sincronização uma vez — CA-F13.25.)*
+- [x] **CA-10.3** Dado que o usuário excluiu um lançamento gerado, quando o app é reaberto, então ele **não** é gerado de novo. *(T-029: verificado na API — CA-F13.9 a .12; T-030: a abertura do app chama a sincronização uma vez — CA-F13.25.)*
 - [x] **CA-10.4** Nunca são gerados lançamentos para meses futuros. *(T-029: CA-F13.12; a abertura do app só chama a mesma sincronização.)*
 
 **Refinados — CRUD e status (T-028)**
@@ -142,13 +142,13 @@ Cadastrar uma vez as contas e receitas que se repetem todo mês (aluguel, assina
 
 **Refinados — frontend (T-030)**
 
-- [ ] **CA-F13.20** Dado a resposta da API, então a lista mostra descrição, categoria (cor e nome atuais do `CategoriasStore`), valor com sinal, dia, vigência por extenso, selo de estado e próximo mês, na ordem da API (CA-09.1); tabela ≥ 600 px, cartões abaixo.
-- [ ] **CA-F13.21** Dado o menu ⋮, então as ações dependem do estado (§3.3.3); Encerrar pede confirmação; Pausar/Reativar/Encerrar chamam o `PATCH`, avisam e recarregam a lista.
-- [ ] **CA-F13.22** Dado o diálogo novo, então os campos de §3.3.4 têm os padrões (tipo Gasto, mês corrente, sem fim), a categoria lista só ativas do tipo, a forma é obrigatória no gasto, e o valor aceita formato pt-BR; dado o diálogo de edição, então vem preenchido e a categoria atual inativa aparece.
-- [ ] **CA-F13.23** Dado 422/409 da API, então o erro aparece no campo e o diálogo fica aberto com os dados; dado 503, o diálogo fica aberto e o banner aparece.
-- [ ] **CA-F13.24** Dado `mes_inicio` anterior ao corrente no diálogo, então aparece o aviso de meses a gerar; ao salvar, a sincronização é chamada e, com `n > 0`, aparece o aviso e `versao` é incrementada (Q5, Q6).
-- [ ] **CA-F13.25** Dado a abertura do app com `health` ok, então `POST /api/recorrencias/sincronizar` é chamado uma vez; `n > 0` → aviso no singular/plural e `versao++`; `0` → nada; `health` com falha → não chama; "Tentar novamente" que restabelece → chama.
-- [ ] **CA-F13.26** Dado lista vazia, carga com erro, ou janela de 360 px, então estado vazio, mensagem de erro e layout sem rolagem horizontal (RNF-07; visual).
+- [x] **CA-F13.20** Dado a resposta da API, então a lista mostra descrição, categoria (cor e nome atuais do `CategoriasStore`), valor com sinal, dia, vigência por extenso, selo de estado e próximo mês, na ordem da API (CA-09.1); tabela ≥ 600 px, cartões abaixo.
+- [x] **CA-F13.21** Dado o menu ⋮, então as ações dependem do estado (§3.3.3); Encerrar pede confirmação; Pausar/Reativar/Encerrar chamam o `PATCH`, avisam e recarregam a lista.
+- [x] **CA-F13.22** Dado o diálogo novo, então os campos de §3.3.4 têm os padrões (tipo Gasto, mês corrente, sem fim), a categoria lista só ativas do tipo, a forma é obrigatória no gasto, e o valor aceita formato pt-BR; dado o diálogo de edição, então vem preenchido e a categoria atual inativa aparece.
+- [x] **CA-F13.23** Dado 422/409 da API, então o erro aparece no campo e o diálogo fica aberto com os dados; dado 503, o diálogo fica aberto e o banner aparece.
+- [x] **CA-F13.24** Dado `mes_inicio` anterior ao corrente no diálogo, então aparece o aviso de meses a gerar; ao salvar, a sincronização é chamada e, com `n > 0`, aparece o aviso e `versao` é incrementada (Q5, Q6).
+- [x] **CA-F13.25** Dado a abertura do app com `health` ok, então `POST /api/recorrencias/sincronizar` é chamado uma vez; `n > 0` → aviso no singular/plural e `versao++`; `0` → nada; `health` com falha → não chama; "Tentar novamente" que restabelece → chama.
+- [~] **CA-F13.26** Dado lista vazia, carga com erro, ou janela de 360 px, então estado vazio, mensagem de erro e layout sem rolagem horizontal (RNF-07; visual).
 
 ---
 
@@ -222,7 +222,7 @@ Cadastrar uma vez as contas e receitas que se repetem todo mês (aluguel, assina
 - **Rota:** `/recorrencias` (F-04).
 - **Componentes:** `RecorrenciasPage` (substitui a provisória), `recorrencia-form.dialog` (aberto sob demanda), `RecorrenciasApi`, modelo `Recorrencia` em `core/models/`, sincronização na abertura junto de `provideVerificacaoDeConexao`/`ConexaoStore` (F-04), `confirmacao-dialog`, `estado-vazio`, `carregando`, `CategoriasStore`, `FormasPagamentoStore`, `utils/valor.ts`, `utils/mes.ts`.
 - **Estados:** carregando · vazio · erro · recarregando · sucesso.
-- **Mensagens (pt-BR):** "Recorrências"; "Nova recorrência"; "Editar recorrência"; "Ativa"/"Pausada"/"Encerrada"; "dia 10"; "desde julho de 2026"; "de julho de 2026 a dezembro de 2026"; "Vigência terminou em agosto de 2026"; "Pausar"; "Reativar"; "Encerrar"; "Encerrar recorrência?"; "Recorrência pausada."; "Recorrência reativada. Meses do período pausado não são gerados."; "Recorrência encerrada."; "Nos meses sem esse dia, usa o último dia do mês."; "Os lançamentos de <mês> a <mês> serão gerados ao salvar."; "Sem fim"; "Nenhuma recorrência cadastrada."; "Não foi possível carregar as recorrências."; "1 lançamento recorrente gerado." / "<n> lançamentos recorrentes gerados.". Backend: "Recorrência não encontrada."; "O mês de fim deve ser igual ou posterior ao mês de início."; "Recorrência encerrada não pode ser editada."; "Não é possível mudar de <Ativa> para <Ativa>.".
+- **Mensagens (pt-BR):** "Recorrências"; "Nova recorrência"; "Editar recorrência"; "Ativa"/"Pausada"/"Encerrada"; "dia 10"; "desde julho de 2026"; "de julho de 2026 a dezembro de 2026"; "Vigência terminou em agosto de 2026"; "Pausar"; "Reativar"; "Encerrar"; "Encerrar recorrência?"; "Recorrência pausada."; "Recorrência reativada. Meses do período pausado não são gerados."; "Recorrência encerrada."; "Nos meses sem esse dia, usa o último dia do mês."; "Os lançamentos de <mês> a <mês> serão gerados ao salvar." / "O lançamento de <mês> será gerado ao salvar."; "Sem fim"; "Nenhuma recorrência cadastrada."; "Não foi possível carregar as recorrências."; "1 lançamento recorrente gerado." / "<n> lançamentos recorrentes gerados.". Backend: "Recorrência não encontrada."; "O mês de fim deve ser igual ou posterior ao mês de início."; "Recorrência encerrada não pode ser editada."; "Não é possível mudar de <Ativa> para <Ativa>.".
 - **Acessibilidade:** tabela com `<th scope="col">`; selo de estado com texto (não só cor); menu ⋮ com `aria-label` "Ações de <descrição>"; foco no 1º campo ao abrir o diálogo (F-06).
 
 ---
@@ -262,8 +262,9 @@ Cadastrar uma vez as contas e receitas que se repetem todo mês (aluguel, assina
 | `…` › `vazio_erro_e_recarga__CA_F13_26` | unitário FE | CA-F13.26 |
 | `…/features/recorrencias/recorrencia-form.dialog.spec.ts` › `novo_e_edicao__CA_F13_22` | unitário FE | CA-F13.22 |
 | `…` › `erros_no_campo__CA_F13_23` | unitário FE | CA-F13.23 |
-| `…` › `aviso_retroativo_e_sincroniza_ao_salvar__CA_F13_24` | unitário FE | CA-F13.24 |
-| `…/core/state/conexao.store.spec.ts` (ou o serviço de sincronização) › `sincroniza_na_abertura__CA_F13_25` | unitário FE | CA-F13.25, borda 23 |
+| `…` › `aviso_retroativo_e_vigencia__CA_F13_24` | unitário FE | CA-F13.24 (aviso; a sincronização ao salvar está no spec da página) |
+| `…/core/state/conexao.store.spec.ts` › `sincroniza_na_abertura__CA_F13_25` (1 e 3) · `abertura_sem_nada_a_gerar_fica_em_silencio__CA_F13_25` · `abertura_com_planilha_fora_nao_sincroniza__CA_F13_25` · `falha_da_sincronizacao_nao_quebra_a_abertura__F13` · `tentar_novamente_que_reconecta_sincroniza__F13_borda_23` | unitário FE | CA-F13.25, CA-10.1..10.3 (disparo), borda 23 |
+| `…/features/recorrencias/recorrencias.page.spec.ts` › `cartoes_abaixo_de_600px__CA_F13_20` · `pausar_reativar_e_encerrar__CA_F13_21` · `status_recusado_avisa_e_recarrega__F13` · `salvar_sincroniza_e_avisa_uma_vez__CA_F13_24` | unitário FE | CA-F13.20, .21, .24 |
 | Conferência visual em 360 px e 1280 px, claro e escuro | manual | CA-F13.26 |
 
 ---
@@ -292,6 +293,12 @@ Ordem: T-028 → T-029 → T-030 (T-030 também depende de T-016 e T-012, conclu
 | Uma sincronização por vez no processo (trava). | Duas abas abrindo juntas não podem gerar em dobro (CA-10.2). | Não |
 | Sem nada a gerar, nenhuma escrita. | Abrir o app várias vezes não gasta cota da API do Google (`02` §5.5). | Não |
 | Nome e cor da categoria na lista vêm do `CategoriasStore`, não da API de recorrências. | O contrato de `03` §6.3 não traz nome/cor na `Recorrencia`; o store já está carregado. | Não |
+| Tipo como lista de seleção (Gasto/Receita), como na edição de lançamento (T-030). | Sem módulo novo do Material; mesmo controle do diálogo de F-08. | Não |
+| Meses de início e fim como botões com o datepicker ano → mês (como o seletor de período de F-11); "Sem fim" com botão para limpar (T-030). | Um campo de data mostraria "01/07/2026" num campo de mês. | Não |
+| Aviso retroativo só enquanto nada foi gerado (criação, ou ativa nunca gerada), com os meses por extenso e o ano em cada um (T-030). | Depois de gerar, mudar o início não gera para trás (RN-10): o aviso estaria errado. | Não |
+| Um aviso por ação, juntando os textos ("Recorrência criada. 3 lançamentos recorrentes gerados."); no "Tentar novamente", junto do "Conexão… restabelecida." e com uma só recarga (T-030). | Dois avisos seguidos fariam um apagar o outro; duas recargas seriam pedidos à toa. | Não |
+| `SincronizacaoRecorrencias` em `core/state/sincronizacao.ts` só chama e conta; quem chama monta o aviso e decide a recarga (T-030). | Usado pelo `ConexaoStore` (abertura, reconexão) e pela página (salvar, reativar). | Não |
+| Validadores de valor e de texto movidos para `core/utils/validadores.ts`, usados pelos dois diálogos (T-030). | Mesmas regras e mensagens em lançamento e recorrência, sem cópia. Sem mudança de comportamento em F-06. | Não |
 | `RecorrenciaService` recebe também o repositório de lançamentos (T-029). | A sincronização insere lançamentos e consulta os já gerados (defesa de §3.2.5). | Não |
 | A trava é um `threading.Lock` do módulo de serviço, não da requisição (T-029). | O serviço é criado a cada requisição; a trava tem de valer para o processo inteiro. | Não |
 | `StatusRecorrencia.rotulo` ("Ativa", "Pausada", "Encerrada") no domínio, como os outros enums (T-028). | Mensagem de transição inválida em pt-BR sem tabela de rótulos no serviço. | Não |
@@ -340,3 +347,4 @@ Texto original das questões, para registro:
 | 2026-10-01 | T-028 concluída: CA-F13.1 a .8 verificados por teste; parte da API de CA-09.1 e CA-09.2. `03` → 1.31 (§3, §6.2, §6.3). Três decisões em §10. |
 | 2026-10-01 | T-029 (plano, aprovado pelo usuário): §3.2.1 editar/mudar status esperam a sincronização; §3.2.3 `atualizado_em` ao avançar a marca d'água; §3.2.6 recorrência apagada à mão durante a sincronização não é erro. |
 | 2026-10-01 | T-029 concluída: CA-F13.9 a .19, CA-09.2 e CA-10.4 verificados por teste; parte da API de CA-10.1 a 10.3 (falta o disparo na abertura, T-030). `03` → 1.32 (§3, §4.4). Duas decisões em §10. |
+| 2026-10-01 | T-030 concluída → feature **Concluída**. CA-09.1, CA-10.1 a 10.3 e CA-F13.20 a .25 verificados por teste; CA-F13.26 depende da conferência visual em 360 px. Seis decisões em §10. `03` → 1.33. |

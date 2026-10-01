@@ -5,7 +5,6 @@ import {
   NonNullableFormBuilder,
   ReactiveFormsModule,
   ValidationErrors,
-  ValidatorFn,
   Validators,
 } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -41,6 +40,7 @@ import {
   textoDaPrevia,
 } from '../../core/utils/parcelas';
 import { formatarValor, interpretarValor } from '../../core/utils/valor';
+import { textoAparado, valorValido } from '../../core/utils/validadores';
 
 export interface DadosFormularioLancamento {
   tipo: TipoLancamento;
@@ -93,14 +93,6 @@ const MENSAGENS: Record<Campo, Record<string, string>> = {
   },
 };
 
-function valorValido(controle: AbstractControl<string>): ValidationErrors | null {
-  const resultado = interpretarValor(controle.value ?? '');
-  if ('erro' in resultado) {
-    return { [resultado.erro === 'vazio' ? 'obrigatorio' : resultado.erro]: true };
-  }
-  return resultado.valor > 0 ? null : { zero: true };
-}
-
 /**
  * Na compra parcelada, o total tem de dar R$ 0,01 por parcela (RN-07). A
  * mensagem já vem pronta no erro, com N e o mínimo (F-12 §3.3.2).
@@ -119,16 +111,6 @@ function minimoDasParcelas(controle: AbstractControl<string>): ValidationErrors 
   return 'minimo' in previa
     ? { minimoParcelas: mensagemDoMinimo(parcelas.value as number, previa.minimo) }
     : null;
-}
-
-function textoAparado(maximo: number, obrigatorio: boolean): ValidatorFn {
-  return (controle: AbstractControl<string>) => {
-    const texto = (controle.value ?? '').trim();
-    if (obrigatorio && !texto) {
-      return { obrigatorio: true };
-    }
-    return texto.length > maximo ? { longo: true } : null;
-  };
 }
 
 /**

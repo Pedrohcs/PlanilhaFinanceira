@@ -3,7 +3,7 @@
 | Campo | Valor |
 |---|---|
 | Documento | `SPECS/03-arquitetura.md` |
-| Versão | 1.32 |
+| Versão | 1.33 |
 | Atualizado em | 2026-10-01 |
 | Status | Aprovado para início |
 | Responde | **Como** o sistema se organiza: componentes, pastas, camadas, modelo de dados na planilha, contrato da API e fluxos |
@@ -100,13 +100,15 @@ PlanilhaFinanceira/
         ├── core/
         │   ├── models/        # interfaces espelhando o JSON da API
         │   ├── api/           # um serviço HTTP por recurso (health, categorias, lancamentos,
-        │   │                  # parcelamentos, resumo, formas-pagamento)
-        │   ├── state/         # mes-selecionado, conexao, dados, categorias, formas-pagamento .store.ts
+        │   │                  # parcelamentos, recorrencias, resumo, formas-pagamento)
+        │   ├── state/         # mes-selecionado, conexao, dados, categorias, formas-pagamento .store.ts;
+        │   │                  # sincronizacao.ts (recorrências na abertura e após salvar, F-13)
         │   ├── interceptors/  # erro.interceptor.ts
         │   ├── avisos/        # avisos.ts: snackbar carregado sob demanda
         │   └── utils/         # mes.ts (YYYY-MM), valor.ts (valor pt-BR), adaptador-de-data.ts
         │                      # (DateAdapter que entende dd/mm/aaaa), parcelas.ts (prévia de
-        │                      # RN-07 só para exibir, F-12 Q1)
+        │                      # RN-07 só para exibir, F-12 Q1), validadores.ts (valor e texto,
+        │                      # comuns aos formulários de lançamento e recorrência)
         ├── shared/
         │   ├── components/    # seletor-mes, confirmacao-dialog, estado-vazio, carregando,
         │   │                  # banner-conexao, totais (cards Gastos/Receitas/Saldo)
@@ -123,7 +125,8 @@ PlanilhaFinanceira/
             │                  # do saldo, empilhado por categoria e tabela mês a mês (F-11);
             │                  # seletor-intervalo.ts (De/Até) e periodo.ts (regras do período na URL)
             ├── categorias/    # categorias.page, categoria-form.dialog, paleta.ts
-            └── recorrencias/
+            └── recorrencias/  # recorrencias.page (lista com estado e próximo mês, menu ⋮ por
+                               # estado) + recorrencia-form.dialog (criar/editar, F-13)
 ```
 
 ---
@@ -446,7 +449,7 @@ sequenceDiagram
         F->>F: banner persistente com a mensagem e botão "Tentar novamente"
     end
 ```
-Falha no inicializador **não impede** o app de abrir: o `provideAppInitializer` dispara o health e **não espera** a resposta (F-04 Q4), e o banner aparece quando e se ela vier com falha. "Tentar novamente" repete o `GET /api/health`; se a planilha voltar, o banner some, um aviso confirma e `DadosStore.versao` é incrementado (F-04 Q5).
+Falha no inicializador **não impede** o app de abrir: o `provideAppInitializer` dispara o health e **não espera** a resposta (F-04 Q4), e o banner aparece quando e se ela vier com falha. "Tentar novamente" repete o `GET /api/health`; se a planilha voltar, o banner some, a sincronização roda, **um** aviso confirma ("Conexão com a planilha restabelecida." + "n lançamentos recorrentes gerados.", se houver) e `DadosStore.versao` é incrementado uma vez (F-04 Q5, F-13 §3.4). Na abertura, `n > 0` também incrementa `versao`. Falha da sincronização vai para o banner/aviso pelo interceptor e não impede o uso do app. A tela de recorrências também sincroniza logo depois de salvar ou reativar (F-13 Q5).
 
 ---
 
@@ -472,7 +475,7 @@ O **shell** (`app.ts`, classe `App`) tem barra superior com os botões **"Regist
 | `MesSelecionadoStore` | `signal<string>` `YYYY-MM` | Sincronizado com o query param `mes` (REQ-04) |
 | `CategoriasStore` | lista de categorias carregada uma vez; recarrega após alterações | Usado pelos formulários |
 | `DadosStore` | `versao = signal(0)` incrementada após qualquer escrita | Páginas reagem e recarregam dados |
-| `ConexaoStore` | estado do `health` e mensagem de erro | Alimenta o banner |
+| `ConexaoStore` | estado do `health` e mensagem de erro | Alimenta o banner; na abertura e no "Tentar novamente" que reconecta, chama a sincronização (`SincronizacaoRecorrencias`, F-13) |
 
 A aplicação é **zoneless**: toda mudança de estado que deve refletir na tela passa por um signal. Não usar APIs marcadas como *experimental* ou *developer preview* na v22 (ex.: Signal Forms) — ver `02` §4.
 
@@ -528,4 +531,5 @@ Quando o **backend não responde** (status 0, ou 502/504 sem o envelope de §6.2
 | 2026-10-01 | 1.30 | §3: página do histórico (`seletor-intervalo.ts`, `periodo.ts`) e `dados` da diretiva como função das cores do tema; §8.2.1: cores de gasto e receita do tema, `--cor-receita` global (T-025). |
 | 2026-10-01 | 1.31 | §3: `recorrencia_service`; §6.2: erros de recorrência (campo `mes_fim`/`status`, 404); §6.3: regra de `proximo_mes`, ordem da listagem e transições de status (T-028). |
 | 2026-10-01 | 1.32 | §3: sincronização em `recorrencia_service`; §4.4: algoritmo com trava, mês já gerado pulado, nenhuma escrita sem nada a gerar e categoria não validada (T-029; F-13 Q1, Q2). |
+| 2026-10-01 | 1.33 | §3: `recorrencias.api`, `sincronizacao.ts`, `validadores.ts` e a página de recorrências; §7.2 e §8.2: sincronização na abertura, no "Tentar novamente" e após salvar/reativar (T-030). |
 | 2026-09-29 | 1.1 | Frontend em Angular 22 (zoneless); pasta `shared/grafico/` com diretiva Chart.js própria (§3, §8.2.1). |

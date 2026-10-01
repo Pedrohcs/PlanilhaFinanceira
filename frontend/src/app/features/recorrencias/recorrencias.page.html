@@ -1,0 +1,166 @@
+<header class="cabecalho">
+  <h1>Recorrências</h1>
+  <button matButton="filled" type="button" class="nova" (click)="nova()">
+    <mat-icon>add</mat-icon>
+    Nova recorrência
+  </button>
+</header>
+
+@if (lista() === null && carregando()) {
+  <app-carregando texto="Carregando recorrências…" />
+} @else if (erro()) {
+  <app-estado-vazio icone="cloud_off" mensagem="Não foi possível carregar as recorrências." />
+} @else if (lista(); as itens) {
+  <div class="conteudo" [class.recarregando]="carregando()">
+    @if (itens.length === 0) {
+      <div class="vazio">
+        <app-estado-vazio icone="event_repeat" mensagem="Nenhuma recorrência cadastrada." />
+        <button matButton="tonal" type="button" (click)="nova()">Nova recorrência</button>
+      </div>
+    } @else if (tabela()) {
+      <table class="tabela">
+        <thead>
+          <tr>
+            <th scope="col">Descrição</th>
+            <th scope="col">Categoria</th>
+            <th scope="col" class="coluna-valor">Valor</th>
+            <th scope="col">Dia</th>
+            <th scope="col">Vigência</th>
+            <th scope="col">Estado</th>
+            <th scope="col">Próximo mês</th>
+            <th scope="col" class="coluna-acoes"><span class="so-leitor">Ações</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of itens; track item.id) {
+            <tr class="recorrencia">
+              <td class="descricao">{{ item.descricao }}</td>
+              <td>
+                <ng-container
+                  [ngTemplateOutlet]="categoriaTpl"
+                  [ngTemplateOutletContext]="{ $implicit: item }"
+                />
+              </td>
+              <td class="coluna-valor">
+                <ng-container
+                  [ngTemplateOutlet]="valorTpl"
+                  [ngTemplateOutletContext]="{ $implicit: item }"
+                />
+              </td>
+              <td class="dia">dia {{ item.dia_do_mes }}</td>
+              <td class="vigencia">{{ vigencia(item) }}</td>
+              <td>
+                <ng-container
+                  [ngTemplateOutlet]="estadoTpl"
+                  [ngTemplateOutletContext]="{ $implicit: item }"
+                />
+              </td>
+              <td class="proximo">{{ proximo(item) }}</td>
+              <td class="coluna-acoes">
+                <ng-container
+                  [ngTemplateOutlet]="acoesTpl"
+                  [ngTemplateOutletContext]="{ $implicit: item }"
+                />
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    } @else {
+      <ul class="cartoes">
+        @for (item of itens; track item.id) {
+          <li class="recorrencia cartao">
+            <div class="linha">
+              <span class="descricao">{{ item.descricao }}</span>
+              <span class="valor-e-acoes">
+                <ng-container
+                  [ngTemplateOutlet]="valorTpl"
+                  [ngTemplateOutletContext]="{ $implicit: item }"
+                />
+                <ng-container
+                  [ngTemplateOutlet]="acoesTpl"
+                  [ngTemplateOutletContext]="{ $implicit: item }"
+                />
+              </span>
+            </div>
+            <div class="linha secundaria">
+              <ng-container
+                [ngTemplateOutlet]="estadoTpl"
+                [ngTemplateOutletContext]="{ $implicit: item }"
+              />
+              <ng-container
+                [ngTemplateOutlet]="categoriaTpl"
+                [ngTemplateOutletContext]="{ $implicit: item }"
+              />
+              <span class="dia">dia {{ item.dia_do_mes }}</span>
+              <span class="vigencia">{{ vigencia(item) }}</span>
+            </div>
+            <div class="linha secundaria">
+              <span
+                >Próximo mês: <span class="proximo">{{ proximo(item) }}</span></span
+              >
+            </div>
+          </li>
+        }
+      </ul>
+    }
+  </div>
+}
+
+<ng-template #categoriaTpl let-item>
+  @let categoria = this.categoria(item);
+  <span class="categoria">
+    <span class="cor" aria-hidden="true" [style.background-color]="categoria.cor"></span>
+    {{ categoria.nome }}{{ categoria.ativa ? '' : ' (inativa)' }}
+  </span>
+</ng-template>
+
+<ng-template #valorTpl let-item>
+  <span
+    class="valor"
+    [class.receita]="item.tipo === 'RECEITA'"
+    [attr.aria-label]="rotuloDoValor(item)"
+    >{{ valor(item) }}</span
+  >
+</ng-template>
+
+<ng-template #estadoTpl let-item>
+  <span class="estado" [class]="'estado estado-' + item.status.toLowerCase()">{{
+    status(item)
+  }}</span>
+</ng-template>
+
+<ng-template #acoesTpl let-item>
+  @if (item.status !== 'ENCERRADA') {
+    <button
+      matIconButton
+      type="button"
+      class="botao-acoes"
+      [matMenuTriggerFor]="menu"
+      [attr.aria-label]="'Ações de ' + item.descricao"
+    >
+      <mat-icon>more_vert</mat-icon>
+    </button>
+    <mat-menu #menu="matMenu">
+      <button mat-menu-item type="button" class="acao-editar" (click)="editar(item)">
+        <mat-icon>edit</mat-icon>
+        Editar
+      </button>
+      @if (item.status === 'ATIVA') {
+        <button mat-menu-item type="button" class="acao-pausar" (click)="pausar(item)">
+          <mat-icon>pause</mat-icon>
+          Pausar
+        </button>
+      } @else {
+        <button mat-menu-item type="button" class="acao-reativar" (click)="reativar(item)">
+          <mat-icon>play_arrow</mat-icon>
+          Reativar
+        </button>
+      }
+      <button mat-menu-item type="button" class="acao-encerrar" (click)="encerrar(item)">
+        <mat-icon>stop</mat-icon>
+        Encerrar
+      </button>
+    </mat-menu>
+  }
+</ng-template>

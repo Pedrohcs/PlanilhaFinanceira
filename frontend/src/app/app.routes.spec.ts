@@ -13,7 +13,7 @@ const PAGINAS = [
   { url: '/lancamentos', titulo: 'Lançamentos', provisoria: false },
   { url: '/historico', titulo: 'Histórico', provisoria: false },
   { url: '/categorias', titulo: 'Categorias', provisoria: false },
-  { url: '/recorrencias', titulo: 'Recorrências', provisoria: true },
+  { url: '/recorrencias', titulo: 'Recorrências', provisoria: false },
 ];
 
 describe('rotas (SPECS/03 §8.1)', () => {

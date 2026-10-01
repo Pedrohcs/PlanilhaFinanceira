@@ -11,6 +11,7 @@ import { Avisos } from '../avisos/avisos';
 import { ErroApi } from '../models/erro-api';
 import { RespostaHealth } from '../models/health';
 import { DadosStore } from './dados.store';
+import { SincronizacaoRecorrencias, textoDosGerados } from './sincronizacao';
 
 export type EstadoConexao = 'verificando' | 'ok' | 'falha';
 
@@ -31,6 +32,7 @@ export class ConexaoStore {
   private readonly health = inject(HealthApi);
   private readonly avisos = inject(Avisos);
   private readonly dados = inject(DadosStore);
+  private readonly sincronizacao = inject(SincronizacaoRecorrencias);
 
   private readonly _estado = signal<EstadoConexao>('verificando');
   private readonly _mensagem = signal<string | null>(null);
@@ -76,12 +78,37 @@ export class ConexaoStore {
     }
   }
 
-  /** "Tentar novamente" do banner (CA-16.2): se voltou, avisa e recarrega a tela (F-04 Q5). */
-  async tentarNovamente(): Promise<void> {
-    if (await this.verificar()) {
-      void this.avisos.mostrar(MENSAGEM_CONEXAO_RESTABELECIDA, DURACAO_AVISO_RECONEXAO_MS);
+  /**
+   * Abertura do app (SPECS/03 §7.2): health e, se a planilha respondeu, a
+   * sincronização das recorrências, uma vez (F-13 §3.4.1). Gerou algo → aviso
+   * e as telas recarregam; nada → silêncio.
+   */
+  async abrir(): Promise<void> {
+    if (!(await this.verificar())) {
+      return;
+    }
+    const gerados = await this.sincronizacao.executar();
+    if (gerados) {
+      void this.avisos.mostrar(textoDosGerados(gerados));
       this.dados.incrementar();
     }
+  }
+
+  /**
+   * "Tentar novamente" do banner (CA-16.2): se voltou, sincroniza as
+   * recorrências (o app pode ter aberto sem planilha — F-13 §3.4.4), avisa
+   * uma vez e recarrega a tela uma vez (F-04 Q5).
+   */
+  async tentarNovamente(): Promise<void> {
+    if (!(await this.verificar())) {
+      return;
+    }
+    const gerados = await this.sincronizacao.executar();
+    const mensagem = gerados
+      ? `${MENSAGEM_CONEXAO_RESTABELECIDA} ${textoDosGerados(gerados)}`
+      : MENSAGEM_CONEXAO_RESTABELECIDA;
+    void this.avisos.mostrar(mensagem, DURACAO_AVISO_RECONEXAO_MS);
+    this.dados.incrementar();
   }
 
   private aplicar(resposta: RespostaHealth): boolean {
@@ -101,12 +128,13 @@ export class ConexaoStore {
 }
 
 /**
- * Verifica a conexão na abertura **sem segurar a primeira renderização**
- * (SPECS/03 §7.2; F-04 Q4): o inicializador dispara o health e retorna.
+ * Verifica a conexão — e sincroniza as recorrências — na abertura **sem
+ * segurar a primeira renderização** (SPECS/03 §7.2; F-04 Q4): o inicializador
+ * dispara o health e retorna.
  */
 export function provideVerificacaoDeConexao(): EnvironmentProviders {
   return provideAppInitializer(() => {
-    void inject(ConexaoStore).verificar();
+    void inject(ConexaoStore).abrir();
   });
 }
 

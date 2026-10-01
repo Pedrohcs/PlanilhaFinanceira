@@ -1,0 +1,144 @@
+// Recorrências (F-13 §3.3). Tabela a partir de 600 px, cartões abaixo (como a listagem de F-07).
+:host {
+  display: block;
+}
+
+.cabecalho {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.conteudo.recarregando {
+  opacity: 0.6;
+  transition: opacity 150ms;
+}
+
+.vazio {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.tabela {
+  width: 100%;
+  border-collapse: collapse;
+
+  th,
+  td {
+    padding: 8px;
+    text-align: left;
+    vertical-align: middle;
+    border-bottom: 1px solid var(--mat-sys-outline-variant);
+  }
+
+  th {
+    font: var(--mat-sys-label-large);
+    color: var(--mat-sys-on-surface-variant);
+  }
+
+  .dia {
+    white-space: nowrap;
+  }
+}
+
+.coluna-valor {
+  text-align: right !important;
+  white-space: nowrap;
+}
+
+.coluna-acoes {
+  width: 48px;
+  padding: 0 !important;
+  text-align: right;
+}
+
+.so-leitor {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.cartoes {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.cartao {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+
+  .linha {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .secundaria {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    gap: 4px 12px;
+    margin-top: 4px;
+    font: var(--mat-sys-body-small);
+    color: var(--mat-sys-on-surface-variant);
+  }
+}
+
+.valor-e-acoes {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.descricao {
+  overflow-wrap: anywhere;
+}
+
+.valor {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+
+  &.receita {
+    color: var(--cor-receita);
+  }
+}
+
+.cor {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-right: 6px;
+  border-radius: 50%;
+}
+
+// Selo com texto (não só cor) — acessível sem depender da cor.
+.estado {
+  display: inline-block;
+  padding: 0 8px;
+  border-radius: 8px;
+  font: var(--mat-sys-label-medium);
+  white-space: nowrap;
+}
+
+.estado-ativa {
+  background: var(--mat-sys-primary-container);
+  color: var(--mat-sys-on-primary-container);
+}
+
+.estado-pausada {
+  background: var(--mat-sys-tertiary-container);
+  color: var(--mat-sys-on-tertiary-container);
+}
+
+.estado-encerrada {
+  background: var(--mat-sys-surface-container-highest);
+  color: var(--mat-sys-on-surface-variant);
+}

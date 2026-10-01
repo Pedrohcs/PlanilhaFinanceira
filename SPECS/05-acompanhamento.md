@@ -25,11 +25,11 @@
 | M0 · Fundação | F-01..F-04 | 12 | 0 | 0 | 12 | 100% |
 | M1 · Registro e consulta | F-05..F-08 | 8 | 0 | 0 | 8 | 100% |
 | M2 · Visão financeira | F-09..F-11 | 5 | 0 | 0 | 5 | 100% |
-| M3 · Automação | F-12..F-13 | 5 | 1 | 0 | 4 | 80% |
+| M3 · Automação | F-12..F-13 | 5 | 0 | 0 | 5 | 100% |
 | M4 · Acabamento | F-14..F-15 | 5 | 5 | 0 | 0 | 0% |
-| **Total** | **15** | **35** | **6** | **0** | **29** | **83%** |
+| **Total** | **15** | **35** | **5** | **0** | **30** | **86%** |
 
-**M0, M1 e M2 concluídos (F-01 a F-11); F-12 concluída; F-13 iniciada (T-028 e T-029 concluídas).** O caminho crítico (F-14) espera só F-13. Desbloqueada: **T-030** (FE, F-13, spec aprovada; próximo passo: `/implementar-tarefa T-030`). Pendentes com o usuário, sem bloquear: seguir o README com a planilha real (CA-F02.13), rodar `pytest -m integracao` (CA-15.1/15.2) e a conferência visual (CA-F04.7, CA-F04.30, CA-F05.20, F-06 borda 16, CA-F07.18, menu ⋮ de F-08 e caixa "Compra parcelada" de F-12 em 360 px, resumo de F-09, gráficos de F-10 e histórico de F-11 em 360 px, claro e escuro).
+**M0 a M3 concluídos (F-01 a F-13).** Caminho crítico em F-14. Desbloqueada: **T-031** (FE, F-14, sem spec; próximo passo: `/especificar-feature F-14`). Pendentes com o usuário, sem bloquear: seguir o README com a planilha real (CA-F02.13), rodar `pytest -m integracao` (CA-15.1/15.2) e a conferência visual (CA-F04.7, CA-F04.30, CA-F05.20, F-06 borda 16, CA-F07.18, menu ⋮ de F-08 e caixa "Compra parcelada" de F-12 em 360 px, resumo de F-09, gráficos de F-10, histórico de F-11 e recorrências de F-13 em 360 px, claro e escuro).
 
 ---
 
@@ -49,7 +49,7 @@
 | F-10 | Gráficos do mês | M2 | Concluída | [`F-10-graficos-do-mes.md`](features/F-10-graficos-do-mes.md) (Concluída) |
 | F-11 | Histórico | M2 | Concluída | [`F-11-historico.md`](features/F-11-historico.md) (Concluída) |
 | F-12 | Parcelamentos | M3 | Concluída | [`F-12-parcelamentos.md`](features/F-12-parcelamentos.md) (Concluída) |
-| F-13 | Recorrências | M3 | Iniciada | [`F-13-recorrencias.md`](features/F-13-recorrencias.md) (Aprovada) |
+| F-13 | Recorrências | M3 | Concluída | [`F-13-recorrencias.md`](features/F-13-recorrencias.md) (Concluída) |
 | F-14 | Polimento e resiliência | M4 | Não iniciada | — |
 | F-15 | Entrega local e verificação E2E | M4 | Não iniciada | — |
 
@@ -82,8 +82,7 @@ flowchart LR
     classDef iniciada fill:#fff3cd,stroke:#f0ad4e,color:#5c4400;
     classDef concluida fill:#d4edda,stroke:#28a745,color:#155724;
     class F14,F15 naoIniciada;
-    class F13 iniciada;
-    class F01,F02,F03,F04,F05,F06,F07,F08,F09,F10,F11,F12 concluida;
+    class F01,F02,F03,F04,F05,F06,F07,F08,F09,F10,F11,F12,F13 concluida;
 ```
 
 ---
@@ -140,7 +139,7 @@ Camadas: **BE** = backend · **FE** = frontend · **DOC** = documentação/infra
 | T-027 | No diálogo: opção "Compra parcelada" + nº de parcelas com prévia do valor da parcela; na listagem: exibir "k/N" e ação "Excluir parcelamento inteiro". | F-12 | FE | T-026, T-020 | Concluída | 2026-09-30 | 2026-09-30 | `ParcelamentosApi`; `utils/parcelas.ts` (prévia de RN-07 em centavos inteiros, só para exibir — Q1); no diálogo, "Compra parcelada" só em gasto novo (rótulos "Valor total"/"Data da compra", "Nº de parcelas" 2–48, mínimo por parcela no Valor total, prévia, `POST /api/parcelamentos`, 422 de `valor_total`/`parcelas` no campo certo); aviso com o intervalo de meses (Q3); "Excluir parcelamento inteiro" no menu ⋮ das parcelas (Q2) com confirmação, recarga no sucesso e no 404, não no 503. 12 testes novos (183 no total); build 475,94 kB inicial (+1,7 kB do `mat-checkbox`, ver Log). CA-08.2, CA-F12.10..15. |
 | T-028 | Aba/repositório de recorrências (se ainda faltar), `recorrencia_service` CRUD + mudança de status (reativação sem retroativos) + routers GET/POST/PUT/PATCH status. Testes CA-09.x. | F-13 | BE | T-015 | Concluída | 2026-10-01 | 2026-10-01 | `recorrencia_service` (listar por status e descrição com `proximo_mes` calculado; criar ATIVA sem marca d'água, `mes_inicio` passado aceito; editar qualquer campo, inclusive o tipo, com 404 antes das regras, categoria atual inativa permitida e encerrada recusada; `mudar_status` com transições de Q3 e reativação sem retroativos — RN-11; `mes_fim` ≥ `mes_inicio`; categoria e forma pela `validar_categoria_e_forma`), `StatusRecorrencia.rotulo`, schemas `RecorrenciaEntrada`/`StatusEntrada`/`RecorrenciaSaida`, router `/api/recorrencias` (GET/POST/PUT/PATCH status). 48 testes novos (862 no total); `ruff` limpo. CA-F13.1..8 (+ parte BE de CA-09.1 e CA-09.2). |
 | T-029 | `recorrencia_service.sincronizar` (algoritmo `03` §4.4) + `POST /api/recorrencias/sincronizar`. Testes CA-10.1..10.4, dia 31, `mes_fim`, pausa. | F-13 | BE | T-028 | Concluída | 2026-10-01 | 2026-10-01 | `recorrencia_service.sincronizar` (algoritmo de `03` §4.4: só ATIVA, de `proximo_mes` até o corrente ou `mes_fim`, `ajustar_dia`, dados atuais da recorrência, categoria não validada — Q1, mês corrente antes do dia — Q2; mês com lançamento da recorrência pulado; uma inserção, depois as marcas d'água com `atualizado_em`; nada a gerar → nenhuma escrita; recorrência sumida ignorada), trava do processo também em editar/mudar status, `SincronizacaoSaida`, `POST /api/recorrencias/sincronizar`. 18 testes novos (880 no total), inclusive dois com threads que falham sem a trava; `ruff` limpo. CA-F13.9..19, CA-09.2, CA-10.4 (+ parte BE de CA-10.1..10.3). |
-| T-030 | Página `/recorrencias` (lista com status e próximo mês, criar/editar/pausar/reativar/encerrar) + sincronização no inicializador do app com snackbar. | F-13 | FE | T-029, T-016, T-012 | Não iniciada | | | |
+| T-030 | Página `/recorrencias` (lista com status e próximo mês, criar/editar/pausar/reativar/encerrar) + sincronização no inicializador do app com snackbar. | F-13 | FE | T-029, T-016, T-012 | Concluída | 2026-10-01 | 2026-10-01 | `RecorrenciasApi`; `SincronizacaoRecorrencias` (`core/state/sincronizacao.ts`) chamada pelo `ConexaoStore` na abertura (depois de health ok; aviso no singular/plural e `versao++` se gerou) e no "Tentar novamente" (um aviso, uma recarga); página `/recorrencias` (tabela ≥ 600 px / cartões, categoria atual do store com "(inativa)" e "Categoria não encontrada", valor com sinal, vigência, selo de estado, próximo mês ou "Vigência terminou em…", menu ⋮ por estado — encerrada sem menu, confirmação de encerrar, PATCH com 404/422 recarregando); `recorrencia-form.dialog` (tipo, valor pt-BR, descrição, categoria ativa do tipo, forma, dia 1–31, meses por datepicker ano→mês, "Sem fim", aviso retroativo, erros no campo); sincroniza após salvar/reativar com um aviso só (Q5). Validadores comuns em `utils/validadores.ts`. 19 testes novos (248 no total); build 477,09 kB inicial. CA-09.1, CA-10.1..10.3, CA-F13.20..25 (CA-F13.26 visual pendente). |
 
 ### M4 · Acabamento
 
@@ -158,6 +157,11 @@ Camadas: **BE** = backend · **FE** = frontend · **DOC** = documentação/infra
 
 | Data | Tarefa/Feature | Mudança | Observação |
 |---|---|---|---|
+| 2026-10-01 | M3 | **Marco concluído** | F-12 e F-13 `Concluída`. Caminho crítico segue em F-14 (sem spec) → F-15. |
+| 2026-10-01 | F-13 | `Iniciada` → `Concluída` | Última tarefa (T-030) concluída; §2 e mapa (§3) atualizados. |
+| 2026-10-01 | T-030 | `Iniciada` → `Concluída` | Tela de recorrências e sincronização na abertura. `03` → 1.33 (§3, §7.2, §8.2). Nenhuma dependência nova. Pacote inicial de 477,37 para 477,09 kB (os validadores saíram do diálogo de lançamento). Testes de F-04 ajustados: `/recorrencias` deixou de ser provisória e o health ok agora dispara a sincronização. |
+| 2026-10-01 | T-030 | Sugestão anotada | Um erro devolvido pelo servidor fica no campo até o campo mudar (como no diálogo de lançamento de F-06): escolher de novo a mesma opção não o limpa. Avaliar em T-031 limpar o erro do servidor a qualquer interação. |
+| 2026-10-01 | T-030 | `Não iniciada` → `Iniciada` | Dependências T-029, T-016 e T-012 `Concluída`. Última tarefa de F-13 e do M3. |
 | 2026-10-01 | T-029 | `Iniciada` → `Concluída` | Sincronização no backend. `03` → 1.32 (§3, §4.4). Guarda de rotas com `POST /api/recorrencias/sincronizar`. Nenhuma dependência nova (`threading` é da biblioteca padrão). |
 | 2026-10-01 | T-029 | Sugestão anotada | Planilha editada à mão por outro processo durante a sincronização não é coberta pela trava (ela vale só para o backend). Risco baixo num app pessoal; se aparecer, a defesa de F-13 §3.2.5 já evita duplicar lançamentos. |
 | 2026-10-01 | T-029 | `Não iniciada` → `Iniciada` | Dependência T-028 `Concluída`. |
