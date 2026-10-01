@@ -3,7 +3,7 @@
 | Campo | Valor |
 |---|---|
 | Documento | `SPECS/05-acompanhamento.md` |
-| Atualizado em | 2026-09-30 |
+| Atualizado em | 2026-10-01 |
 | Responde | **Onde estamos:** status de cada tarefa e feature |
 | Depende de | `04-roadmap.md` (plano) |
 
@@ -29,7 +29,7 @@
 | M4 · Acabamento | F-14..F-15 | 5 | 5 | 0 | 0 | 0% |
 | **Total** | **15** | **35** | **10** | **0** | **25** | **71%** |
 
-**M0 e M1 concluídos (F-01 a F-08); F-09, F-10 e F-12 concluídas.** O caminho crítico (F-14) espera F-11 e F-13. Desbloqueadas, ambas sem spec: **T-024** (BE, F-11; próximo passo: `/especificar-feature F-11`) e T-028 (BE, F-13). Pendentes com o usuário, sem bloquear: seguir o README com a planilha real (CA-F02.13), rodar `pytest -m integracao` (CA-15.1/15.2) e a conferência visual (CA-F04.7, CA-F04.30, CA-F05.20, F-06 borda 16, CA-F07.18, menu ⋮ de F-08 e caixa "Compra parcelada" de F-12 em 360 px, resumo de F-09 e gráficos de F-10 em 360 px, claro e escuro).
+**M0 e M1 concluídos (F-01 a F-08); F-09, F-10 e F-12 concluídas.** O caminho crítico (F-14) espera F-11 e F-13. Desbloqueadas: **T-024** (BE, F-11, spec aprovada; próximo passo: `/implementar-tarefa T-024`) e T-028 (BE, F-13, sem spec). Pendentes com o usuário, sem bloquear: seguir o README com a planilha real (CA-F02.13), rodar `pytest -m integracao` (CA-15.1/15.2) e a conferência visual (CA-F04.7, CA-F04.30, CA-F05.20, F-06 borda 16, CA-F07.18, menu ⋮ de F-08 e caixa "Compra parcelada" de F-12 em 360 px, resumo de F-09 e gráficos de F-10 em 360 px, claro e escuro).
 
 ---
 
@@ -47,7 +47,7 @@
 | F-08 | Editar e excluir lançamentos | M1 | Concluída | [`F-08-editar-excluir-lancamentos.md`](features/F-08-editar-excluir-lancamentos.md) (Concluída) |
 | F-09 | Resumo mensal | M2 | Concluída | [`F-09-resumo-mensal.md`](features/F-09-resumo-mensal.md) (Concluída) |
 | F-10 | Gráficos do mês | M2 | Concluída | [`F-10-graficos-do-mes.md`](features/F-10-graficos-do-mes.md) (Concluída) |
-| F-11 | Histórico | M2 | Não iniciada | — |
+| F-11 | Histórico | M2 | Não iniciada | [`F-11-historico.md`](features/F-11-historico.md) (Aprovada) |
 | F-12 | Parcelamentos | M3 | Concluída | [`F-12-parcelamentos.md`](features/F-12-parcelamentos.md) (Concluída) |
 | F-13 | Recorrências | M3 | Não iniciada | — |
 | F-14 | Polimento e resiliência | M4 | Não iniciada | — |
@@ -157,6 +157,7 @@ Camadas: **BE** = backend · **FE** = frontend · **DOC** = documentação/infra
 
 | Data | Tarefa/Feature | Mudança | Observação |
 |---|---|---|---|
+| 2026-10-01 | F-11 | Spec da feature criada e **aprovada** | `features/F-11-historico.md`: Q1–Q6 respondidas (todas na opção recomendada). Q2 (intervalo com as duas pontas ou nenhuma, até 36 meses) e Q6 (`linhas_ignoradas` no `ResumoHistorico`) precisam `03` §6.1/§6.3 — T-024 aplica. Nenhum status de tarefa alterado. |
 | 2026-09-30 | F-10 | `Iniciada` → `Concluída` | Única tarefa (T-023) concluída; §2 e mapa (§3) atualizados. |
 | 2026-09-30 | T-023 | `Iniciada` → `Concluída` | Gráficos do mês. `03` → 1.28 (§3, §8.2.1). Nenhuma dependência nova (Chart.js já em `02` §1, ADR-11). |
 | 2026-09-30 | T-023 | `Não iniciada` → `Iniciada` | Dependência T-022 `Concluída`; spec F-10 `Aprovada`. F-10 passa a `Iniciada` (§2) e o mapa (§3) foi atualizado. |
