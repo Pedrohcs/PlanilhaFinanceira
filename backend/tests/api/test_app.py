@@ -22,8 +22,8 @@ def test_rotas_da_api_sao_as_do_contrato__CA_F02_8(cliente: TestClient) -> None:
 
     Em T-002 este teste exigia nenhuma rota sob `/api`; T-005 aceitou só
     `/api/health`; T-013 acrescentou as de categorias; T-015, lançamentos e formas
-    de pagamento; T-026, parcelamentos; T-021, resumo mensal. Cada tarefa que criar
-    endpoint atualiza esta lista junto com o contrato.
+    de pagamento; T-026, parcelamentos; T-021, resumo mensal; T-024, histórico. Cada
+    tarefa que criar endpoint atualiza esta lista junto com o contrato.
     """
     esquema = cliente.get("/openapi.json").json().get("paths", {})
     rotas = {
@@ -47,6 +47,7 @@ def test_rotas_da_api_sao_as_do_contrato__CA_F02_8(cliente: TestClient) -> None:
         ("POST", "/api/parcelamentos"),
         ("DELETE", "/api/parcelamentos/{parcelamento_id}"),
         ("GET", "/api/resumo/mensal"),
+        ("GET", "/api/resumo/historico"),
     }
 
 

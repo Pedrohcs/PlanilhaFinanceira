@@ -12,7 +12,7 @@ from app.domain.modelos import Data
 from app.services.categoria_service import CategoriaComUso, normalizar_nome
 from app.services.lancamento_service import LancamentoComCategoria, ListaDoMes
 from app.services.parcelamento_service import ParcelamentoCriado
-from app.services.resumo_service import ResumoDoMes
+from app.services.resumo_service import HistoricoDoPeriodo, ResumoDoMes
 
 STATUS_OK = "ok"
 STATUS_DEGRADADO = "degradado"
@@ -282,4 +282,55 @@ class ResumoMensalSaida(BaseModel):
                 for dia, total in enumerate(resumo.gasto_acumulado_diario, start=1)
             ],
             linhas_ignoradas=resumo.linhas_ignoradas,
+        )
+
+
+# Histórico (F-11) --------------------------------------------------------------------
+
+
+class MesDoHistoricoSaida(BaseModel):
+    mes: str
+    total_gastos: Montante
+    total_receitas: Montante
+    saldo: Montante
+
+
+class CategoriaNoHistoricoSaida(BaseModel):
+    categoria_id: str
+    nome: str
+    cor: str
+    valores: list[Montante]
+
+
+class ResumoHistoricoSaida(BaseModel):
+    """`GET /api/resumo/historico` (`SPECS/03` §6.3). `valores` alinhados a `meses`."""
+
+    inicio: str
+    fim: str
+    meses: list[MesDoHistoricoSaida]
+    por_categoria: list[CategoriaNoHistoricoSaida]
+    total_gastos_periodo: Montante
+    media_mensal_gastos: Montante
+    linhas_ignoradas: int
+
+    @classmethod
+    def de(cls, historico: HistoricoDoPeriodo) -> "ResumoHistoricoSaida":
+        return cls(
+            inicio=historico.inicio,
+            fim=historico.fim,
+            meses=[
+                MesDoHistoricoSaida(
+                    mes=item.mes,
+                    total_gastos=item.totais.gastos,
+                    total_receitas=item.totais.receitas,
+                    saldo=item.totais.saldo,
+                )
+                for item in historico.meses
+            ],
+            por_categoria=[
+                CategoriaNoHistoricoSaida(**vars(item)) for item in historico.por_categoria
+            ],
+            total_gastos_periodo=historico.total_gastos_periodo,
+            media_mensal_gastos=historico.media_mensal_gastos,
+            linhas_ignoradas=historico.linhas_ignoradas,
         )

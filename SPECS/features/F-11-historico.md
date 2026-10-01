@@ -93,22 +93,22 @@ Ver como o dinheiro evoluiu mês a mês num intervalo (por padrão, os últimos 
 
 **Herdados de `01`**
 
-- [ ] **CA-14.1** Dado o intervalo padrão, então aparecem 12 meses, inclusive meses sem lançamentos (com zero).
+- [ ] **CA-14.1** Dado o intervalo padrão, então aparecem 12 meses, inclusive meses sem lançamentos (com zero). *(T-024: a API devolve os 12 meses com zero — CA-F11.1; falta a tela em T-025.)*
 - [ ] **CA-14.2** Dado que o usuário muda o intervalo, então gráficos e totais do período se atualizam.
-- [ ] **CA-14.3** Dado o período exibido, então são mostrados também total gasto no período e média mensal de gastos.
+- [ ] **CA-14.3** Dado o período exibido, então são mostrados também total gasto no período e média mensal de gastos. *(T-024: a API devolve total e média — CA-F11.6; falta a tela em T-025.)*
 
 **Refinados — backend (T-024)**
 
-- [ ] **CA-F11.1** Dado hoje = 01/10/2026 e nenhum parâmetro, quando `GET /api/resumo/historico`, então `inicio` = `2025-11`, `fim` = `2026-10` e `meses` tem 12 itens em ordem crescente, os sem lançamento com 0 (CA-14.1).
-- [ ] **CA-F11.2** Dado lançamentos em vários meses (gastos e receitas, inclusive parcelas e recorrentes) e lançamentos fora do período, então cada item de `meses` tem os mesmos `total_gastos`, `total_receitas` e `saldo` de `GET /api/resumo/mensal` daquele mês, e nada de fora do período conta (RN-03, RN-13).
-- [ ] **CA-F11.3** Dado 0,10 + 0,20 somados 3 vezes num mês, então o mês e o total do período saem exatos: R$ 0,90 (RN-16).
-- [ ] **CA-F11.4** Dado gastos de 3 categorias em meses diferentes, então `por_categoria` traz só gastos, um item por categoria com gasto no período, `valores` com o tamanho de `meses` e 0 onde não houve gasto, nome e cor atuais, em ordem de total no período (empate pelo nome).
-- [ ] **CA-F11.5** Dado uma categoria inativa com gasto no período e outra apagada à mão, então a inativa aparece com seu nome e a apagada como "Categoria não encontrada" (`#9E9E9E`).
-- [ ] **CA-F11.6** Dado R$ 100,00 de gastos em um período de 3 meses (dois deles sem lançamento), então `total_gastos_periodo` = 100.00 e `media_mensal_gastos` = 33.33 (Q3) (CA-14.3).
-- [ ] **CA-F11.7** Dado um período sem lançamentos, então 200 com todos os meses em 0, `por_categoria` vazio, total e média 0.
-- [ ] **CA-F11.8** Dado só `inicio` ou só `fim`, formato inválido, `inicio` > `fim` ou mais de 36 meses (Q2), então 422 `VALIDACAO` no campo indicado em §3.1.1; dado a planilha inacessível, então 503 com a causa.
-- [ ] **CA-F11.9** Dado uma linha inválida na aba, então ela não entra em nenhuma soma e `linhas_ignoradas` = 1 (Q6, CA-16.3).
-- [ ] **CA-F11.10** Dado o histórico de 36 meses com 5.000 lançamentos, então há uma leitura de cada aba (pelo cache), sem escrita (RNF-04).
+- [x] **CA-F11.1** Dado hoje = 01/10/2026 e nenhum parâmetro, quando `GET /api/resumo/historico`, então `inicio` = `2025-11`, `fim` = `2026-10` e `meses` tem 12 itens em ordem crescente, os sem lançamento com 0 (CA-14.1).
+- [x] **CA-F11.2** Dado lançamentos em vários meses (gastos e receitas, inclusive parcelas e recorrentes) e lançamentos fora do período, então cada item de `meses` tem os mesmos `total_gastos`, `total_receitas` e `saldo` de `GET /api/resumo/mensal` daquele mês, e nada de fora do período conta (RN-03, RN-13).
+- [x] **CA-F11.3** Dado 0,10 + 0,20 somados 3 vezes num mês, então o mês e o total do período saem exatos: R$ 0,90 (RN-16).
+- [x] **CA-F11.4** Dado gastos de 3 categorias em meses diferentes, então `por_categoria` traz só gastos, um item por categoria com gasto no período, `valores` com o tamanho de `meses` e 0 onde não houve gasto, nome e cor atuais, em ordem de total no período (empate pelo nome).
+- [x] **CA-F11.5** Dado uma categoria inativa com gasto no período e outra apagada à mão, então a inativa aparece com seu nome e a apagada como "Categoria não encontrada" (`#9E9E9E`).
+- [x] **CA-F11.6** Dado R$ 100,00 de gastos em um período de 3 meses (dois deles sem lançamento), então `total_gastos_periodo` = 100.00 e `media_mensal_gastos` = 33.33 (Q3) (CA-14.3).
+- [x] **CA-F11.7** Dado um período sem lançamentos, então 200 com todos os meses em 0, `por_categoria` vazio, total e média 0.
+- [x] **CA-F11.8** Dado só `inicio` ou só `fim`, formato inválido, `inicio` > `fim` ou mais de 36 meses (Q2), então 422 `VALIDACAO` no campo indicado em §3.1.1; dado a planilha inacessível, então 503 com a causa.
+- [x] **CA-F11.9** Dado uma linha inválida na aba, então ela não entra em nenhuma soma e `linhas_ignoradas` = 1 (Q6, CA-16.3).
+- [x] **CA-F11.10** Dado o histórico de 36 meses com 5.000 lançamentos, então há uma leitura de cada aba (pelo cache), sem escrita (RNF-04).
 
 **Refinados — frontend (T-025)**
 
@@ -206,8 +206,8 @@ Ver como o dinheiro evoluiu mês a mês num intervalo (por padrão, os últimos 
 | `…::test_historico_categoria_inativa_e_apagada__CA_F11_5` | unitário BE | CA-F11.5, bordas 13–14 |
 | `…::test_historico_total_e_media__CA_14_3` (inclui `inicio` = `fim` e meses futuros) | unitário BE | CA-14.3, CA-F11.6, bordas 4, 8, 9 |
 | `…::test_historico_periodo_vazio_e_so_receitas__CA_F11_7` | unitário BE | CA-F11.7, borda 10 |
-| `…::test_historico_intervalo_invalido__CA_F11_8` (parametrizado: só um, invertido, 37 meses; 36 aceito) | unitário BE | CA-F11.8, bordas 5–7 |
-| `tests/api/test_resumo.py::test_get_historico_formato__CA_14_1` | API BE | contrato §6 |
+| `…::test_historico_intervalo_invalido__CA_F11_8` (parametrizado: só um, invertido, 37 meses) · `test_historico_36_meses_aceito__CA_F11_8` | unitário BE | CA-F11.8, bordas 5–7 |
+| `tests/api/test_resumo.py::test_get_historico_formato__CA_14_1` · `test_get_historico_padrao__CA_14_1` | API BE | contrato §6, CA-F11.1 |
 | `…::test_get_historico_422__CA_F11_8` · `test_get_historico_503__CA_F11_8` | API BE | CA-F11.8 |
 | `…::test_historico_linha_invalida_ignorada__CA_16_3` (planilha falsa) | API BE | CA-F11.9, borda 16 |
 | `…::test_historico_uma_leitura_por_aba__RNF_04` (planilha falsa, 5.000 linhas, 36 meses) | API BE | CA-F11.10 |
@@ -253,6 +253,9 @@ Ordem: T-024 → T-025 (T-025 também depende de T-011, concluída).
 | Período sem lançamentos: cards com R$ 0,00 e estado vazio no lugar dos gráficos e da tabela; só receitas: só o gráfico por categoria some. | Mesmo padrão de F-09/F-10 (CA-13.2). | Não |
 | Gráfico misto (barras gastos/receitas + linha de saldo) num só canvas. | É o que T-025 descreve; os controladores de barra e linha já estão registrados (F-04), sem peso novo. | Não |
 | Cores: Gastos = erro do tema, Receitas = verde de F-07 (vira token global), Saldo = destaque do tema; todas pelos padrões de `grafico.config.ts`. | Gasto/receita reconhecíveis e coerentes com a listagem; acompanham claro/escuro (F-10 §10). | Não |
+| Formato de `inicio`/`fim` validado na rota (`Query(pattern=MES_PADRAO)`, como `mes`); combinação, ordem e limite no serviço (`periodo_do_historico`), com `ErroValidacao.no_campo` (T-024). | Formato é entrada HTTP; as outras três são regras de F-11 Q2, que ficam em `services` (`03` §4.2). | Não |
+| `historico(..., hoje=None)` recebe a data de hoje opcional, como `mes_corrente(hoje)` (T-024). | O padrão "12 meses até o corrente" fica testável com data fixa, inclusive na virada do ano. | Não |
+| Lançamentos agrupados por mês uma única vez; `_nome_e_cor` compartilhado entre resumo mensal e histórico (T-024). | 36 meses × 5.000 linhas numa passada; nome/cor de categoria ausente com uma regra só. | Não |
 | Legenda visível nos dois gráficos. | Três séries no misto e N categorias no empilhado, sem tabela de categorias que faça o papel de legenda. | Não |
 | Seletores "De"/"Até" + "Últimos 12 meses" (Q1). | Qualquer intervalo com dois controles já conhecidos (o datepicker de F-04); o atalho cobre o caso mais comum. | Não |
 | Intervalo com as duas pontas ou nenhuma, `inicio` ≤ `fim`, no máximo 36 meses (Q2). | Sem padrão "pela metade"; 3 anos ainda cabem legíveis em 360 px. | Não |
@@ -282,3 +285,4 @@ Ordem: T-024 → T-025 (T-025 também depende de T-011, concluída).
 |---|---|
 | 2026-10-01 | Criação (`/especificar-feature F-11`). Status `Rascunho` — 6 questões em aberto. |
 | 2026-10-01 | Q1–Q6 respondidas (todas na opção recomendada) → status **Aprovada**. Seis decisões em §10. Precisões em `03` §6.1/§6.3 ficam para T-024. |
+| 2026-10-01 | T-024 concluída: CA-F11.1 a .10 verificados por teste (inclui 5.000 linhas e 36 meses com uma leitura por aba); parte da API de CA-14.1 e CA-14.3. `03` → 1.29 (§6.1, §6.3). Três decisões em §10. |

@@ -3,8 +3,8 @@
 | Campo | Valor |
 |---|---|
 | Documento | `SPECS/03-arquitetura.md` |
-| Versão | 1.28 |
-| Atualizado em | 2026-09-30 |
+| Versão | 1.29 |
+| Atualizado em | 2026-10-01 |
 | Status | Aprovado para início |
 | Responde | **Como** o sistema se organiza: componentes, pastas, camadas, modelo de dados na planilha, contrato da API e fluxos |
 | Depende de | `01-requisitos.md`, `02-definicoes-tecnicas.md` |
@@ -304,7 +304,7 @@ Base: `/api`. JSON em `snake_case`. Valores monetários como número com 2 casas
 | PATCH | `/api/recorrencias/{id}/status` | `{status}` | `200 Recorrencia` | REQ-09 |
 | POST | `/api/recorrencias/sincronizar` | — | `200 {lancamentos_gerados, detalhes: [{recorrencia_id, meses: [YYYY-MM]}]}` | REQ-10 |
 | GET | `/api/resumo/mensal` | `?mes=YYYY-MM` (obrig.) | `200 ResumoMensal` | REQ-12, REQ-13 |
-| GET | `/api/resumo/historico` | `?inicio=YYYY-MM&fim=YYYY-MM` (padrão: últimos 12) | `200 ResumoHistorico` | REQ-14 |
+| GET | `/api/resumo/historico` | `?inicio=YYYY-MM&fim=YYYY-MM` (os dois ou nenhum; padrão: últimos 12 até o corrente; no máximo 36 meses) | `200 ResumoHistorico` | REQ-14 |
 
 ### 6.2 Formato de erro (todas as respostas ≥ 400)
 
@@ -385,9 +385,12 @@ Erros do próprio framework também saem neste envelope: rota inexistente vira 4
 { "inicio": "2025-10", "fim": "2026-09",
   "meses": [{ "mes": "2025-10", "total_gastos": 0, "total_receitas": 0, "saldo": 0 }],
   "por_categoria": [{ "categoria_id", "nome", "cor", "valores": [0, 0, ...] }],   // um valor por mês, na ordem de "meses"
-  "total_gastos_periodo": 0, "media_mensal_gastos": 0 }
+  "total_gastos_periodo": 0, "media_mensal_gastos": 0,
+  "linhas_ignoradas": 0 }
 ```
 `percentual` é número de 0 a 100 com 1 casa, arredondado linha a linha (`ROUND_HALF_UP`; a soma pode dar 99,9 ou 100,1 — F-09 Q1). `por_categoria` e `por_forma_pagamento` consideram só gastos e vêm ordenados do maior para o menor; empates: categoria pelo nome sem acento/caixa, forma na ordem de RN-05. Os totais do `ResumoMensal` são os mesmos da `ListaLancamentos` sem filtro. `gasto_acumulado_diario` tem um item por dia do mês, todos os dias (F-09 Q2).
+
+No `ResumoHistorico`, `meses` tem um item por mês de `inicio` a `fim`, inclusive os sem lançamento (com zero), com os mesmos totais do `ResumoMensal` de cada mês. `por_categoria` considera só gastos, traz as categorias com gasto em algum mês do período e vem ordenado pelo total no período (maior primeiro; empate pelo nome sem acento/caixa). `media_mensal_gastos` = `total_gastos_periodo` ÷ número de meses do período, inclusive zerados e futuros, com 2 casas (`ROUND_HALF_UP`). Só um dos parâmetros, `inicio` > `fim` ou mais de 36 meses → 422 `VALIDACAO` no campo (F-11 Q2, Q3).
 
 ---
 
@@ -508,4 +511,5 @@ Quando o **backend não responde** (status 0, ou 502/504 sem o envelope de §6.2
 | 2026-09-30 | 1.26 | §3: `resumo_service`; §6.1: `mes` obrigatório no resumo; §6.3: arredondamento do percentual, empates e acumulado diário (T-021). |
 | 2026-09-30 | 1.27 | §3: `resumo.api`, componente compartilhado `totais` e página de resumo (T-022). |
 | 2026-09-30 | 1.28 | §3 e §8.2.1: gráficos do resumo e cor de destaque do tema nos padrões de `grafico.config.ts` (T-023). |
+| 2026-10-01 | 1.29 | §6.1: parâmetros do histórico (os dois ou nenhum, até 36 meses); §6.3: `linhas_ignoradas` no `ResumoHistorico` e regras de meses, ordem e média (T-024; F-11 Q2, Q3, Q6). |
 | 2026-09-29 | 1.1 | Frontend em Angular 22 (zoneless); pasta `shared/grafico/` com diretiva Chart.js própria (§3, §8.2.1). |

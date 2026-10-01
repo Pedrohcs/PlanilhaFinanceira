@@ -1,4 +1,4 @@
-"""Resumo do mês (REQ-12, RN-03, RN-13, RN-16; F-09 §3.1), em memória."""
+"""Resumo do mês e histórico (REQ-12, REQ-14, RN-03, RN-13, RN-16; F-09, F-11), em memória."""
 
 from datetime import date, datetime
 from decimal import Decimal
@@ -7,6 +7,7 @@ from itertools import count
 import pytest
 
 from app.domain.enums import FormaPagamento, TipoLancamento
+from app.domain.erros import ErroValidacao
 from app.domain.modelos import Categoria, Lancamento
 from app.repositories.memoria import CategoriaRepositoryMemoria, LancamentoRepositoryMemoria
 from app.services.lancamento_service import LancamentoService
@@ -226,3 +227,169 @@ def test_mes_vazio_e_so_receitas__CA_F09_6() -> None:
     assert so_receitas.totais.saldo == Decimal("5000.00")
     assert so_receitas.por_categoria == so_receitas.por_forma_pagamento == []
     assert set(so_receitas.gasto_acumulado_diario) == {Decimal("0.00")}
+
+
+# Histórico (F-11 §3.1) ----------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("hoje", "inicio", "fim"),
+    [(date(2026, 10, 1), "2025-11", "2026-10"), (date(2027, 1, 15), "2026-02", "2027-01")],
+)
+def test_historico_padrao_ultimos_12__CA_14_1(hoje: date, inicio: str, fim: str) -> None:
+    """CA-F11.1, borda 1: 12 meses até o corrente, em ordem, os vazios com zero."""
+    historico = servico(lancamento(hoje, "10.00")).historico(hoje=hoje)
+
+    assert (historico.inicio, historico.fim) == (inicio, fim)
+    assert len(historico.meses) == 12
+    assert [m.mes for m in historico.meses] == sorted(m.mes for m in historico.meses)
+    assert historico.meses[0].mes == inicio
+    assert historico.meses[0].totais.gastos == Decimal("0.00")
+    assert historico.meses[-1].totais.gastos == Decimal("10.00")
+
+
+def test_historico_meses_iguais_ao_mensal__CA_F11_2() -> None:
+    """Cada mês com os totais do resumo mensal; nada de fora do período (RN-03, RN-13)."""
+    itens = [
+        lancamento(date(2026, 7, 31), "40.00"),
+        lancamento(
+            date(2026, 8, 1), "25.00", parcelamento_id="p", parcela_numero=1, parcela_total=2
+        ),
+        lancamento(
+            date(2026, 9, 1), "25.00", parcelamento_id="p", parcela_numero=2, parcela_total=2
+        ),
+        lancamento(date(2026, 9, 10), "39.90", "lazer", recorrencia_id="r"),
+        receita(date(2026, 9, 5), "100.00"),
+        lancamento(date(2026, 10, 1), "999.00"),  # fora do período
+    ]
+    resumos = servico(*itens)
+    historico = resumos.historico("2026-07", "2026-09")
+
+    assert [m.mes for m in historico.meses] == ["2026-07", "2026-08", "2026-09"]
+    for item in historico.meses:
+        assert item.totais == resumos.mensal(item.mes).totais
+    assert historico.meses[2].totais.saldo == Decimal("35.10")
+    assert historico.total_gastos_periodo == Decimal("129.90")
+
+
+def test_historico_somas_exatas__RN_16() -> None:
+    """CA-F11.3, borda 3: 0,10 + 0,20 (×3) = 0,90 exato no mês e no período."""
+    valores = ["0.10", "0.20"] * 3
+    historico = servico(*[lancamento(date(2026, 9, 1), v) for v in valores]).historico(
+        "2026-09", "2026-09"
+    )
+
+    assert historico.meses[0].totais.gastos == Decimal("0.90")
+    assert historico.total_gastos_periodo == Decimal("0.90")
+    assert historico.por_categoria[0].valores == [Decimal("0.90")]
+
+
+def test_historico_por_categoria_alinhado__CA_F11_4() -> None:
+    """Só gastos; `valores` alinhados aos meses; ordem por total no período, empate pelo nome."""
+    categorias = [
+        categoria("mercado", "Supermercado", cor="#123456"),  # renomeada: nome atual (borda 12)
+        categoria("lazer", "Lazer", cor="#FFB74D"),
+        categoria("agua", "Água", cor="#4FC3F7"),
+        categoria("salario", "Salário", RECEITA),
+    ]
+    historico = servico(
+        lancamento(date(2026, 7, 3), "10.00", "mercado"),
+        lancamento(date(2026, 9, 3), "40.00", "mercado"),
+        lancamento(date(2026, 8, 3), "30.00", "lazer"),
+        lancamento(date(2026, 9, 4), "30.00", "agua"),
+        receita(date(2026, 8, 5), "5000.00"),
+        lancamento(date(2026, 6, 30), "500.00", "lazer"),  # fora do período
+        categorias=categorias,
+    ).historico("2026-07", "2026-09")
+
+    assert [(c.categoria_id, c.nome, c.cor) for c in historico.por_categoria] == [
+        ("mercado", "Supermercado", "#123456"),
+        ("agua", "Água", "#4FC3F7"),  # empate com Lazer: "agua" < "lazer"
+        ("lazer", "Lazer", "#FFB74D"),
+    ]
+    assert [c.valores for c in historico.por_categoria] == [
+        [Decimal("10.00"), Decimal("0.00"), Decimal("40.00")],
+        [Decimal("0.00"), Decimal("0.00"), Decimal("30.00")],
+        [Decimal("0.00"), Decimal("30.00"), Decimal("0.00")],
+    ]
+
+
+def test_historico_categoria_inativa_e_apagada__CA_F11_5() -> None:
+    """Bordas 13–14: inativa aparece; cada categoria apagada à mão vira um item cinza."""
+    historico = servico(
+        lancamento(date(2026, 9, 1), "30.00", "velha"),
+        lancamento(date(2026, 9, 1), "20.00", "sumiu"),
+        lancamento(date(2026, 9, 1), "10.00", "sumiu-2"),
+    ).historico("2026-09", "2026-09")
+
+    assert [(c.categoria_id, c.nome, c.cor) for c in historico.por_categoria] == [
+        ("velha", "Velha", "#E57373"),
+        ("sumiu", "Categoria não encontrada", "#9E9E9E"),
+        ("sumiu-2", "Categoria não encontrada", "#9E9E9E"),
+    ]
+
+
+@pytest.mark.parametrize(
+    ("inicio", "fim", "itens", "total", "media"),
+    [
+        # CA-F11.6, borda 9: dois meses sem lançamento entram no divisor (Q3).
+        ("2026-07", "2026-09", [(date(2026, 8, 10), "100.00")], "100.00", "33.33"),
+        # Borda 4: um mês só, média = total.
+        ("2026-09", "2026-09", [(date(2026, 9, 10), "12.34")], "12.34", "12.34"),
+        # Borda 8: parcelas em meses futuros contam no total e na média.
+        ("2026-10", "2027-01", [(date(2026, 11, 15), "50.00"), (date(2027, 1, 15), "50.01")],
+         "100.01", "25.00"),
+        # ROUND_HALF_UP: 0,05 ÷ 2 = 0,025 → 0,03.
+        ("2026-08", "2026-09", [(date(2026, 9, 1), "0.05")], "0.05", "0.03"),
+    ],
+)  # fmt: skip
+def test_historico_total_e_media__CA_14_3(
+    inicio: str, fim: str, itens: list[tuple[date, str]], total: str, media: str
+) -> None:
+    historico = servico(
+        *[lancamento(dia, valor) for dia, valor in itens], receita(date(2026, 9, 1), "999.00")
+    ).historico(inicio, fim)
+
+    assert historico.total_gastos_periodo == Decimal(total)
+    assert historico.media_mensal_gastos == Decimal(media)
+
+
+def test_historico_periodo_vazio_e_so_receitas__CA_F11_7() -> None:
+    """Borda 10 e período sem nada: zeros, sem categorias, total e média 0."""
+    vazio = servico().historico("2026-01", "2026-03")
+    so_receitas = servico(receita(date(2026, 2, 5), "5000.00")).historico("2026-01", "2026-03")
+
+    assert [m.totais.gastos for m in vazio.meses] == [Decimal("0.00")] * 3
+    assert [m.totais.saldo for m in vazio.meses] == [Decimal("0.00")] * 3
+    assert vazio.por_categoria == []
+    assert vazio.total_gastos_periodo == vazio.media_mensal_gastos == Decimal("0.00")
+    assert so_receitas.por_categoria == []
+    assert so_receitas.meses[1].totais.saldo == Decimal("5000.00")
+    assert so_receitas.total_gastos_periodo == so_receitas.media_mensal_gastos == Decimal("0.00")
+
+
+@pytest.mark.parametrize(
+    ("inicio", "fim", "campo", "mensagem"),
+    [
+        ("2026-01", None, "fim", "Informe o início e o fim do período."),
+        (None, "2026-01", "inicio", "Informe o início e o fim do período."),
+        ("2026-09", "2026-01", "fim", "O fim do período deve ser igual ou posterior ao início."),
+        ("2024-01", "2027-01", "fim", "O período pode ter no máximo 36 meses."),  # 37 meses
+    ],
+)
+def test_historico_intervalo_invalido__CA_F11_8(
+    inicio: str | None, fim: str | None, campo: str, mensagem: str
+) -> None:
+    """Bordas 5–7 (Q2): as duas pontas ou nenhuma, início ≤ fim, até 36 meses."""
+    with pytest.raises(ErroValidacao) as erro:
+        servico().historico(inicio, fim)
+
+    assert erro.value.mensagem == mensagem
+    assert erro.value.detalhes == [{"campo": campo, "mensagem": mensagem}]
+
+
+def test_historico_36_meses_aceito__CA_F11_8() -> None:
+    """Borda 5: exatamente 36 meses é o limite aceito."""
+    historico = servico().historico("2024-01", "2026-12")
+
+    assert len(historico.meses) == 36

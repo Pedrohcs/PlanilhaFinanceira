@@ -24,12 +24,12 @@
 |---|---|---|---|---|---|---|
 | M0 · Fundação | F-01..F-04 | 12 | 0 | 0 | 12 | 100% |
 | M1 · Registro e consulta | F-05..F-08 | 8 | 0 | 0 | 8 | 100% |
-| M2 · Visão financeira | F-09..F-11 | 5 | 2 | 0 | 3 | 60% |
+| M2 · Visão financeira | F-09..F-11 | 5 | 1 | 0 | 4 | 80% |
 | M3 · Automação | F-12..F-13 | 5 | 3 | 0 | 2 | 40% |
 | M4 · Acabamento | F-14..F-15 | 5 | 5 | 0 | 0 | 0% |
-| **Total** | **15** | **35** | **10** | **0** | **25** | **71%** |
+| **Total** | **15** | **35** | **9** | **0** | **26** | **74%** |
 
-**M0 e M1 concluídos (F-01 a F-08); F-09, F-10 e F-12 concluídas.** O caminho crítico (F-14) espera F-11 e F-13. Desbloqueadas: **T-024** (BE, F-11, spec aprovada; próximo passo: `/implementar-tarefa T-024`) e T-028 (BE, F-13, sem spec). Pendentes com o usuário, sem bloquear: seguir o README com a planilha real (CA-F02.13), rodar `pytest -m integracao` (CA-15.1/15.2) e a conferência visual (CA-F04.7, CA-F04.30, CA-F05.20, F-06 borda 16, CA-F07.18, menu ⋮ de F-08 e caixa "Compra parcelada" de F-12 em 360 px, resumo de F-09 e gráficos de F-10 em 360 px, claro e escuro).
+**M0 e M1 concluídos (F-01 a F-08); F-09, F-10 e F-12 concluídas; F-11 iniciada (T-024 concluída).** O caminho crítico (F-14) espera F-11 e F-13. Desbloqueadas: **T-025** (FE, F-11, spec aprovada; próximo passo: `/implementar-tarefa T-025`) e T-028 (BE, F-13, sem spec). Pendentes com o usuário, sem bloquear: seguir o README com a planilha real (CA-F02.13), rodar `pytest -m integracao` (CA-15.1/15.2) e a conferência visual (CA-F04.7, CA-F04.30, CA-F05.20, F-06 borda 16, CA-F07.18, menu ⋮ de F-08 e caixa "Compra parcelada" de F-12 em 360 px, resumo de F-09 e gráficos de F-10 em 360 px, claro e escuro).
 
 ---
 
@@ -47,7 +47,7 @@
 | F-08 | Editar e excluir lançamentos | M1 | Concluída | [`F-08-editar-excluir-lancamentos.md`](features/F-08-editar-excluir-lancamentos.md) (Concluída) |
 | F-09 | Resumo mensal | M2 | Concluída | [`F-09-resumo-mensal.md`](features/F-09-resumo-mensal.md) (Concluída) |
 | F-10 | Gráficos do mês | M2 | Concluída | [`F-10-graficos-do-mes.md`](features/F-10-graficos-do-mes.md) (Concluída) |
-| F-11 | Histórico | M2 | Não iniciada | [`F-11-historico.md`](features/F-11-historico.md) (Aprovada) |
+| F-11 | Histórico | M2 | Iniciada | [`F-11-historico.md`](features/F-11-historico.md) (Aprovada) |
 | F-12 | Parcelamentos | M3 | Concluída | [`F-12-parcelamentos.md`](features/F-12-parcelamentos.md) (Concluída) |
 | F-13 | Recorrências | M3 | Não iniciada | — |
 | F-14 | Polimento e resiliência | M4 | Não iniciada | — |
@@ -81,7 +81,8 @@ flowchart LR
     classDef naoIniciada fill:#eeeeee,stroke:#9e9e9e,color:#424242;
     classDef iniciada fill:#fff3cd,stroke:#f0ad4e,color:#5c4400;
     classDef concluida fill:#d4edda,stroke:#28a745,color:#155724;
-    class F11,F13,F14,F15 naoIniciada;
+    class F13,F14,F15 naoIniciada;
+    class F11 iniciada;
     class F01,F02,F03,F04,F05,F06,F07,F08,F09,F10,F12 concluida;
 ```
 
@@ -128,7 +129,7 @@ Camadas: **BE** = backend · **FE** = frontend · **DOC** = documentação/infra
 | T-021 | `resumo_service.mensal` (totais, saldo, por categoria/forma com %, acumulado diário) + `GET /api/resumo/mensal`. Testes CA-12.x e RN-16 (somas em centavos). | F-09 | BE | T-015 | Concluída | 2026-09-30 | 2026-09-30 | `resumo_service.mensal` (totais pela `totalizar` da listagem; por categoria e por forma só de gastos, maior primeiro, empates por nome/RN-05, `percentual` com 1 casa linha a linha — Q1; acumulado com todos os dias do mês — Q2; categoria ausente como na listagem), `dias_no_mes` no domínio, `GET /api/resumo/mensal` (`mes` obrigatório). 24 testes novos (787 no total), inclusive 5.000 linhas com uma leitura por aba; `ruff` limpo. CA-F09.1..9 (+ parte BE de CA-12.1). |
 | T-022 | Página `/resumo`: cards de gastos/receitas/saldo (saldo negativo destacado), tabela por categoria e por forma, seletor de mês. | F-09 | FE | T-021, T-011 | Concluída | 2026-09-30 | 2026-09-30 | `ResumoApi`; `formatarMontante`/`formatarPercentual` em `utils/valor.ts`; componente compartilhado `shared/components/totais` (cards, saldo negativo destacado; a listagem passou a usá-lo); página `/resumo` com tabelas por categoria (cor) e por forma, lado a lado ≥ 960 px, vazio ("Nenhum lançamento/gasto em <mês>."), erro, recarga por mês e `versao` descartando resposta antiga. 10 testes novos (193 no total); build 476,21 kB inicial (ver Log). CA-12.1, CA-12.2, CA-F09.10..16. |
 | T-023 | Gráficos no `/resumo`: rosca por categoria (cores da categoria), barras por forma de pagamento, linha do acumulado diário; estados vazios. | F-10 | FE | T-022 | Concluída | 2026-09-30 | 2026-09-30 | `CoresDoTema.destaque` (`--mat-sys-primary`) nos padrões de barra/linha de `grafico.config.ts`; no `/resumo`, rosca por categoria (cores das categorias, sem legenda), barras horizontais por forma e linha do acumulado (tooltip "Dia N"), gráfico acima da tabela (Q1), só o mês selecionado (Q2), `role="img"` + `aria-label`; sem gastos, nenhum gráfico. 7 testes novos (200 no total); Chart.js só no pedaço `resumo-page` (193 kB brutos / 59 kB transferidos), pacote inicial 476,21 kB. CA-13.1, CA-13.2, CA-F10.1..8 (CA-F10.9 visual pendente). |
-| T-024 | `resumo_service.historico` (meses sem lançamento com zero, por categoria alinhado aos meses, total e média) + `GET /api/resumo/historico` (padrão últimos 12). Testes CA-14.x. | F-11 | BE | T-021 | Não iniciada | | | |
+| T-024 | `resumo_service.historico` (meses sem lançamento com zero, por categoria alinhado aos meses, total e média) + `GET /api/resumo/historico` (padrão últimos 12). Testes CA-14.x. | F-11 | BE | T-021 | Concluída | 2026-10-01 | 2026-10-01 | `resumo_service.historico` (padrão de 12 meses até o corrente com `hoje` injetável; `periodo_do_historico` com as duas pontas ou nenhuma, início ≤ fim e até 36 meses → 422 no campo; formato pela rota; lançamentos agrupados por mês numa passada; totais de cada mês pela `totalizar`, iguais ao resumo mensal; `por_categoria` só de gastos, alinhado aos meses, ordem pelo total no período; média por todos os meses com `ROUND_HALF_UP`; `linhas_ignoradas`), `_nome_e_cor` compartilhado com o resumo mensal, `ResumoHistoricoSaida`, `GET /api/resumo/historico`. 27 testes novos (814 no total), inclusive 5.000 linhas e 36 meses com uma leitura por aba; `ruff` limpo. CA-F11.1..10 (+ parte BE de CA-14.1 e CA-14.3). |
 | T-025 | Página `/historico`: seletor de intervalo, barras gastos x receitas, linha de saldo, barras empilhadas por categoria, total e média do período. | F-11 | FE | T-024, T-011 | Não iniciada | | | |
 
 ### M3 · Automação
@@ -157,6 +158,8 @@ Camadas: **BE** = backend · **FE** = frontend · **DOC** = documentação/infra
 
 | Data | Tarefa/Feature | Mudança | Observação |
 |---|---|---|---|
+| 2026-10-01 | T-024 | `Iniciada` → `Concluída` | Histórico no backend. `03` → 1.29 (§6.1 parâmetros do histórico; §6.3 `linhas_ignoradas` e regras de meses, ordem e média). Guarda de rotas com `GET /api/resumo/historico`. Nenhuma dependência nova. Contrato verificado pelos testes de API com planilha falsa; sem fumaça contra a planilha real (a conexão roda o bootstrap, que pode escrever nela). |
+| 2026-10-01 | T-024 | `Não iniciada` → `Iniciada` | Dependência T-021 `Concluída`; spec F-11 `Aprovada`. F-11 passa a `Iniciada` (§2) e o mapa (§3) foi atualizado. |
 | 2026-10-01 | F-11 | Spec da feature criada e **aprovada** | `features/F-11-historico.md`: Q1–Q6 respondidas (todas na opção recomendada). Q2 (intervalo com as duas pontas ou nenhuma, até 36 meses) e Q6 (`linhas_ignoradas` no `ResumoHistorico`) precisam `03` §6.1/§6.3 — T-024 aplica. Nenhum status de tarefa alterado. |
 | 2026-09-30 | F-10 | `Iniciada` → `Concluída` | Única tarefa (T-023) concluída; §2 e mapa (§3) atualizados. |
 | 2026-09-30 | T-023 | `Iniciada` → `Concluída` | Gráficos do mês. `03` → 1.28 (§3, §8.2.1). Nenhuma dependência nova (Chart.js já em `02` §1, ADR-11). |
