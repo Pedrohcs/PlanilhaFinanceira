@@ -80,7 +80,9 @@ def obter_parcelamento_service(
 def obter_recorrencia_service(
     repositorios: Annotated[Repositorios, Depends(obter_repositorios)],
 ) -> RecorrenciaService:
-    return RecorrenciaService(repositorios.categorias, repositorios.recorrencias)
+    return RecorrenciaService(
+        repositorios.categorias, repositorios.recorrencias, repositorios.lancamentos
+    )
 
 
 def obter_resumo_service(

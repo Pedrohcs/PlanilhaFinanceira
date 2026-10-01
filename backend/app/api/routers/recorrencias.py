@@ -1,12 +1,14 @@
-"""`/api/recorrencias` — cadastro, edição e status (REQ-09; F-13 §3.1).
-
-A sincronização (`POST /api/recorrencias/sincronizar`, REQ-10) chega em T-029.
-"""
+"""`/api/recorrencias` — cadastro, edição, status e sincronização (REQ-09, REQ-10; F-13)."""
 
 from fastapi import APIRouter, status
 
 from app.api.deps import RecorrenciaServiceDep
-from app.api.schemas import RecorrenciaEntrada, RecorrenciaSaida, StatusEntrada
+from app.api.schemas import (
+    RecorrenciaEntrada,
+    RecorrenciaSaida,
+    SincronizacaoSaida,
+    StatusEntrada,
+)
 
 router = APIRouter(prefix="/recorrencias", tags=["recorrencias"])
 
@@ -36,3 +38,9 @@ def mudar_status(
 ) -> RecorrenciaSaida:
     """Pausar, reativar (sem retroativos — RN-11) ou encerrar (definitivo)."""
     return RecorrenciaSaida.de(servico.mudar_status(id, entrada.status))
+
+
+@router.post("/sincronizar", response_model=SincronizacaoSaida)
+def sincronizar(servico: RecorrenciaServiceDep) -> SincronizacaoSaida:
+    """Gera os lançamentos devidos até o mês corrente (REQ-10); repetir não duplica (CA-10.2)."""
+    return SincronizacaoSaida.de(servico.sincronizar())

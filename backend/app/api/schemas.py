@@ -12,7 +12,7 @@ from app.domain.modelos import Data, Mes
 from app.services.categoria_service import CategoriaComUso, normalizar_nome
 from app.services.lancamento_service import LancamentoComCategoria, ListaDoMes
 from app.services.parcelamento_service import ParcelamentoCriado
-from app.services.recorrencia_service import RecorrenciaComProximo
+from app.services.recorrencia_service import RecorrenciaComProximo, Sincronizacao
 from app.services.resumo_service import HistoricoDoPeriodo, ResumoDoMes
 
 STATUS_OK = "ok"
@@ -272,6 +272,25 @@ class RecorrenciaSaida(BaseModel):
     @classmethod
     def de(cls, item: RecorrenciaComProximo) -> "RecorrenciaSaida":
         return cls(**item.recorrencia.model_dump(), proximo_mes=item.proximo_mes)
+
+
+class MesesGeradosSaida(BaseModel):
+    recorrencia_id: str
+    meses: list[str]
+
+
+class SincronizacaoSaida(BaseModel):
+    """`POST /api/recorrencias/sincronizar` (`SPECS/03` §6.1): só quem gerou algo em `detalhes`."""
+
+    lancamentos_gerados: int
+    detalhes: list[MesesGeradosSaida]
+
+    @classmethod
+    def de(cls, sincronizacao: Sincronizacao) -> "SincronizacaoSaida":
+        return cls(
+            lancamentos_gerados=sincronizacao.lancamentos_gerados,
+            detalhes=[MesesGeradosSaida(**vars(item)) for item in sincronizacao.detalhes],
+        )
 
 
 # Resumo (F-09) -----------------------------------------------------------------------

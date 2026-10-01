@@ -1,6 +1,6 @@
-"""Recorrências: cadastro, edição e status (REQ-09, RN-04..06, RN-09, RN-11; F-13 §3.1).
+"""Recorrências: cadastro, edição, status e sincronização (REQ-09, REQ-10, RN-04..06, RN-09..11).
 
-A sincronização (REQ-10, RN-10) chega em T-029. Os formatos de campo
+F-13 §3.1 (cadastro e status) e §3.2 (sincronização). Os formatos de campo
 (valor com 2 casas, dia de 1 a 31, `YYYY-MM`…) são garantidos na entrada da
 API e no modelo de domínio; aqui ficam as regras que dependem de outros dados
 — a categoria (RN-04), o mês de fim e as transições de status. Depende só de
@@ -8,16 +8,30 @@ API e no modelo de domínio; aqui ficam as regras que dependem de outros dados
 categorias.
 """
 
+import logging
+import threading
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime
 from decimal import Decimal
 
-from app.domain.datas import agora, mes_anterior, mes_de, proximo_mes
+from app.domain.datas import (
+    agora,
+    ajustar_dia,
+    ano_e_mes,
+    mes_anterior,
+    mes_de,
+    meses_entre,
+    proximo_mes,
+)
 from app.domain.enums import FormaPagamento, StatusRecorrencia, TipoLancamento
 from app.domain.erros import ErroValidacao, NaoEncontrado
-from app.domain.modelos import Recorrencia
-from app.repositories.base import CategoriaRepository, RecorrenciaRepository
+from app.domain.modelos import Lancamento, Recorrencia
+from app.repositories.base import (
+    CategoriaRepository,
+    LancamentoRepository,
+    RecorrenciaRepository,
+)
 from app.services.categoria_service import chave_do_nome
 from app.services.lancamento_service import gerar_id, validar_categoria_e_forma
 
@@ -32,6 +46,27 @@ MENSAGEM_ENCERRADA_NAO_EDITA = "Recorrência encerrada não pode ser editada."
 # Encerrar é definitivo: nenhuma transição sai de ENCERRADA (F-13 Q3).
 _TRANSICOES = {(ATIVA, PAUSADA), (PAUSADA, ATIVA), (ATIVA, ENCERRADA), (PAUSADA, ENCERRADA)}
 _ORDEM_DO_STATUS = {ATIVA: 0, PAUSADA: 1, ENCERRADA: 2}
+
+# Uma sincronização por vez no processo; editar e mudar status esperam por ela
+# (F-13 §3.2.1). Sem isso, duas abas abrindo juntas gerariam em dobro, e uma
+# edição feita no meio seria sobrescrita pela cópia antiga com a marca d'água nova.
+_TRAVA = threading.Lock()
+
+logger = logging.getLogger(__name__)
+
+
+@dataclass(frozen=True)
+class MesesGerados:
+    recorrencia_id: str
+    meses: list[str]
+
+
+@dataclass(frozen=True)
+class Sincronizacao:
+    """Resultado de `POST /api/recorrencias/sincronizar` (`03` §6.1)."""
+
+    lancamentos_gerados: int
+    detalhes: list[MesesGerados]  # só as recorrências que geraram algo
 
 
 @dataclass(frozen=True)
@@ -63,12 +98,14 @@ class RecorrenciaService:
         self,
         categorias: CategoriaRepository,
         recorrencias: RecorrenciaRepository,
+        lancamentos: LancamentoRepository,
         *,
         relogio: Callable[[], datetime] = agora,
         novo_id: Callable[[], str] = gerar_id,
     ) -> None:
         self._categorias = categorias
         self._recorrencias = recorrencias
+        self._lancamentos = lancamentos
         self._relogio = relogio
         self._novo_id = novo_id
 
@@ -136,6 +173,32 @@ class RecorrenciaService:
         Status, marca d'água e `criado_em` são preservados; nenhum lançamento
         já gerado é tocado.
         """
+        with _TRAVA:
+            return self._editar(
+                id,
+                tipo=tipo,
+                descricao=descricao,
+                valor=valor,
+                categoria_id=categoria_id,
+                forma_pagamento=forma_pagamento,
+                dia_do_mes=dia_do_mes,
+                mes_inicio=mes_inicio,
+                mes_fim=mes_fim,
+            )
+
+    def _editar(
+        self,
+        id: str,
+        *,
+        tipo: TipoLancamento,
+        descricao: str,
+        valor: Decimal,
+        categoria_id: str,
+        forma_pagamento: FormaPagamento | None,
+        dia_do_mes: int,
+        mes_inicio: str,
+        mes_fim: str | None,
+    ) -> RecorrenciaComProximo:
         atual = self._obter(id)  # 404 antes de qualquer regra
         if atual.status is ENCERRADA:
             raise ErroValidacao.no_campo("status", MENSAGEM_ENCERRADA_NAO_EDITA)
@@ -166,6 +229,10 @@ class RecorrenciaService:
 
     def mudar_status(self, id: str, status: StatusRecorrencia) -> RecorrenciaComProximo:
         """Pausar, reativar (sem retroativos — RN-11) ou encerrar (definitivo — F-13 Q3)."""
+        with _TRAVA:
+            return self._mudar_status(id, status)
+
+    def _mudar_status(self, id: str, status: StatusRecorrencia) -> RecorrenciaComProximo:
         atual = self._obter(id)
         if (atual.status, status) not in _TRANSICOES:
             raise ErroValidacao.no_campo(
@@ -188,6 +255,85 @@ class RecorrenciaService:
         )
         self._gravar(alterada)
         return _com_proximo(alterada)
+
+    def sincronizar(self) -> Sincronizacao:
+        """Gera os lançamentos devidos das recorrências ativas (REQ-10; `03` §4.4, F-13 §3.2).
+
+        Do mês seguinte à marca d'água até o corrente — nunca um mês futuro
+        (CA-10.4). Idempotente: sem nada a gerar, nada é escrito (CA-10.2); um
+        lançamento excluído não volta, porque está num mês ≤ marca d'água (RN-10).
+        """
+        with _TRAVA:
+            return self._sincronizar()
+
+    def _sincronizar(self) -> Sincronizacao:
+        instante = self._relogio()
+        corrente = mes_de(instante.date())
+        recorrencias = self._recorrencias.listar().itens
+        # Meses que já têm lançamento da recorrência: pulados, se uma sincronização
+        # anterior gravou os lançamentos e falhou antes da marca d'água (F-13 §3.2.5).
+        ja_gerados = {
+            (item.recorrencia_id, mes_de(item.data))
+            for item in self._lancamentos.listar().itens
+            if item.recorrencia_id is not None
+        }
+        novos: list[Lancamento] = []
+        avancadas: list[Recorrencia] = []
+        detalhes: list[MesesGerados] = []
+        for recorrencia in recorrencias:
+            primeiro = proximo_mes_a_gerar(recorrencia)  # None se não ativa ou vigência gerada
+            if primeiro is None:
+                continue
+            ultimo = min(corrente, recorrencia.mes_fim or corrente)
+            meses = meses_entre(primeiro, ultimo)  # vazio se o início é futuro
+            if not meses:
+                continue
+            gerar = [mes for mes in meses if (recorrencia.id, mes) not in ja_gerados]
+            novos.extend(self._lancamento(recorrencia, mes, instante) for mes in gerar)
+            if gerar:
+                detalhes.append(MesesGerados(recorrencia.id, gerar))
+            avancadas.append(
+                Recorrencia.model_validate(
+                    {
+                        **recorrencia.model_dump(),
+                        "ultimo_mes_gerado": ultimo,
+                        "atualizado_em": instante,
+                    }
+                )
+            )
+        # Lançamentos numa única chamada; depois, as marcas d'água (`03` §4.4).
+        # Nada a gerar → nenhuma escrita (CA-10.2; `02` §5.5).
+        if novos:
+            self._lancamentos.inserir(novos)
+        for recorrencia in avancadas:
+            try:
+                self._recorrencias.atualizar(recorrencia)
+            except NaoEncontrado:
+                # Apagada à mão no meio da sincronização: o resto segue (F-13 §3.2.6).
+                logger.warning(
+                    "Recorrência %s sumiu da planilha durante a sincronização.", recorrencia.id
+                )
+        return Sincronizacao(len(novos), detalhes)
+
+    def _lancamento(self, recorrencia: Recorrencia, mes: str, instante: datetime) -> Lancamento:
+        """Os dados atuais da recorrência valem para o que é gerado agora (CA-09.2).
+
+        A categoria não é validada: inativa ou apagada, gera mesmo assim (F-13 Q1).
+        """
+        ano, numero = ano_e_mes(mes)
+        return Lancamento(
+            id=self._novo_id(),
+            data=ajustar_dia(ano, numero, recorrencia.dia_do_mes),  # dia 31 → último dia (RN-09)
+            tipo=recorrencia.tipo,
+            descricao=recorrencia.descricao,
+            valor=recorrencia.valor,
+            categoria_id=recorrencia.categoria_id,
+            forma_pagamento=recorrencia.forma_pagamento,
+            observacao=None,
+            recorrencia_id=recorrencia.id,
+            criado_em=instante,
+            atualizado_em=instante,
+        )
 
     def _obter(self, id: str) -> Recorrencia:
         try:

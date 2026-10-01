@@ -84,7 +84,11 @@ class Cenario:
         )
         self.recorrencias = RecorrenciaRepositoryMemoria(list(itens))
         self.servico = RecorrenciaService(
-            self.categorias, self.recorrencias, relogio=lambda: agora, novo_id=lambda: "nova"
+            self.categorias,
+            self.recorrencias,
+            LancamentoRepositoryMemoria(),
+            relogio=lambda: agora,
+            novo_id=lambda: "nova",
         )
 
     def gravada(self, id_: str) -> Recorrencia:

@@ -7,6 +7,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.api.deps import Repositorios, obter_repositorios
+from app.domain.datas import mes_anterior, mes_corrente
 from app.infra import sheets_client
 from app.infra.schema_planilha import ABA_RECORRENCIAS
 from app.infra.sheets_client import PlanilhaAberta
@@ -228,6 +229,75 @@ def test_get_ordem_e_linha_invalida_ignorada__CA_09_1(monkeypatch: pytest.Monkey
 
 def test_get_503(cliente: TestClient) -> None:
     resposta = cliente.get("/api/recorrencias")
+
+    assert resposta.status_code == 503
+    assert resposta.json()["erro"]["codigo"] == "CREDENCIAIS_INVALIDAS"
+
+
+# Sincronização (T-029) ----------------------------------------------------------------
+
+
+def test_sincronizar_uma_insercao_e_sem_escrita_na_repeticao__CA_10_2(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """CA-F13.9/.10: um `append_rows` com os meses devidos e a marca d'água; repetir não escreve."""
+    corrente = mes_corrente()
+    anterior = mes_anterior(corrente)
+    cliente, documento = cliente_com_planilha(
+        monkeypatch,
+        linha("r", "Streaming", mes_inicio=anterior, dia_do_mes=31),
+        linha("p", "Pausada", mes_inicio=anterior, status="PAUSADA"),
+    )
+
+    with cliente:
+        escritas_antes = len(documento.escritas)
+        resposta = cliente.post("/api/recorrencias/sincronizar")
+        primeira = documento.escritas[escritas_antes:]
+        repetida = cliente.post("/api/recorrencias/sincronizar")
+        lista = cliente.get(f"/api/lancamentos?mes={corrente}").json()
+        recorrencias = cliente.get("/api/recorrencias").json()
+        escritas_depois = len(documento.escritas)
+
+    assert resposta.status_code == 200
+    assert resposta.json() == {
+        "lancamentos_gerados": 2,
+        "detalhes": [{"recorrencia_id": "r", "meses": [anterior, corrente]}],
+    }
+    assert [(escrita[0], escrita[1]) for escrita in primeira] == [
+        ("append_rows", "Lancamentos"),  # uma única inserção, com os dois meses
+        ("update", "Recorrencias"),  # só a recorrência que avançou
+    ]
+    assert len(primeira[0][2]) == 2
+    assert repetida.json() == {"lancamentos_gerados": 0, "detalhes": []}
+    assert escritas_depois == escritas_antes + 2  # a repetição não escreveu nada
+    [gerado] = lista["itens"]
+    assert gerado["recorrencia_id"] == "r"
+    assert gerado["data"].startswith(corrente)
+    assert {item["id"]: item["ultimo_mes_gerado"] for item in recorrencias} == {
+        "r": corrente,
+        "p": None,
+    }
+
+
+def test_sincronizar_linha_invalida_ignorada__CA_F13_19(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Borda 20: a linha quebrada não derruba a sincronização das outras."""
+    cliente, _ = cliente_com_planilha(
+        monkeypatch,
+        linha("ruim", "Quebrada", dia_do_mes=40, mes_inicio=mes_corrente()),
+        linha("boa", "Aluguel", mes_inicio=mes_corrente()),
+    )
+
+    with cliente:
+        corpo = cliente.post("/api/recorrencias/sincronizar").json()
+
+    assert corpo == {
+        "lancamentos_gerados": 1,
+        "detalhes": [{"recorrencia_id": "boa", "meses": [mes_corrente()]}],
+    }
+
+
+def test_sincronizar_503__CA_F13_19(cliente: TestClient) -> None:
+    resposta = cliente.post("/api/recorrencias/sincronizar")
 
     assert resposta.status_code == 503
     assert resposta.json()["erro"]["codigo"] == "CREDENCIAIS_INVALIDAS"

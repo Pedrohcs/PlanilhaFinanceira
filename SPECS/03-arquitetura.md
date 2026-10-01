@@ -3,7 +3,7 @@
 | Campo | Valor |
 |---|---|
 | Documento | `SPECS/03-arquitetura.md` |
-| Versão | 1.31 |
+| Versão | 1.32 |
 | Atualizado em | 2026-10-01 |
 | Status | Aprovado para início |
 | Responde | **Como** o sistema se organiza: componentes, pastas, camadas, modelo de dados na planilha, contrato da API e fluxos |
@@ -76,7 +76,8 @@ PlanilhaFinanceira/
 │   │   │                          # proximo_mes, mes_anterior, meses_entre, mes_corrente
 │   │   ├── services/              # categoria_service.py (T-013), lancamento_service.py (T-015),
 │   │   │                          # parcelamento_service.py (T-026), resumo_service.py (T-021),
-│   │   │                          # recorrencia_service.py (T-028: CRUD, status, `proximo_mes`)
+│   │   │                          # recorrencia_service.py (T-028: CRUD, status, `proximo_mes`;
+│   │   │                          # T-029: `sincronizar`, trava de uma sincronização por vez)
 │   │   ├── repositories/
 │   │   │   ├── base.py            # Protocols dos repositórios (`Repositorio[T]` + 3 específicos)
 │   │   │   ├── memoria/           # implementações em memória (testes), mesmo comportamento
@@ -184,14 +185,19 @@ class LancamentoRepository(Protocol):
 
 **Algoritmo de sincronização de recorrências** (REQ-10):
 ```text
+com a trava (uma sincronização por vez; editar e mudar status também esperam):
 para cada recorrência com status ATIVA:
     primeiro = max(mes_inicio, proximo_mes(ultimo_mes_gerado))   # se ultimo_mes_gerado vazio → mes_inicio
     ultimo   = min(mes_corrente, mes_fim or mes_corrente)
     para cada mes em [primeiro .. ultimo]:
-        gerar lançamento com data = ajustar_dia(mes, dia_do_mes), recorrencia_id = id
-    ultimo_mes_gerado = ultimo  (se gerou algo)
-inserir todos os lançamentos gerados em UMA chamada; depois atualizar as recorrências
+        se já existe lançamento com recorrencia_id = id nesse mês: pular   # falha parcial anterior
+        senão: gerar lançamento com data = ajustar_dia(mes, dia_do_mes), recorrencia_id = id
+    ultimo_mes_gerado = ultimo, atualizado_em = agora  (se o intervalo não era vazio)
+se gerou algo: inserir todos os lançamentos gerados em UMA chamada
+depois atualizar as recorrências que avançaram (uma que sumiu da planilha é ignorada)
+nada a gerar → nenhuma escrita
 ```
+A categoria não é validada na geração: inativa ou apagada à mão, o lançamento sai mesmo assim (F-13 Q1). O mês corrente é gerado mesmo antes do dia (F-13 Q2).
 Ao **reativar** uma recorrência pausada: `ultimo_mes_gerado = max(ultimo_mes_gerado, mes_anterior(mes_corrente))` (RN-11 — sem retroativos).
 
 ### 4.5 Inicialização (lifespan)
@@ -521,4 +527,5 @@ Quando o **backend não responde** (status 0, ou 502/504 sem o envelope de §6.2
 | 2026-10-01 | 1.29 | §6.1: parâmetros do histórico (os dois ou nenhum, até 36 meses); §6.3: `linhas_ignoradas` no `ResumoHistorico` e regras de meses, ordem e média (T-024; F-11 Q2, Q3, Q6). |
 | 2026-10-01 | 1.30 | §3: página do histórico (`seletor-intervalo.ts`, `periodo.ts`) e `dados` da diretiva como função das cores do tema; §8.2.1: cores de gasto e receita do tema, `--cor-receita` global (T-025). |
 | 2026-10-01 | 1.31 | §3: `recorrencia_service`; §6.2: erros de recorrência (campo `mes_fim`/`status`, 404); §6.3: regra de `proximo_mes`, ordem da listagem e transições de status (T-028). |
+| 2026-10-01 | 1.32 | §3: sincronização em `recorrencia_service`; §4.4: algoritmo com trava, mês já gerado pulado, nenhuma escrita sem nada a gerar e categoria não validada (T-029; F-13 Q1, Q2). |
 | 2026-09-29 | 1.1 | Frontend em Angular 22 (zoneless); pasta `shared/grafico/` com diretiva Chart.js própria (§3, §8.2.1). |

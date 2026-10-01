@@ -69,17 +69,17 @@ Cadastrar uma vez as contas e receitas que se repetem todo mês (aluguel, assina
 
 ### 3.2 Sincronização — `recorrencia_service.sincronizar` (T-029)
 
-1. **Uma sincronização por vez** no processo (trava): duas abas do navegador abrindo juntas não geram em dobro.
+1. **Uma sincronização por vez** no processo (trava): duas abas do navegador abrindo juntas não geram em dobro. **Editar e mudar status esperam** a sincronização em curso (mesma trava): senão a sincronização gravaria por cima da edição a cópia antiga da recorrência, só com a marca d'água nova (T-029).
 2. Lê `Recorrencias`, `Lancamentos` e `Categorias` (uma leitura de cada, pelo cache). `mes_corrente` do relógio local (injetável nos testes, como em F-11).
 3. Para cada recorrência **`ATIVA`** (`03` §4.4):
    - `primeiro = max(mes_inicio, proximo_mes(ultimo_mes_gerado))` (sem marca d'água → `mes_inicio`);
    - `ultimo = min(mes_corrente, mes_fim or mes_corrente)` — **nunca** um mês futuro (CA-10.4, RN-09);
    - para cada mês de `primeiro` a `ultimo`: um lançamento com `data = ajustar_dia(mes, dia_do_mes)` (dia 31 em fevereiro → 28/29 — RN-09), `tipo`, `descricao`, `valor`, `categoria_id`, `forma_pagamento` da recorrência **no momento da geração** (CA-09.2), observação vazia, `recorrencia_id = id`, `criado_em = atualizado_em = agora()`;
    - no mês corrente o lançamento é gerado **mesmo que o dia ainda não tenha chegado** (data futura dentro do mês) **(Q2)**;
-   - se gerou algo (ou pulou pela defesa do item 5), `ultimo_mes_gerado = ultimo`.
+   - se gerou algo (ou pulou pela defesa do item 5), `ultimo_mes_gerado = ultimo` e `atualizado_em = agora()`.
 4. **Categoria inativa ou apagada à mão:** gera normalmente (o lançamento aparece com o nome da categoria inativa, ou "Categoria não encontrada" — F-07). RN-04 vale para lançamentos registrados pelo usuário; desativar a categoria não para a recorrência — para isso existe pausar/encerrar **(Q1)**.
 5. **Defesa contra falha parcial:** um mês que já tem lançamento com o mesmo `recorrencia_id` é **pulado** (não gera de novo), mas conta para avançar a marca d'água. Cobre o caso de a escrita dos lançamentos dar certo e a das marcas d'água falhar (item 6). Não muda CA-10.3: um lançamento excluído está num mês ≤ marca d'água, que já não é gerado.
-6. **Escritas:** todos os lançamentos gerados numa **única** chamada (`inserir` em lote, `02` §5.5); **depois**, uma atualização por recorrência que avançou (`atualizar`). Sem nada a gerar → **nenhuma** escrita (CA-10.2).
+6. **Escritas:** todos os lançamentos gerados numa **única** chamada (`inserir` em lote, `02` §5.5); **depois**, uma atualização por recorrência que avançou (`atualizar`). Sem nada a gerar → **nenhuma** escrita (CA-10.2). Recorrência apagada à mão entre a leitura e a atualização: os lançamentos já gravados ficam e as demais recorrências seguem (não é erro) (T-029).
 7. **Resposta:** `{lancamentos_gerados: n, detalhes: [{recorrencia_id, meses: [YYYY-MM]}]}` — só as recorrências que geraram algo, meses em ordem.
 8. Planilha inacessível → 503 com a causa (F-02); nada é gravado pela metade além do previsto no item 5.
 
@@ -109,11 +109,11 @@ Cadastrar uma vez as contas e receitas que se repetem todo mês (aluguel, assina
 **Herdados de `01`**
 
 - [ ] **CA-09.1** Dado a tela de recorrências, então todas aparecem com seu estado (ativa/pausada/encerrada) e o próximo mês a gerar. *(T-028: a API devolve status e `proximo_mes` — CA-F13.7; falta a tela em T-030.)*
-- [ ] **CA-09.2** Dado uma recorrência editada, então só os lançamentos gerados **depois** da edição usam os novos dados. *(T-028: a edição não toca lançamentos e preserva a marca d'água — CA-F13.3; a geração com os dados novos é verificada em T-029 — CA-F13.15.)*
-- [ ] **CA-10.1** Dado uma recorrência ativa desde julho, e o app aberto pela primeira vez em setembro, então são gerados os lançamentos de julho, agosto e setembro.
-- [ ] **CA-10.2** Dado que o app é aberto várias vezes no mesmo mês, então nenhum lançamento é duplicado.
-- [ ] **CA-10.3** Dado que o usuário excluiu um lançamento gerado, quando o app é reaberto, então ele **não** é gerado de novo.
-- [ ] **CA-10.4** Nunca são gerados lançamentos para meses futuros.
+- [x] **CA-09.2** Dado uma recorrência editada, então só os lançamentos gerados **depois** da edição usam os novos dados. *(T-028: a edição não toca lançamentos e preserva a marca d'água — CA-F13.3; T-029: a geração seguinte usa os dados novos — CA-F13.15.)*
+- [ ] **CA-10.1** Dado uma recorrência ativa desde julho, e o app aberto pela primeira vez em setembro, então são gerados os lançamentos de julho, agosto e setembro. *(T-029: verificado na API — CA-F13.9 a .12; falta o disparo na abertura do app, T-030.)*
+- [ ] **CA-10.2** Dado que o app é aberto várias vezes no mesmo mês, então nenhum lançamento é duplicado. *(T-029: verificado na API — CA-F13.9 a .12; falta o disparo na abertura do app, T-030.)*
+- [ ] **CA-10.3** Dado que o usuário excluiu um lançamento gerado, quando o app é reaberto, então ele **não** é gerado de novo. *(T-029: verificado na API — CA-F13.9 a .12; falta o disparo na abertura do app, T-030.)*
+- [x] **CA-10.4** Nunca são gerados lançamentos para meses futuros. *(T-029: CA-F13.12; a abertura do app só chama a mesma sincronização.)*
 
 **Refinados — CRUD e status (T-028)**
 
@@ -128,17 +128,17 @@ Cadastrar uma vez as contas e receitas que se repetem todo mês (aluguel, assina
 
 **Refinados — sincronização (T-029)**
 
-- [ ] **CA-F13.9** Dado uma recorrência ativa desde `2026-07`, dia 10, nunca gerada, e hoje = 01/10/2026, quando `POST /api/recorrencias/sincronizar`, então 4 lançamentos (10/07, 10/08, 10/09 e 10/10 — o de outubro por Q2), todos com `recorrencia_id`, gravados numa **única** chamada de inserção, `ultimo_mes_gerado` = `2026-10` e a resposta lista os 4 meses (CA-10.1).
-- [ ] **CA-F13.10** Dado a sincronização repetida no mesmo mês, então `lancamentos_gerados` = 0 e **nenhuma** escrita na planilha (CA-10.2).
-- [ ] **CA-F13.11** Dado um lançamento gerado excluído (F-08), quando sincroniza de novo, então ele não volta (CA-10.3, RN-10).
-- [ ] **CA-F13.12** Dado `mes_inicio` no futuro, ou `mes_fim` no passado já todo gerado, então nada é gerado; nunca há lançamento com data em mês posterior ao corrente (CA-10.4).
-- [ ] **CA-F13.13** Dado `dia_do_mes` = 31 e o período jan–abr/2027, então as datas são 31/01, 28/02, 31/03 e 30/04 (RN-09); em 2028, 29/02.
-- [ ] **CA-F13.14** Dado recorrências pausadas e encerradas com meses pendentes, então nada é gerado para elas (RN-11).
-- [ ] **CA-F13.15** Dado uma recorrência editada depois de gerar julho e agosto, quando setembro é gerado, então setembro usa os dados novos e julho/agosto continuam como estavam (CA-09.2).
-- [ ] **CA-F13.16** Dado uma recorrência ativa com categoria desativada (ou apagada à mão), então o lançamento é gerado normalmente (Q1).
-- [ ] **CA-F13.17** Dado um lançamento da recorrência já existente em agosto e marca d'água em julho (falha parcial anterior), quando sincroniza, então agosto **não** é gerado de novo e a marca d'água avança.
-- [ ] **CA-F13.18** Dado duas sincronizações simultâneas, então os lançamentos saem uma vez só (trava).
-- [ ] **CA-F13.19** Dado a planilha inacessível, então 503 com a causa; dado uma linha inválida em `Recorrencias`, então ela é ignorada sem derrubar a sincronização.
+- [x] **CA-F13.9** Dado uma recorrência ativa desde `2026-07`, dia 10, nunca gerada, e hoje = 01/10/2026, quando `POST /api/recorrencias/sincronizar`, então 4 lançamentos (10/07, 10/08, 10/09 e 10/10 — o de outubro por Q2), todos com `recorrencia_id`, gravados numa **única** chamada de inserção, `ultimo_mes_gerado` = `2026-10` e a resposta lista os 4 meses (CA-10.1).
+- [x] **CA-F13.10** Dado a sincronização repetida no mesmo mês, então `lancamentos_gerados` = 0 e **nenhuma** escrita na planilha (CA-10.2).
+- [x] **CA-F13.11** Dado um lançamento gerado excluído (F-08), quando sincroniza de novo, então ele não volta (CA-10.3, RN-10).
+- [x] **CA-F13.12** Dado `mes_inicio` no futuro, ou `mes_fim` no passado já todo gerado, então nada é gerado; nunca há lançamento com data em mês posterior ao corrente (CA-10.4).
+- [x] **CA-F13.13** Dado `dia_do_mes` = 31 e o período jan–abr/2027, então as datas são 31/01, 28/02, 31/03 e 30/04 (RN-09); em 2028, 29/02.
+- [x] **CA-F13.14** Dado recorrências pausadas e encerradas com meses pendentes, então nada é gerado para elas (RN-11).
+- [x] **CA-F13.15** Dado uma recorrência editada depois de gerar julho e agosto, quando setembro é gerado, então setembro usa os dados novos e julho/agosto continuam como estavam (CA-09.2).
+- [x] **CA-F13.16** Dado uma recorrência ativa com categoria desativada (ou apagada à mão), então o lançamento é gerado normalmente (Q1).
+- [x] **CA-F13.17** Dado um lançamento da recorrência já existente em agosto e marca d'água em julho (falha parcial anterior), quando sincroniza, então agosto **não** é gerado de novo e a marca d'água avança.
+- [x] **CA-F13.18** Dado duas sincronizações simultâneas, então os lançamentos saem uma vez só (trava).
+- [x] **CA-F13.19** Dado a planilha inacessível, então 503 com a causa; dado uma linha inválida em `Recorrencias`, então ela é ignorada sem derrubar a sincronização.
 
 **Refinados — frontend (T-030)**
 
@@ -248,12 +248,13 @@ Cadastrar uma vez as contas e receitas que se repetem todo mês (aluguel, assina
 | `…::test_edicao_vale_para_proximos__CA_09_2` | unitário BE | CA-F13.15, borda 13 |
 | `…::test_categoria_inativa_ou_apagada_gera__CA_F13_16` | unitário BE | CA-F13.16, bordas 15–16 |
 | `…::test_pula_mes_ja_gerado__CA_F13_17` | unitário BE | CA-F13.17, bordas 17–18 |
-| `…::test_trava_sincronizacoes_simultaneas__CA_F13_18` (threads) | unitário BE | CA-F13.18, borda 19 |
+| `…::test_trava_sincronizacoes_simultaneas__CA_F13_18` · `test_edicao_espera_a_sincronizacao__CA_F13_18` (threads; ambos falham sem a trava, conferido) | unitário BE | CA-F13.18, borda 19, §3.2.1 |
+| `…::test_receita_sem_forma__RN_05` · `test_so_mes_ja_gerado_avanca_a_marca_sem_inserir` · `test_recorrencia_apagada_durante_sincronizacao` | unitário BE | borda 21, §3.2.5–6 |
 | `tests/api/test_recorrencias.py::test_post_201_formato_e_linha__CA_F13_1` (planilha falsa) | API BE | contrato §6, CA-F13.1 |
 | `…::test_422_409__CA_F13_2` (parametrizado: RN-01, RN-06, RN-09 no Pydantic) · `test_put_edita_e_404__CA_09_2` · `test_get_ordem_e_linha_invalida_ignorada__CA_09_1` · `test_get_503` | API BE | CA-F13.2, CA-F13.3, CA-F13.7, borda 20 |
 | `…::test_patch_status__CA_F13_5` | API BE | CA-F13.5 |
 | `…::test_sincronizar_uma_insercao_e_sem_escrita_na_repeticao__CA_10_2` (planilha falsa) | API BE | CA-F13.9, CA-F13.10 |
-| `…::test_linha_invalida_ignorada__CA_F13_19` · `test_503__CA_F13_19` | API BE | CA-F13.19, borda 20 |
+| `…::test_sincronizar_linha_invalida_ignorada__CA_F13_19` · `test_sincronizar_503__CA_F13_19` | API BE | CA-F13.19, borda 20 |
 | `tests/api/test_app.py` (guarda de rotas) | API BE | 5 rotas novas |
 | `frontend/…/core/api/recorrencias.api.spec.ts` | unitário FE | §6 |
 | `…/features/recorrencias/recorrencias.page.spec.ts` › `lista_com_estado_e_proximo_mes__CA_09_1` | unitário FE | CA-09.1, CA-F13.20 |
@@ -291,6 +292,8 @@ Ordem: T-028 → T-029 → T-030 (T-030 também depende de T-016 e T-012, conclu
 | Uma sincronização por vez no processo (trava). | Duas abas abrindo juntas não podem gerar em dobro (CA-10.2). | Não |
 | Sem nada a gerar, nenhuma escrita. | Abrir o app várias vezes não gasta cota da API do Google (`02` §5.5). | Não |
 | Nome e cor da categoria na lista vêm do `CategoriasStore`, não da API de recorrências. | O contrato de `03` §6.3 não traz nome/cor na `Recorrencia`; o store já está carregado. | Não |
+| `RecorrenciaService` recebe também o repositório de lançamentos (T-029). | A sincronização insere lançamentos e consulta os já gerados (defesa de §3.2.5). | Não |
+| A trava é um `threading.Lock` do módulo de serviço, não da requisição (T-029). | O serviço é criado a cada requisição; a trava tem de valer para o processo inteiro. | Não |
 | `StatusRecorrencia.rotulo` ("Ativa", "Pausada", "Encerrada") no domínio, como os outros enums (T-028). | Mensagem de transição inválida em pt-BR sem tabela de rótulos no serviço. | Não |
 | Empate de status e descrição na listagem → `criado_em` (T-028). | Ordem estável entre recargas. | Não |
 | Reativação usa o mês do mesmo relógio injetável de `criado_em`/`atualizado_em` (T-028). | Um só relógio nos testes; RN-11 testado com data fixa. | Não |
@@ -335,3 +338,5 @@ Texto original das questões, para registro:
 | 2026-10-01 | Criação (`/especificar-feature F-13`). Status `Rascunho` — 7 questões em aberto. Resolve (pendente de Q1) a pendência cruzada de F-05. |
 | 2026-10-01 | Q1–Q7 respondidas (todas na opção recomendada) → status **Aprovada**. Seis decisões em §10. P-04 e P-05 confirmadas (`01` → 1.2). Precisões em `03` §4.4/§6.2/§6.3 ficam para T-028/T-029. |
 | 2026-10-01 | T-028 concluída: CA-F13.1 a .8 verificados por teste; parte da API de CA-09.1 e CA-09.2. `03` → 1.31 (§3, §6.2, §6.3). Três decisões em §10. |
+| 2026-10-01 | T-029 (plano, aprovado pelo usuário): §3.2.1 editar/mudar status esperam a sincronização; §3.2.3 `atualizado_em` ao avançar a marca d'água; §3.2.6 recorrência apagada à mão durante a sincronização não é erro. |
+| 2026-10-01 | T-029 concluída: CA-F13.9 a .19, CA-09.2 e CA-10.4 verificados por teste; parte da API de CA-10.1 a 10.3 (falta o disparo na abertura, T-030). `03` → 1.32 (§3, §4.4). Duas decisões em §10. |
