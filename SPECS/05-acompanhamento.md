@@ -29,7 +29,7 @@
 | M4 · Acabamento | F-14..F-15 | 5 | 5 | 0 | 0 | 0% |
 | **Total** | **15** | **35** | **8** | **0** | **27** | **77%** |
 
-**M0, M1 e M2 concluídos (F-01 a F-11); F-12 concluída.** O caminho crítico (F-14) espera só F-13. Desbloqueada: **T-028** (BE, F-13, sem spec; próximo passo: `/especificar-feature F-13`). Pendentes com o usuário, sem bloquear: seguir o README com a planilha real (CA-F02.13), rodar `pytest -m integracao` (CA-15.1/15.2) e a conferência visual (CA-F04.7, CA-F04.30, CA-F05.20, F-06 borda 16, CA-F07.18, menu ⋮ de F-08 e caixa "Compra parcelada" de F-12 em 360 px, resumo de F-09, gráficos de F-10 e histórico de F-11 em 360 px, claro e escuro).
+**M0, M1 e M2 concluídos (F-01 a F-11); F-12 concluída.** O caminho crítico (F-14) espera só F-13. Desbloqueada: **T-028** (BE, F-13, spec aprovada; próximo passo: `/implementar-tarefa T-028`). Pendentes com o usuário, sem bloquear: seguir o README com a planilha real (CA-F02.13), rodar `pytest -m integracao` (CA-15.1/15.2) e a conferência visual (CA-F04.7, CA-F04.30, CA-F05.20, F-06 borda 16, CA-F07.18, menu ⋮ de F-08 e caixa "Compra parcelada" de F-12 em 360 px, resumo de F-09, gráficos de F-10 e histórico de F-11 em 360 px, claro e escuro).
 
 ---
 
@@ -49,7 +49,7 @@
 | F-10 | Gráficos do mês | M2 | Concluída | [`F-10-graficos-do-mes.md`](features/F-10-graficos-do-mes.md) (Concluída) |
 | F-11 | Histórico | M2 | Concluída | [`F-11-historico.md`](features/F-11-historico.md) (Concluída) |
 | F-12 | Parcelamentos | M3 | Concluída | [`F-12-parcelamentos.md`](features/F-12-parcelamentos.md) (Concluída) |
-| F-13 | Recorrências | M3 | Não iniciada | — |
+| F-13 | Recorrências | M3 | Não iniciada | [`F-13-recorrencias.md`](features/F-13-recorrencias.md) (Aprovada) |
 | F-14 | Polimento e resiliência | M4 | Não iniciada | — |
 | F-15 | Entrega local e verificação E2E | M4 | Não iniciada | — |
 
@@ -157,6 +157,7 @@ Camadas: **BE** = backend · **FE** = frontend · **DOC** = documentação/infra
 
 | Data | Tarefa/Feature | Mudança | Observação |
 |---|---|---|---|
+| 2026-10-01 | F-13 | Spec da feature criada e **aprovada** | `features/F-13-recorrencias.md`: Q1–Q7 respondidas (todas na opção recomendada). Pendência cruzada de F-05 decidida (Q1: gera com categoria desativada). **P-04 e P-05 confirmadas** (`01` → 1.2). Precisões em `03` §4.4/§6.2/§6.3 ficam para T-028/T-029. Nenhum status de tarefa alterado. |
 | 2026-10-01 | M2 | **Marco concluído** | F-09 a F-11 `Concluída`. Caminho crítico segue em F-13 (sem spec) → F-14. |
 | 2026-10-01 | F-11 | `Iniciada` → `Concluída` | Última tarefa (T-025) concluída; §2 e mapa (§3) atualizados. |
 | 2026-10-01 | T-025 | `Iniciada` → `Concluída` | Página do histórico. `02` → 1.11 (§4, `dados` como função das cores do tema — aprovado no plano), `03` → 1.30 (§3, §8.2.1). Nenhuma dependência nova. Pacote inicial de 476,21 para 477,37 kB: as funções novas de `utils/mes.ts` (já no pacote inicial, pelo `MesSelecionadoStore`) ficam nele para as páginas lazy usarem; o Chart.js segue só num pedaço lazy, agora compartilhado por resumo e histórico. Teste de rotas de F-04: `/historico` deixou de ser provisória. |

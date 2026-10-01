@@ -306,7 +306,7 @@ Ordem: T-013 → T-014 (`05` §4; T-014 também depende de T-011, já concluída
 - [x] **Q4** → opção **B**: `em_uso` na listagem; "Excluir" em categoria em uso oferece desativar (§3.6.3). `03` → 1.14.
 - [x] **Q5** → permitido desativar/excluir a última ativa de um tipo; F-06 orienta (§3.5.4).
 
-**Pendência cruzada (não bloqueia F-05):** recorrência ativa ligada a uma categoria desativada — gerar o lançamento mesmo assim ou pular? RN-04 exige categoria ativa "para novos lançamentos". Decidir ao especificar **F-13**.
+**Pendência cruzada (não bloqueia F-05):** recorrência ativa ligada a uma categoria desativada — gerar o lançamento mesmo assim ou pular? RN-04 exige categoria ativa "para novos lançamentos". Decidir ao especificar **F-13**. → **Decidida em F-13 Q1 (2026-10-01): gera normalmente**; desativar só esconde a categoria dos lançamentos novos.
 
 ---
 
@@ -319,3 +319,4 @@ Ordem: T-013 → T-014 (`05` §4; T-014 também depende de T-011, já concluída
 | 2026-09-30 | T-013 concluída: CA-11.1 e CA-F05.1 a .13, .21 a .23 verificados por teste; CA-11.2, .3 e .4 com a parte do backend verificada (o resto é T-014/F-07). Três decisões em §10. `03` → 1.15. |
 | 2026-09-30 | T-014 concluída → **feature Concluída**. CA-11.3 e CA-F05.14 a .19 e .24 verificados por teste; CA-11.2/.4 com a parte de F-05 feita (o resto é F-07/F-09); CA-F05.20 com conferência visual pendente. Cinco decisões em §10, incluindo a troca do `mat-nav-list` do shell (revisão registrada em F-04). `02` → 1.9, `03` → 1.16. |
 | 2026-09-30 | **Revisão (T-016, F-06 Q3):** o diálogo de categoria passa o marcador `TRATAMENTO_LOCAL` em criar/atualizar; um 409 (nome duplicado) aparece só no campo, sem o aviso repetido do interceptor. A página (desativar/reativar/excluir), que não mostra erro em campo, continua com o aviso. Teste `duplicada_so_no_campo__CA_F06_16`. |
+| 2026-10-01 | Pendência cruzada de §11 decidida em F-13 Q1: recorrência ativa com categoria desativada continua gerando. Sem mudança de comportamento em F-05. |

@@ -3,8 +3,8 @@
 | Campo | Valor |
 |---|---|
 | Documento | `SPECS/01-requisitos.md` |
-| Versão | 1.1 |
-| Atualizado em | 2026-09-29 |
+| Versão | 1.2 |
+| Atualizado em | 2026-10-01 |
 | Status | Em revisão (ver [Premissas a confirmar](#8-premissas-a-confirmar)) |
 | Responde | **O quê** o sistema faz e **por quê** — sem decisões técnicas |
 | Alimenta | `03-arquitetura.md`, `04-roadmap.md`, `features/F-xx-*.md` |
@@ -243,8 +243,8 @@ Decisões assumidas durante a escrita desta spec. Enquanto estiverem **"A confir
 | P-01 | Formas de pagamento são uma lista fixa (não gerenciável pelo usuário). | RN-05 | A confirmar |
 | P-02 | Gasto no cartão de crédito conta no mês da compra, não no mês da fatura. | RN-03 | A confirmar |
 | P-03 | Parcelamento informado pelo valor total; centavos residuais na 1ª parcela. | RN-07 | **Confirmada em 2026-09-29** |
-| P-04 | Recorrência tem valor fixo; contas variáveis (luz, água) são geradas com valor estimado e ajustadas manualmente. | RN-09 | A confirmar |
-| P-05 | Recorrências são geradas ao abrir o aplicativo (não em segundo plano). | REQ-10 | A confirmar |
+| P-04 | Recorrência tem valor fixo; contas variáveis (luz, água) são geradas com valor estimado e ajustadas manualmente. | RN-09 | **Confirmada em 2026-10-01** |
+| P-05 | Recorrências são geradas ao abrir o aplicativo (não em segundo plano). | REQ-10 | **Confirmada em 2026-10-01** |
 | P-06 | O usuário cria a planilha e a compartilha com o sistema; o sistema não cria a planilha em si, só a estrutura interna. | REQ-15 | A confirmar |
 | P-07 | Moeda única: real (BRL). | RN-01 | A confirmar |
 
@@ -256,3 +256,4 @@ Decisões assumidas durante a escrita desta spec. Enquanto estiverem **"A confir
 |---|---|---|
 | 2026-09-29 | 1.0 | Versão inicial. |
 | 2026-09-29 | 1.1 | §8: **P-03 confirmada** pelo usuário (parcelamento pelo valor total, resto de centavos na 1ª parcela). RN-07 permanece como estava. |
+| 2026-10-01 | 1.2 | §8: **P-04 e P-05 confirmadas** pelo usuário (F-13 Q7): recorrência com valor fixo; geração ao abrir o aplicativo. RN-09 e REQ-10 permanecem como estavam. |
