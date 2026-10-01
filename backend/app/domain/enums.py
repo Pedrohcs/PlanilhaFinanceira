@@ -37,6 +37,10 @@ class StatusRecorrencia(StrEnum):
     PAUSADA = "PAUSADA"
     ENCERRADA = "ENCERRADA"
 
+    @property
+    def rotulo(self) -> str:
+        return _ROTULOS_STATUS[self]
+
 
 _ROTULOS_TIPO = {
     TipoLancamento.GASTO: "Gasto",
@@ -50,4 +54,10 @@ _ROTULOS_FORMA = {
     FormaPagamento.DINHEIRO: "Dinheiro",
     FormaPagamento.BOLETO: "Boleto",
     FormaPagamento.TRANSFERENCIA: "Transferência",
+}
+
+_ROTULOS_STATUS = {
+    StatusRecorrencia.ATIVA: "Ativa",
+    StatusRecorrencia.PAUSADA: "Pausada",
+    StatusRecorrencia.ENCERRADA: "Encerrada",
 }

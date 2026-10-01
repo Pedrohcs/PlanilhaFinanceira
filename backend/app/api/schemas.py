@@ -7,11 +7,12 @@ from typing import Annotated, Literal
 from pydantic import BaseModel, BeforeValidator, Field, PlainSerializer
 
 from app.domain.dinheiro import PARCELAS_MAX, PARCELAS_MIN, Dinheiro, Montante
-from app.domain.enums import FormaPagamento, TipoLancamento
-from app.domain.modelos import Data
+from app.domain.enums import FormaPagamento, StatusRecorrencia, TipoLancamento
+from app.domain.modelos import Data, Mes
 from app.services.categoria_service import CategoriaComUso, normalizar_nome
 from app.services.lancamento_service import LancamentoComCategoria, ListaDoMes
 from app.services.parcelamento_service import ParcelamentoCriado
+from app.services.recorrencia_service import RecorrenciaComProximo
 from app.services.resumo_service import HistoricoDoPeriodo, ResumoDoMes
 
 STATUS_OK = "ok"
@@ -226,6 +227,51 @@ class ParcelamentoSaida(BaseModel):
             parcelamento_id=criado.parcelamento_id,
             lancamentos=[LancamentoSaida.de(item) for item in criado.lancamentos],
         )
+
+
+# Recorrências (F-13) -------------------------------------------------------------
+
+
+class RecorrenciaEntrada(BaseModel):
+    """`POST`/`PUT /api/recorrencias` (`SPECS/03` §6.3). Sem observação: a aba não tem a coluna."""
+
+    tipo: TipoLancamento
+    descricao: DescricaoEntrada
+    valor: Dinheiro
+    categoria_id: Annotated[str, Field(min_length=1)]
+    forma_pagamento: FormaPagamento | None = None
+    dia_do_mes: Annotated[int, Field(ge=1, le=31)]
+    mes_inicio: Mes
+    mes_fim: Mes | None = None
+
+
+class StatusEntrada(BaseModel):
+    """`PATCH /api/recorrencias/{id}/status` — pausar, reativar ou encerrar (F-13 §3.1.5)."""
+
+    status: StatusRecorrencia
+
+
+class RecorrenciaSaida(BaseModel):
+    """Recorrência na resposta (`SPECS/03` §6.3), com `proximo_mes` calculado."""
+
+    id: str
+    tipo: TipoLancamento
+    descricao: str
+    valor: Dinheiro
+    categoria_id: str
+    forma_pagamento: FormaPagamento | None
+    dia_do_mes: int
+    mes_inicio: str
+    mes_fim: str | None
+    status: StatusRecorrencia
+    ultimo_mes_gerado: str | None
+    proximo_mes: str | None
+    criado_em: datetime
+    atualizado_em: datetime
+
+    @classmethod
+    def de(cls, item: RecorrenciaComProximo) -> "RecorrenciaSaida":
+        return cls(**item.recorrencia.model_dump(), proximo_mes=item.proximo_mes)
 
 
 # Resumo (F-09) -----------------------------------------------------------------------

@@ -101,7 +101,7 @@ def validar_categoria_e_forma(
 
 
 def gerar_id() -> str:
-    """`uuid4().hex` para lançamentos e parcelamentos (`SPECS/02` §3)."""
+    """`uuid4().hex` para lançamentos, parcelamentos e recorrências (`SPECS/02` §3)."""
     return uuid4().hex
 
 

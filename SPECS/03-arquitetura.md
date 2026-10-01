@@ -3,7 +3,7 @@
 | Campo | Valor |
 |---|---|
 | Documento | `SPECS/03-arquitetura.md` |
-| Versão | 1.30 |
+| Versão | 1.31 |
 | Atualizado em | 2026-10-01 |
 | Status | Aprovado para início |
 | Responde | **Como** o sistema se organiza: componentes, pastas, camadas, modelo de dados na planilha, contrato da API e fluxos |
@@ -75,8 +75,8 @@ PlanilhaFinanceira/
 │   │   │   └── datas.py           # ajustar_dia, somar_meses, data_da_parcela, mes_de,
 │   │   │                          # proximo_mes, mes_anterior, meses_entre, mes_corrente
 │   │   ├── services/              # categoria_service.py (T-013), lancamento_service.py (T-015),
-│   │   │                          # parcelamento_service.py (T-026), resumo_service.py (T-021);
-│   │   │                          # recorrencia
+│   │   │                          # parcelamento_service.py (T-026), resumo_service.py (T-021),
+│   │   │                          # recorrencia_service.py (T-028: CRUD, status, `proximo_mes`)
 │   │   ├── repositories/
 │   │   │   ├── base.py            # Protocols dos repositórios (`Repositorio[T]` + 3 específicos)
 │   │   │   ├── memoria/           # implementações em memória (testes), mesmo comportamento
@@ -327,7 +327,7 @@ Base: `/api`. JSON em `snake_case`. Valores monetários como número com 2 casas
 | 404 | `NAO_ENCONTRADO` | `id` inexistente |
 | 409 | `CATEGORIA_DUPLICADA`, `CATEGORIA_EM_USO`, `CATEGORIA_INATIVA`, `CATEGORIA_TIPO_INCOMPATIVEL` | Conflitos de regra |
 
-Regras de negócio violadas **num campo** (ex.: categoria inexistente, gasto sem forma de pagamento) também saem como 422 `VALIDACAO`, com o campo em `detalhes` — o formulário marca o campo certo (F-06 §3.4).
+Regras de negócio violadas **num campo** (ex.: categoria inexistente, gasto sem forma de pagamento) também saem como 422 `VALIDACAO`, com o campo em `detalhes` — o formulário marca o campo certo (F-06 §3.4). Em recorrências: `mes_fim` antes de `mes_inicio` → campo `mes_fim`; transição de status inválida ou edição de recorrência encerrada → campo `status`; `id` inexistente → 404 "Recorrência não encontrada." (F-13).
 | 503 | `PLANILHA_INDISPONIVEL`, `SEM_PERMISSAO_PLANILHA`, `PLANILHA_NAO_ENCONTRADA`, `CREDENCIAIS_INVALIDAS`, `API_SHEETS_DESABILITADA`, `SCHEMA_PLANILHA_INVALIDO` | Falhas no Google e na estrutura da planilha (ver `02` §5.6) |
 | 500 | `ERRO_INTERNO` | Não previsto (mensagem genérica; detalhe só no log) |
 
@@ -376,6 +376,10 @@ Erros do próprio framework também saem neste envelope: rota inexistente vira 4
   "forma_pagamento": "CREDITO", "dia_do_mes": 10, "mes_inicio": "2026-07", "mes_fim": null }
 
 // Recorrencia = RecorrenciaEntrada + { "id", "status", "ultimo_mes_gerado", "proximo_mes", "criado_em", "atualizado_em" }
+// proximo_mes (calculado, não é coluna): ATIVA → max(mes_inicio, proximo_mes(ultimo_mes_gerado)),
+//   ou null se passar de mes_fim; PAUSADA e ENCERRADA → null. Pode ser um mês futuro.
+// GET /api/recorrencias: ATIVA, PAUSADA, ENCERRADA; dentro de cada, descrição sem acento/caixa.
+// Transições (PATCH .../status): ATIVA↔PAUSADA, ATIVA|PAUSADA → ENCERRADA (definitivo, F-13 Q3).
 
 // ResumoMensal
 { "mes": "2026-09", "total_gastos": 0, "total_receitas": 0, "saldo": 0,
@@ -516,4 +520,5 @@ Quando o **backend não responde** (status 0, ou 502/504 sem o envelope de §6.2
 | 2026-09-30 | 1.28 | §3 e §8.2.1: gráficos do resumo e cor de destaque do tema nos padrões de `grafico.config.ts` (T-023). |
 | 2026-10-01 | 1.29 | §6.1: parâmetros do histórico (os dois ou nenhum, até 36 meses); §6.3: `linhas_ignoradas` no `ResumoHistorico` e regras de meses, ordem e média (T-024; F-11 Q2, Q3, Q6). |
 | 2026-10-01 | 1.30 | §3: página do histórico (`seletor-intervalo.ts`, `periodo.ts`) e `dados` da diretiva como função das cores do tema; §8.2.1: cores de gasto e receita do tema, `--cor-receita` global (T-025). |
+| 2026-10-01 | 1.31 | §3: `recorrencia_service`; §6.2: erros de recorrência (campo `mes_fim`/`status`, 404); §6.3: regra de `proximo_mes`, ordem da listagem e transições de status (T-028). |
 | 2026-09-29 | 1.1 | Frontend em Angular 22 (zoneless); pasta `shared/grafico/` com diretiva Chart.js própria (§3, §8.2.1). |

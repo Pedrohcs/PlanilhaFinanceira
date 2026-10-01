@@ -19,6 +19,7 @@ from app.api.routers import (
     health,
     lancamentos,
     parcelamentos,
+    recorrencias,
     resumo,
 )
 from app.config import Settings, obter_settings
@@ -83,6 +84,7 @@ def criar_app(settings: Settings | None = None, conexao: ConexaoPlanilha | None 
     app.include_router(formas_pagamento.router, prefix=PREFIXO_API)
     app.include_router(lancamentos.router, prefix=PREFIXO_API)
     app.include_router(parcelamentos.router, prefix=PREFIXO_API)
+    app.include_router(recorrencias.router, prefix=PREFIXO_API)
     app.include_router(resumo.router, prefix=PREFIXO_API)
     return app
 

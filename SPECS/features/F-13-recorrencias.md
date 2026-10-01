@@ -108,8 +108,8 @@ Cadastrar uma vez as contas e receitas que se repetem todo mês (aluguel, assina
 
 **Herdados de `01`**
 
-- [ ] **CA-09.1** Dado a tela de recorrências, então todas aparecem com seu estado (ativa/pausada/encerrada) e o próximo mês a gerar.
-- [ ] **CA-09.2** Dado uma recorrência editada, então só os lançamentos gerados **depois** da edição usam os novos dados.
+- [ ] **CA-09.1** Dado a tela de recorrências, então todas aparecem com seu estado (ativa/pausada/encerrada) e o próximo mês a gerar. *(T-028: a API devolve status e `proximo_mes` — CA-F13.7; falta a tela em T-030.)*
+- [ ] **CA-09.2** Dado uma recorrência editada, então só os lançamentos gerados **depois** da edição usam os novos dados. *(T-028: a edição não toca lançamentos e preserva a marca d'água — CA-F13.3; a geração com os dados novos é verificada em T-029 — CA-F13.15.)*
 - [ ] **CA-10.1** Dado uma recorrência ativa desde julho, e o app aberto pela primeira vez em setembro, então são gerados os lançamentos de julho, agosto e setembro.
 - [ ] **CA-10.2** Dado que o app é aberto várias vezes no mesmo mês, então nenhum lançamento é duplicado.
 - [ ] **CA-10.3** Dado que o usuário excluiu um lançamento gerado, quando o app é reaberto, então ele **não** é gerado de novo.
@@ -117,14 +117,14 @@ Cadastrar uma vez as contas e receitas que se repetem todo mês (aluguel, assina
 
 **Refinados — CRUD e status (T-028)**
 
-- [ ] **CA-F13.1** Dado uma `RecorrenciaEntrada` válida, quando `POST /api/recorrencias`, então 201 com `status` `ATIVA`, `ultimo_mes_gerado` `null`, `proximo_mes` = `mes_inicio`, e **uma** linha nova na aba `Recorrencias` (colunas de `03` §5.3).
-- [ ] **CA-F13.2** Dado descrição vazia/101 caracteres, valor ≤ 0 ou com 3 casas, `dia_do_mes` 0 ou 32, mês fora de `YYYY-MM`, `mes_fim` < `mes_inicio`, gasto sem forma ou categoria inexistente, então 422 `VALIDACAO` no campo certo; categoria de outro tipo ou inativa → 409 com o código de F-06.
-- [ ] **CA-F13.3** Dado uma recorrência com lançamentos gerados, quando `PUT` muda valor, descrição, categoria e dia, então 200 com os dados novos, `status`/`ultimo_mes_gerado`/`criado_em` preservados, e nenhum lançamento já gerado muda (CA-09.2).
-- [ ] **CA-F13.4** Dado `PUT` com a categoria atual inativa, então 200 (F-08 Q1); trocar para outra inativa → 409 `CATEGORIA_INATIVA`.
-- [ ] **CA-F13.5** Dado as transições de §3.1.5, então as válidas dão 200 com o status novo e as inválidas (mesmo status, sair de `ENCERRADA`) dão 422 no campo `status`; `id` inexistente → 404 em `PUT` e `PATCH`.
-- [ ] **CA-F13.6** Dado uma recorrência pausada em junho com `ultimo_mes_gerado` = `2026-05`, quando reativada em setembro de 2026, então `ultimo_mes_gerado` = `2026-08` e `proximo_mes` = `2026-09` (RN-11: junho a agosto não são gerados).
-- [ ] **CA-F13.7** Dado recorrências nos três status, então `GET` as traz na ordem de §3.1.6, com `proximo_mes` de §3.1.7 (ativa nunca gerada, ativa em dia, ativa com `mes_fim` passado → `null`, pausada e encerrada → `null`).
-- [ ] **CA-F13.8** Dado `PUT` numa recorrência encerrada, então 422 no campo `status` (Q3).
+- [x] **CA-F13.1** Dado uma `RecorrenciaEntrada` válida, quando `POST /api/recorrencias`, então 201 com `status` `ATIVA`, `ultimo_mes_gerado` `null`, `proximo_mes` = `mes_inicio`, e **uma** linha nova na aba `Recorrencias` (colunas de `03` §5.3).
+- [x] **CA-F13.2** Dado descrição vazia/101 caracteres, valor ≤ 0 ou com 3 casas, `dia_do_mes` 0 ou 32, mês fora de `YYYY-MM`, `mes_fim` < `mes_inicio`, gasto sem forma ou categoria inexistente, então 422 `VALIDACAO` no campo certo; categoria de outro tipo ou inativa → 409 com o código de F-06.
+- [x] **CA-F13.3** Dado uma recorrência com lançamentos gerados, quando `PUT` muda valor, descrição, categoria e dia, então 200 com os dados novos, `status`/`ultimo_mes_gerado`/`criado_em` preservados, e nenhum lançamento já gerado muda (CA-09.2).
+- [x] **CA-F13.4** Dado `PUT` com a categoria atual inativa, então 200 (F-08 Q1); trocar para outra inativa → 409 `CATEGORIA_INATIVA`.
+- [x] **CA-F13.5** Dado as transições de §3.1.5, então as válidas dão 200 com o status novo e as inválidas (mesmo status, sair de `ENCERRADA`) dão 422 no campo `status`; `id` inexistente → 404 em `PUT` e `PATCH`.
+- [x] **CA-F13.6** Dado uma recorrência pausada em junho com `ultimo_mes_gerado` = `2026-05`, quando reativada em setembro de 2026, então `ultimo_mes_gerado` = `2026-08` e `proximo_mes` = `2026-09` (RN-11: junho a agosto não são gerados).
+- [x] **CA-F13.7** Dado recorrências nos três status, então `GET` as traz na ordem de §3.1.6, com `proximo_mes` de §3.1.7 (ativa nunca gerada, ativa em dia, ativa com `mes_fim` passado → `null`, pausada e encerrada → `null`).
+- [x] **CA-F13.8** Dado `PUT` numa recorrência encerrada, então 422 no campo `status` (Q3).
 
 **Refinados — sincronização (T-029)**
 
@@ -232,10 +232,10 @@ Cadastrar uma vez as contas e receitas que se repetem todo mês (aluguel, assina
 | Teste | Nível | Cobre |
 |---|---|---|
 | `tests/unit/test_recorrencia_service.py::test_criar__CA_F13_1` | unitário BE | CA-F13.1 |
-| `…::test_validacoes__CA_F13_2` (parametrizado) | unitário BE | CA-F13.2, RN-01, RN-04..06, RN-09 |
+| `…::test_validacoes__CA_F13_2` (parametrizado) · `test_criar_receita_sem_forma_e_inicio_no_passado__RN_05` · `test_mes_fim_igual_ao_inicio_e_aceito` | unitário BE | CA-F13.2, RN-04, RN-05, bordas 21–22 |
 | `…::test_editar_nao_muda_gerados__CA_09_2` | unitário BE | CA-09.2, CA-F13.3, borda 13 |
 | `…::test_editar_categoria_atual_inativa__CA_F13_4` | unitário BE | CA-F13.4 |
-| `…::test_transicoes_de_status__CA_F13_5` (parametrizado) | unitário BE | CA-F13.5, borda 12 |
+| `…::test_transicoes_de_status__CA_F13_5` (parametrizado) · `test_mudar_status_inexistente_404` · `test_pausar_e_encerrar_nao_mexem_na_marca_dagua__RN_11` | unitário BE | CA-F13.5, borda 12 |
 | `…::test_reativar_sem_retroativos__RN_11` (parametrizado: bordas 9–11) | unitário BE | CA-F13.6, RN-11 |
 | `…::test_listar_ordem_e_proximo_mes__CA_09_1` | unitário BE | CA-09.1, CA-F13.7, bordas 6–7 |
 | `…::test_editar_encerrada__CA_F13_8` | unitário BE | CA-F13.8 |
@@ -250,7 +250,7 @@ Cadastrar uma vez as contas e receitas que se repetem todo mês (aluguel, assina
 | `…::test_pula_mes_ja_gerado__CA_F13_17` | unitário BE | CA-F13.17, bordas 17–18 |
 | `…::test_trava_sincronizacoes_simultaneas__CA_F13_18` (threads) | unitário BE | CA-F13.18, borda 19 |
 | `tests/api/test_recorrencias.py::test_post_201_formato_e_linha__CA_F13_1` (planilha falsa) | API BE | contrato §6, CA-F13.1 |
-| `…::test_422_409_404__CA_F13_2` | API BE | CA-F13.2, CA-F13.5 |
+| `…::test_422_409__CA_F13_2` (parametrizado: RN-01, RN-06, RN-09 no Pydantic) · `test_put_edita_e_404__CA_09_2` · `test_get_ordem_e_linha_invalida_ignorada__CA_09_1` · `test_get_503` | API BE | CA-F13.2, CA-F13.3, CA-F13.7, borda 20 |
 | `…::test_patch_status__CA_F13_5` | API BE | CA-F13.5 |
 | `…::test_sincronizar_uma_insercao_e_sem_escrita_na_repeticao__CA_10_2` (planilha falsa) | API BE | CA-F13.9, CA-F13.10 |
 | `…::test_linha_invalida_ignorada__CA_F13_19` · `test_503__CA_F13_19` | API BE | CA-F13.19, borda 20 |
@@ -291,6 +291,9 @@ Ordem: T-028 → T-029 → T-030 (T-030 também depende de T-016 e T-012, conclu
 | Uma sincronização por vez no processo (trava). | Duas abas abrindo juntas não podem gerar em dobro (CA-10.2). | Não |
 | Sem nada a gerar, nenhuma escrita. | Abrir o app várias vezes não gasta cota da API do Google (`02` §5.5). | Não |
 | Nome e cor da categoria na lista vêm do `CategoriasStore`, não da API de recorrências. | O contrato de `03` §6.3 não traz nome/cor na `Recorrencia`; o store já está carregado. | Não |
+| `StatusRecorrencia.rotulo` ("Ativa", "Pausada", "Encerrada") no domínio, como os outros enums (T-028). | Mensagem de transição inválida em pt-BR sem tabela de rótulos no serviço. | Não |
+| Empate de status e descrição na listagem → `criado_em` (T-028). | Ordem estável entre recargas. | Não |
+| Reativação usa o mês do mesmo relógio injetável de `criado_em`/`atualizado_em` (T-028). | Um só relógio nos testes; RN-11 testado com data fixa. | Não |
 | Sem excluir recorrência. | REQ-09 pede encerrar, não excluir; a categoria usada por recorrência encerrada continua "em uso" (F-05). | Não |
 | Categoria desativada ou apagada não para a geração (Q1). | Desativar só esconde a categoria dos lançamentos novos (CA-11.4); parar a recorrência é pausar/encerrar. Fecha a pendência cruzada de F-05. | Não |
 | Mês corrente gerado mesmo antes do dia (Q2). | É o algoritmo de `03` §4.4 (por mês, não por dia); a conta já entra no saldo do mês. | Não |
@@ -331,3 +334,4 @@ Texto original das questões, para registro:
 |---|---|
 | 2026-10-01 | Criação (`/especificar-feature F-13`). Status `Rascunho` — 7 questões em aberto. Resolve (pendente de Q1) a pendência cruzada de F-05. |
 | 2026-10-01 | Q1–Q7 respondidas (todas na opção recomendada) → status **Aprovada**. Seis decisões em §10. P-04 e P-05 confirmadas (`01` → 1.2). Precisões em `03` §4.4/§6.2/§6.3 ficam para T-028/T-029. |
+| 2026-10-01 | T-028 concluída: CA-F13.1 a .8 verificados por teste; parte da API de CA-09.1 e CA-09.2. `03` → 1.31 (§3, §6.2, §6.3). Três decisões em §10. |
