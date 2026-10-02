@@ -98,7 +98,30 @@ O `.env` não é versionado. O `.env.example` é.
 
 ## 3. Como rodar
 
-### Backend (pasta `backend/`)
+### Com um comando (recomendado)
+
+Na pasta do projeto:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\start.ps1
+```
+
+O script:
+
+1. confere o Python e o Node.js (seção 1) e se o `backend/.env` existe (passo 2.5);
+2. na primeira vez, cria a `backend/.venv` e instala as dependências do backend e do frontend — pode levar alguns minutos;
+3. abre duas janelas, **"Planilha Financeira — backend"** e **"Planilha Financeira — frontend"**, com os logs de cada parte;
+4. espera as duas responderem e abre <http://localhost:4200> no navegador.
+
+Se o aplicativo já estiver rodando, ele só abre o navegador. Se só uma parte estiver no ar (você fechou uma das janelas), sobe só a que falta. Para parar, feche as duas janelas (ou Ctrl+C em cada uma).
+
+O `-ExecutionPolicy Bypass` vale só para esse comando: não muda a configuração do Windows. Também dá para subir cada parte sozinha com `scripts\start-backend.ps1` e `scripts\start-frontend.ps1`, do mesmo jeito.
+
+### Manualmente
+
+Útil para desenvolver (o backend recarrega a cada alteração com `--reload`).
+
+#### Backend (pasta `backend/`)
 
 ```powershell
 cd backend
@@ -112,7 +135,7 @@ uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 - Documentação interativa: <http://127.0.0.1:8000/docs>
 - Estado da conexão: <http://127.0.0.1:8000/api/health>
 
-### Frontend (pasta `frontend/`)
+#### Frontend (pasta `frontend/`)
 
 ```powershell
 cd frontend
@@ -170,7 +193,7 @@ PlanilhaFinanceira/
 ├── SPECS/            # fonte da verdade: requisitos, arquitetura, roadmap, acompanhamento
 ├── backend/          # FastAPI + gspread
 ├── frontend/         # Angular 22
-├── scripts/          # scripts de execução (em construção)
+├── scripts/          # start.ps1 (sobe tudo e abre o navegador), start-backend.ps1, start-frontend.ps1
 └── credentials.json  # sua chave da conta de serviço — nunca versionada
 ```
 

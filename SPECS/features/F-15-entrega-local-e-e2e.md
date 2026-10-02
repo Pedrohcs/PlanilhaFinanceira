@@ -50,19 +50,23 @@ Todos em PowerShell (Windows, `02` §1), com caminhos relativos ao próprio scri
 
 1. **`scripts/start-backend.ps1`**
    1. Confere o Python (`python --version` ≥ 3.12, `02` §1). Se faltar ou for antigo: "Python 3.12 ou superior não encontrado. Veja o README, seção 1." e sai com código ≠ 0.
-   2. Se `backend/.venv` não existe, cria e instala `requirements.txt` **(Q3)**.
+   2. Se `backend/.venv` não existe, cria; e instala `requirements.txt` quando a `.venv` acabou de ser criada **ou** quando `import fastapi, gspread, uvicorn` falha nela (preparação interrompida antes) **(Q3)**.
    3. Se `backend/.env` não existe: "Falta o arquivo backend/.env. Copie backend/.env.example e preencha SPREADSHEET_ID (README, seção 2.5)." e sai com código ≠ 0. O conteúdo não é validado aqui: SPREADSHEET_ID vazio já gera a mensagem do próprio backend, e problemas de credencial ou planilha aparecem no banner (`/api/health`).
    4. Sobe `uvicorn app.main:app --host 127.0.0.1 --port 8000`, **sem `--reload`** **(Q1)**, usando o Python da `.venv`, sem exigir que o usuário a ative.
+   5. Com `-SoPreparar`, faz os passos 1–3 e termina com código 0, sem subir o servidor (usado pelo `start.ps1`, item 3.3).
 2. **`scripts/start-frontend.ps1`**
    1. Confere o Node (24 LTS ou `^22.22.3`, `02` §1), com mensagem e saída ≠ 0 se faltar.
-   2. Se `frontend/node_modules` não existe, roda `npm install` **(Q3)**.
+   2. Se falta `frontend/node_modules\.bin\ng.cmd` (sem `node_modules` ou instalação interrompida), roda `npm install` **(Q3)**.
    3. Sobe `npm start` (`ng serve` com o proxy `/api` → 8000; `http://localhost:4200`) **(Q1)**.
-3. **`scripts/start.ps1`** **(Q2)**
-   1. Se `http://127.0.0.1:8000/api/health` já responde e `http://localhost:4200` também, o app já está rodando: só abre o navegador e termina.
-   2. Se a porta 8000 ou 4200 está ocupada por outro programa: "A porta 8000 está em uso por outro programa. Feche-o ou veja o README, seção 5." e sai sem subir nada.
-   3. Abre **uma janela do PowerShell para cada parte**, com os títulos "Planilha Financeira — backend" e "Planilha Financeira — frontend", rodando os dois scripts acima. Os logs ficam visíveis, e fechar a janela (ou Ctrl+C nela) para aquela parte.
-   4. Espera o `/api/health` responder (até 60 s) e depois `http://localhost:4200` (até 180 s, porque o primeiro `ng serve` compila tudo). Assim que o frontend responde, abre o navegador padrão em `http://localhost:4200`.
-   5. Esgotado o tempo: "O backend (ou frontend) não respondeu em N s. Veja a janela dele para o erro." Nada é encerrado, para o usuário poder ler o log.
+   4. Com `-SoPreparar`, faz os passos 1–2 e termina com código 0, sem subir o servidor.
+3. **`scripts/start.ps1`** **(Q2)** — decide **parte por parte** (backend na 8000, frontend na 4200):
+   1. **Reconhece o app:** o backend é este app se `http://127.0.0.1:8000/api/health` responde JSON com o campo `planilha`; o frontend é este app se `http://localhost:4200` devolve uma página com `<title>Planilha Financeira</title>`.
+   2. Parte já no ar → não sobe de novo. As duas no ar: "O aplicativo já está rodando. Abrindo o navegador." e só abre o navegador.
+   3. Porta ocupada por **outro** programa (alguém escuta na porta, mas não é este app): "A porta 8000 está em uso por outro programa. Feche-o ou veja o README, seção 5." e sai **sem subir nada** (nem a outra parte).
+   4. **Preparação antes de contar o tempo:** para cada parte a subir, roda o script dela com `-SoPreparar` **na própria janela** (verificações, `.venv`/`pip install`, `npm install`). Se falhar, a mensagem já foi mostrada e o `start.ps1` termina sem abrir janelas.
+   5. Abre **uma janela do PowerShell para cada parte a subir**, com os títulos "Planilha Financeira — backend" e "Planilha Financeira — frontend", rodando os dois scripts acima. Os logs ficam visíveis, e fechar a janela (ou Ctrl+C nela) para aquela parte.
+   6. Espera o `/api/health` responder (até 60 s) e depois `http://localhost:4200` (até 180 s, porque o primeiro `ng serve` compila tudo). Assim que o frontend responde, abre o navegador padrão em `http://localhost:4200`.
+   7. Esgotado o tempo: "O backend (ou frontend) não respondeu em N s. Veja a janela dele para o erro." Nada é encerrado, para o usuário poder ler o log.
 4. **Como executar:** `powershell -ExecutionPolicy Bypass -File .\scripts\start.ps1` (documentado no README). Isso evita exigir uma mudança permanente da política de execução do Windows (configuração do sistema).
 
 ### 3.2 Suíte de integração (T-034)
@@ -150,7 +154,7 @@ Todos em PowerShell (Windows, `02` §1), com caminhos relativos ao próprio scri
 ### 3.4 README final (T-035)
 
 1. **Como rodar** passa a começar por `scripts/start.ps1` (com o comando de §3.1.4). Os comandos manuais continuam como alternativa: `test_readme.py` exige `uvicorn app.main:app` e `npm start`.
-2. **Estrutura:** `scripts/` deixa de ser "(em construção)".
+2. **Estrutura:** `scripts/` deixa de ser "(em construção)" (feito já em T-033).
 3. **Se algo der errado** ganha: política de execução do PowerShell, porta ocupada com os scripts, "linhas ignoradas" e o botão "Recarregar dados", e `SPREADSHEET_ID_TESTE` conforme Q5.
 4. **Testes:** a suíte de integração completa, a trava de §3.2.3 e o aviso de que ela escreve na planilha de teste (e, com Q6, apaga e recria as abas do app nela).
 5. **Uso (Q9):** uma seção curta com as 5 telas e o que cada uma faz.
@@ -176,12 +180,12 @@ Todos em PowerShell (Windows, `02` §1), com caminhos relativos ao próprio scri
 
 **Refinados — scripts (T-033)**
 
-- [ ] **CA-F15.1** Dado `start.ps1` com nada rodando, então abre duas janelas (backend e frontend), espera o health e o frontend responderem e abre o navegador em `http://localhost:4200`.
-- [ ] **CA-F15.2** Dado o app já rodando, quando `start.ps1` é executado de novo, então só abre o navegador, sem subir uma segunda cópia.
-- [ ] **CA-F15.3** Dado a porta 8000 ou 4200 ocupada por outro programa, então `start.ps1` mostra qual porta e não sobe nada.
-- [ ] **CA-F15.4** Dado `backend/.env` ausente, então `start-backend.ps1` mostra a mensagem de §3.1.1.3 e termina com código ≠ 0; dado Python < 3.12 ou Node fora da faixa, mensagem equivalente.
-- [ ] **CA-F15.5** (Q3) Dado um clone novo (sem `.venv` e sem `node_modules`), então os scripts preparam o ambiente na primeira execução e sobem o app.
-- [ ] **CA-F15.6** Dado qualquer script, então ele não lê nem imprime `credentials.json` nem o conteúdo do `.env`, e o backend escuta só em `127.0.0.1` (RNF-05).
+- [x] **CA-F15.1** Dado `start.ps1` com nada rodando, então abre duas janelas (backend e frontend), espera o health e o frontend responderem e abre o navegador em `http://localhost:4200`. *(T-033: CA-F15.1 a .4 e a borda 8 executados pelo usuário em 2026-10-02 — todos como esperado; CA-F15.6 e a sintaxe pela guarda `test_scripts.py`.)*
+- [x] **CA-F15.2** Dado o app já rodando, quando `start.ps1` é executado de novo, então só abre o navegador, sem subir uma segunda cópia.
+- [x] **CA-F15.3** Dado a porta 8000 ou 4200 ocupada por outro programa, então `start.ps1` mostra qual porta e não sobe nada.
+- [x] **CA-F15.4** Dado `backend/.env` ausente, então `start-backend.ps1` mostra a mensagem de §3.1.1.3 e termina com código ≠ 0; dado Python < 3.12 ou Node fora da faixa, mensagem equivalente.
+- [ ] **CA-F15.5** (Q3) Dado um clone novo (sem `.venv` e sem `node_modules`), então os scripts preparam o ambiente na primeira execução e sobem o app. *(T-033: implementado; a execução num clone novo fica para o roteiro de T-035 — RNF-01.)*
+- [x] **CA-F15.6** Dado qualquer script, então ele não lê nem imprime `credentials.json` nem o conteúdo do `.env`, e o backend escuta só em `127.0.0.1` (RNF-05).
 
 **Refinados — integração (T-034)**
 
@@ -206,10 +210,12 @@ Todos em PowerShell (Windows, `02` §1), com caminhos relativos ao próprio scri
 | 2 | Caminho do repositório com espaço ou acento (ex.: `C:\Users\João Silva\…`) | Scripts funcionam (caminhos sempre entre aspas) | RNF-01 |
 | 3 | Política de execução `Restricted` | Com `-ExecutionPolicy Bypass` no comando documentado, roda sem mudar a configuração do sistema | — |
 | 4 | Segundo `start.ps1` com o app no ar | Só abre o navegador (CA-F15.2) | — |
-| 5 | Porta 4200 ocupada por outro `ng serve` (outro projeto) | Mensagem de porta ocupada: o health de 8000 não responde como este app | — |
+| 5 | Porta 4200 ocupada por outro `ng serve` (outro projeto) | Mensagem de porta ocupada: a página não tem o título deste app | — |
 | 6 | Primeiro `ng serve` demorando mais de 60 s | Espera até 180 s antes de desistir | — |
 | 7 | Backend sobe, mas a planilha está inacessível | O navegador abre do mesmo jeito; o banner explica a causa (F-04) | REQ-16 |
-| 8 | Janela do backend fechada com o frontend aberto | Banner "O servidor do aplicativo não está respondendo…"; rodar `start.ps1` de novo resolve | REQ-16 |
+| 8 | Janela do backend fechada com o frontend aberto | Banner "O servidor do aplicativo não está respondendo…"; rodar `start.ps1` de novo sobe só o backend e abre o navegador | REQ-16 |
+| 8a | Primeira execução: `pip install` ou `npm install` levando minutos | A preparação roda antes de contar os 60/180 s (§3.1.3.4) | RNF-01 |
+| 8b | `.venv` criada, mas o `pip install` foi interrompido | Na execução seguinte o import falha e a instalação roda de novo (§3.1.1.2) | — |
 | 9 | `SPREADSHEET_ID_TESTE` vazio | Integração pulada, como hoje | `02` §8 |
 | 10 | Teste de integração interrompido (Ctrl+C) | O `finally` limpa as linhas marcadas; o que sobrar tem a marca e é apagado na execução seguinte (varredura por `teste-integracao-` no início) | — |
 | 11 | Planilha de teste com dados de outra execução manual | Os testes só olham e apagam as próprias linhas marcadas; os totais são conferidos por diferença ou num mês só dos testes | — |
@@ -252,7 +258,7 @@ Todos em PowerShell (Windows, `02` §1), com caminhos relativos ao próprio scri
 | Teste | Nível | Cobre |
 |---|---|---|
 | Execução de `start.ps1`: nada rodando / já rodando / porta ocupada / sem `.env` / clone novo | manual (registrada no roteiro) | CA-F15.1 a CA-F15.5, bordas 1–8 |
-| Leitura dos scripts (sem `Get-Content` de credencial/`.env`; `--host 127.0.0.1`) | revisão | CA-F15.6, RNF-05 |
+| `backend/tests/unit/test_scripts.py` › `test_scripts_sem_erro_de_sintaxe__CA_F15_1` (parser do PowerShell) e `test_backend_so_em_localhost_e_sem_ler_segredos__CA_F15_6` | unitário BE | CA-F15.1 a .6 (base), RNF-05, borda 1 |
 | `backend/tests/integracao/conftest.py` › trava de mesma planilha (unitário com `monkeypatch`, fora do marcador `integracao`) — `test_trava_mesma_planilha__CA_F15_8` | unitário BE | CA-F15.8 |
 | `backend/tests/unit/test_conftest_integracao.py` › `test_le_planilha_teste_do_env__CA_F15_7` (Q5) | unitário BE | CA-F15.7, borda 9 |
 | `tests/integracao/test_bootstrap.py::test_planilha_vazia_preparada__CA_15_1` (Q6) | integração | CA-15.1, CA-15.2, RN-15 |
@@ -273,7 +279,7 @@ Todos em PowerShell (Windows, `02` §1), com caminhos relativos ao próprio scri
 
 | Tarefa | Escopo nesta feature | Arquivos principais |
 |---|---|---|
-| **T-033** (DOC) | Scripts de §3.1 (Q1–Q3) e a parte "Como rodar" do README que os descreve. | `scripts/start-backend.ps1`, `scripts/start-frontend.ps1`, `scripts/start.ps1`, `README.md` (§3) |
+| **T-033** (DOC) | Scripts de §3.1 (Q1–Q3) e as partes "Como rodar" e "Estrutura" do README que os descrevem; guarda `test_scripts.py`. | `scripts/start-backend.ps1`, `scripts/start-frontend.ps1`, `scripts/start.ps1`, `README.md` (§3, §6), `backend/tests/unit/test_scripts.py` |
 | **T-034** (BE) | Suíte de §3.2 (Q5, Q6): `conftest` com `.env` e trava, varredura de limpeza, os 6 arquivos novos; guarda de rastreabilidade (Q10); execução de `pytest -m integracao` na planilha de teste. | `backend/tests/integracao/{conftest.py,test_bootstrap.py,test_lancamentos_e2e.py,test_categorias_e2e.py,test_parcelamento_e2e.py,test_recorrencias_e2e.py,test_edicao_manual_e2e.py}`, `backend/tests/conftest.py`, `backend/tests/unit/{test_conftest_integracao.py,test_rastreabilidade.py}`, `backend/.env.example` |
 | **T-035** (DOC) | Roteiro de §3.3 (Q7, Q8): refinar passos, executar, registrar; README final (§3.4, Q9); matriz RN → teste (§3.5). | `SPECS/features/F-15-entrega-local-e-e2e.md`, `README.md`, `SPECS/05-acompanhamento.md` |
 
@@ -299,6 +305,11 @@ Ordem: T-033 e T-034 em qualquer ordem (as duas dependem só de T-032); T-035 de
 | Falha pequena e dentro do especificado é corrigida em T-035 com teste; mudança de comportamento ou falha grande vira tarefa nova (Q8). | Fecha o marco sem abrir tarefa para cada ajuste mínimo, sem esconder mudança de escopo. | Não |
 | README ganha uma seção "Uso" curta (Q9). | O README é o único manual do app. | Não |
 | Guarda automática `test_rastreabilidade.py` para RNF-08 (Q10). | RN nova sem teste passa a falhar a suíte. | Não |
+| `-SoPreparar` em `start-backend.ps1`/`start-frontend.ps1`; o `start.ps1` prepara na própria janela antes de contar os 60/180 s (T-033, aprovado). | `pip install`/`npm install` da primeira execução passariam do tempo de espera. Sem arquivo novo em `scripts/`. | Não |
+| `start.ps1` decide parte por parte, reconhecendo o app pelo campo `planilha` do health e pelo `<title>` do frontend (T-033, aprovado). | Cobre a borda 8 (uma janela fechada) e distingue "este app" de "outro programa na porta". | Não |
+| Reinstalação quando o `import fastapi, gspread, uvicorn` falha na `.venv` ou falta `node_modules\.bin\ng.cmd` (T-033, aprovado). | Preparação interrompida não deixa o ambiente quebrado para sempre. | Não |
+| Scripts em UTF-8 **com BOM** e CRLF, cobertos por `test_scripts.py` (T-033). | O Windows PowerShell 5.1 lê `.ps1` sem BOM como ANSI e estragaria os acentos das mensagens. | Não |
+| Execução real dos cenários feita pelo usuário, não pelo Claude (T-033). | Escolha do usuário: os scripts abrem janelas e o navegador na máquina dele. | Não |
 
 *(O resultado do roteiro e a matriz RN → teste entram aqui em T-035.)*
 
@@ -327,3 +338,5 @@ Ordem: T-033 e T-034 em qualquer ordem (as duas dependem só de T-032); T-035 de
 |---|---|
 | 2026-10-02 | Criação (`/especificar-feature F-15`). Status `Rascunho` — 10 questões em aberto. |
 | 2026-10-02 | Q1–Q10 respondidas → status **Aprovada**. Todas na opção recomendada; em Q4, só P-01 e P-07 confirmadas (`01` → 1.3). Dez decisões em §10. |
+| 2026-10-02 | T-033 (aprovado pelo usuário): §3.1 com `-SoPreparar` e preparação antes de contar o tempo, decisão parte por parte no `start.ps1` (reconhecimento do app pelo health e pelo título), reinstalação após preparação interrompida; bordas 5, 8, 8a, 8b; README §6 já em T-033; guarda `test_scripts.py` no plano de testes. |
+| 2026-10-02 | T-033 concluída: CA-F15.1 a .4 e .6 verificados (5 cenários executados pelo usuário + `test_scripts.py`); CA-F15.5 implementado, execução num clone novo no roteiro de T-035. Cinco decisões em §10. |

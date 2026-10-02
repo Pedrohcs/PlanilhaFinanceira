@@ -26,10 +26,10 @@
 | M1 · Registro e consulta | F-05..F-08 | 8 | 0 | 0 | 8 | 100% |
 | M2 · Visão financeira | F-09..F-11 | 5 | 0 | 0 | 5 | 100% |
 | M3 · Automação | F-12..F-13 | 5 | 0 | 0 | 5 | 100% |
-| M4 · Acabamento | F-14..F-15 | 5 | 3 | 0 | 2 | 40% |
-| **Total** | **15** | **35** | **3** | **0** | **32** | **91%** |
+| M4 · Acabamento | F-14..F-15 | 5 | 2 | 0 | 3 | 60% |
+| **Total** | **15** | **35** | **2** | **0** | **33** | **94%** |
 
-**M0 a M3 concluídos (F-01 a F-13); F-14 concluída.** Caminho crítico em F-15 (sem spec). Desbloqueadas: **T-033** (DOC) e **T-034** (BE), ambas de F-15 — spec `Aprovada`; próximo passo: `/implementar-tarefa T-033` (ou T-034). Pendentes com o usuário, sem bloquear: seguir o README com a planilha real (CA-F02.13); rodar `pytest -m integracao` (CA-15.1/15.2 e, desde T-032, o desempenho de CA-F14.16; precisa de `SPREADSHEET_ID_TESTE` no `.env`, hoje vazio). Conferência visual: feita em T-031 com backend em memória (F-14 §10); o botão "Recarregar dados" e a faixa de linhas ignoradas de T-032 não foram vistos no navegador (extensão do Chrome desconectada) — entram no roteiro E2E de F-15 junto com a repetição na planilha real.
+**M0 a M3 concluídos (F-01 a F-13); F-14 concluída; F-15 iniciada (T-033 concluída).** Caminho crítico em F-15. Desbloqueada: **T-034** (BE) — próximo passo: `/implementar-tarefa T-034`; depois T-035 (depende de T-033 e T-034). Pendentes com o usuário, sem bloquear: seguir o README com a planilha real (CA-F02.13); rodar `pytest -m integracao` (CA-15.1/15.2 e, desde T-032, o desempenho de CA-F14.16; precisa de `SPREADSHEET_ID_TESTE` no `.env`, hoje vazio). Conferência visual: feita em T-031 com backend em memória (F-14 §10); o botão "Recarregar dados" e a faixa de linhas ignoradas de T-032 não foram vistos no navegador (extensão do Chrome desconectada) — entram no roteiro E2E de F-15 junto com a repetição na planilha real.
 
 ---
 
@@ -51,7 +51,7 @@
 | F-12 | Parcelamentos | M3 | Concluída | [`F-12-parcelamentos.md`](features/F-12-parcelamentos.md) (Concluída) |
 | F-13 | Recorrências | M3 | Concluída | [`F-13-recorrencias.md`](features/F-13-recorrencias.md) (Concluída) |
 | F-14 | Polimento e resiliência | M4 | Concluída | [`F-14-polimento-e-resiliencia.md`](features/F-14-polimento-e-resiliencia.md) (Concluída) |
-| F-15 | Entrega local e verificação E2E | M4 | Não iniciada | [`F-15-entrega-local-e-e2e.md`](features/F-15-entrega-local-e-e2e.md) (Aprovada) |
+| F-15 | Entrega local e verificação E2E | M4 | Iniciada | [`F-15-entrega-local-e-e2e.md`](features/F-15-entrega-local-e-e2e.md) (Aprovada) |
 
 Status da feature: `Não iniciada` (nenhuma tarefa iniciada) · `Iniciada` (alguma tarefa iniciada ou concluída) · `Concluída` (todas concluídas). Na coluna *Spec da feature*, coloque o link do arquivo em `SPECS/features/` quando ele for criado.
 
@@ -81,7 +81,7 @@ flowchart LR
     classDef naoIniciada fill:#eeeeee,stroke:#9e9e9e,color:#424242;
     classDef iniciada fill:#fff3cd,stroke:#f0ad4e,color:#5c4400;
     classDef concluida fill:#d4edda,stroke:#28a745,color:#155724;
-    class F15 naoIniciada;
+    class F15 iniciada;
     class F01,F02,F03,F04,F05,F06,F07,F08,F09,F10,F11,F12,F13,F14 concluida;
 ```
 
@@ -147,7 +147,7 @@ Camadas: **BE** = backend · **FE** = frontend · **DOC** = documentação/infra
 |---|---|---|---|---|---|---|---|---|
 | T-031 | Revisão de todas as telas: carregando/vazio/erro, responsividade ≥ 360 px, mensagens em pt-BR, acessibilidade básica (labels, foco no diálogo). | F-14 | FE | T-020, T-023, T-025, T-027, T-030 | Concluída | 2026-10-01 | 2026-10-01 | Revisão das 5 telas, do shell e dos 4 diálogos (tabela em F-14 §10), com conferência visual em 360/1280 px, claro e escuro, no Chrome com backend em memória. Corrigidos: fontes locais (`@fontsource/roboto` latino + `material-symbols`, ADR-15); calendário em pt-BR (`DATEPICKER_PT_BR` nos 4 componentes com datepicker — no `app.config` o pacote inicial ia a 744 kB); erro do servidor sai ao voltar ao campo nos 3 diálogos (`limparErroDoServidorAoFocar`); Categorias com recarga esmaecida e sem lista velha após erro; frase "Vigência terminou…" no cartão de recorrência. Helper `src/testing/acessibilidade.ts`. 11 testes novos (259 no total; ver Log sobre a suíte sob carga); build 478,31 kB inicial, sem `fonts.googleapis.com`. CA-F14.1..8. |
 | T-032 | `POST /api/sistema/recarregar` + botão "Recarregar dados"; aviso de `linhas_ignoradas` na interface; teste de desempenho com 5.000 linhas (RNF-04) usando repositório em memória e planilha de teste. | F-14 | BE+FE | T-031 | Concluída | 2026-10-02 | 2026-10-02 | `POST /api/sistema/recarregar` (router `sistema`, `CacheDep`, `app.state.cache`; 204 sem chamar o Google, também com a planilha fora); mensagens do Pydantic em pt-BR por tipo em `api/erros.py` (tabela de F-14 §3.5 completada com os tipos reais — aprovado); botão ↻ "Recarregar dados da planilha" na barra (desabilitado durante o pedido, `versao++`, aviso; backend fora → banner, sem aviso); `SistemaApi`; faixa `aviso-linhas-ignoradas` (`role="status"`, singular/plural, some com 0) em lançamentos, resumo e histórico; teste de registro com 5.000 linhas (planilha falsa) e `tests/integracao/test_desempenho.py` (`@integracao`, cache frio via recarregar, limpeza no `finally` — **não executado**: `SPREADSHEET_ID_TESTE` vazio). Backend 899 testes (19 novos), `ruff` limpo; frontend 266 testes (7 novos), build 479,13 kB inicial (+0,82 kB). CA-16.2, CA-16.3, CA-F14.10..15 (CA-F14.16 pendente com o usuário). |
-| T-033 | `scripts/start-backend.ps1`, `scripts/start-frontend.ps1`, `scripts/start.ps1` (sobe ambos e abre o navegador). | F-15 | DOC | T-032 | Não iniciada | | | |
+| T-033 | `scripts/start-backend.ps1`, `scripts/start-frontend.ps1`, `scripts/start.ps1` (sobe ambos e abre o navegador). | F-15 | DOC | T-032 | Concluída | 2026-10-02 | 2026-10-02 | `scripts/start-backend.ps1` (Python ≥ 3.12, `.venv` + `requirements.txt` na 1ª vez ou se o import falhar, só a existência do `.env`, `uvicorn` em 127.0.0.1:8000 sem `--reload`), `start-frontend.ps1` (Node 24 ou 22.22.3+, `npm install` se faltar o `ng.cmd`, `npm start`), ambos com `-SoPreparar`; `start.ps1` (parte por parte: reconhece o app pelo health e pelo título, recusa porta de outro programa, prepara antes de contar 60/180 s, duas janelas com título, abre o navegador). UTF-8 com BOM (PowerShell 5.1). README §3 (comando único + manual) e §6. Guarda `tests/unit/test_scripts.py` (BOM, sintaxe pelo parser do PowerShell, sem leitura de arquivo, 127.0.0.1, sem `--reload`): 10 testes, 909 no total; `ruff` limpo. Cenários executados pelo usuário: nada rodando, já rodando, só o backend fechado, porta 4200 ocupada, sem `.env` — todos OK. CA-F15.1..4, .6 (CA-F15.5 no roteiro de T-035). |
 | T-034 | Suíte `tests/integracao/` completa contra `SPREADSHEET_ID_TESTE` (bootstrap, CRUD, parcelamento, sincronização). | F-15 | BE | T-032 | Não iniciada | | | |
 | T-035 | Roteiro E2E manual cobrindo todos os CA-xx (em `SPECS/features/F-15-*.md`), execução e registro do resultado; `README.md` final. | F-15 | DOC | T-033, T-034 | Não iniciada | | | |
 
@@ -157,6 +157,8 @@ Camadas: **BE** = backend · **FE** = frontend · **DOC** = documentação/infra
 
 | Data | Tarefa/Feature | Mudança | Observação |
 |---|---|---|---|
+| 2026-10-02 | T-033 | `Iniciada` → `Concluída` | Scripts de execução. F-15 §3.1 ajustada antes do código (aprovado pelo usuário): `-SoPreparar`, decisão parte por parte, reinstalação após preparação interrompida, README §6 em T-033. Execução real feita pelo usuário (o comando do Claude para rodar os cenários num clone foi negado; decisão do usuário). Nenhuma dependência nova; `02` e `03` sem mudança (`scripts/` já previsto em `03` §3). |
+| 2026-10-02 | T-033 | `Não iniciada` → `Iniciada` | Dependência T-032 `Concluída`; spec F-15 `Aprovada`. F-15 passa a `Iniciada` (§2) e o mapa (§3) foi atualizado. |
 | 2026-10-02 | F-15 | Spec da feature **aprovada** | Q1–Q10 respondidas, todas na opção recomendada. **P-01 e P-07 confirmadas** (`01` → 1.3); P-02 e P-06 seguem "A confirmar". Nenhuma mudança em 02–03. Nenhum status de tarefa alterado. |
 | 2026-10-02 | F-15 | Spec da feature criada (**Rascunho**) | `features/F-15-entrega-local-e-e2e.md`: scripts, suíte de integração, roteiro E2E com os 44 CA de `01`, README final e matriz RN → teste. 10 questões em aberto (Q1–Q10). Achado: o `conftest` só lê `SPREADSHEET_ID_TESTE` do terminal, embora o `.env.example` e o resumo (§1) sugiram o `.env` (Q5). Nenhum status de tarefa alterado. |
 | 2026-10-02 | F-14 | `Iniciada` → `Concluída` | Última tarefa (T-032) concluída; §2 e mapa (§3) atualizados. Caminho crítico segue em F-15 (sem spec). |
