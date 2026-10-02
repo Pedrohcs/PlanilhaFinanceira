@@ -6,6 +6,7 @@ import { DateAdapter, MAT_DATE_LOCALE, provideNativeDateAdapter } from '@angular
 import { MatDialog } from '@angular/material/dialog';
 import { provideRouter } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
+import { botoesSemNome, camposSemRotulo } from '../../../testing/acessibilidade';
 import { umaCategoria } from '../../../testing/categorias';
 import { provideMaterialParaTestes } from '../../../testing/material';
 import { Avisos } from '../../core/avisos/avisos';
@@ -209,6 +210,40 @@ describe('RecorrenciaFormDialog', () => {
       forma_pagamento: null,
     });
     put.flush(ORIGINAL);
+  });
+
+  it('foco_inicial_e_rotulos__CA_F14_4', async () => {
+    await abrir();
+
+    expect(document.activeElement).toBe(campo('valor'));
+    expect(camposSemRotulo(container())).toEqual([]);
+    expect(botoesSemNome(container())).toEqual([]);
+  });
+
+  it('erro_do_servidor_some_ao_interagir__CA_F14_8', async () => {
+    await abrir();
+    await digitar('valor', '10');
+    await digitar('descricao', 'Aluguel');
+    await escolher('categoria_id', 'Assinaturas');
+    await escolher('forma_pagamento', 'Pix');
+    await salvar();
+    controle
+      .expectOne('/api/recorrencias')
+      .flush(
+        { erro: { codigo: 'CATEGORIA_INATIVA', mensagem: 'Categoria inativa.', detalhes: [] } },
+        { status: 409, statusText: 'x' },
+      );
+    await estabilizar();
+    controle.match(URL_CATEGORIAS).forEach((pedido) => pedido.flush(CATEGORIAS));
+    await estabilizar();
+    expect(texto(container())).toContain('Categoria inativa.');
+
+    campo('categoria_id').dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
+    await estabilizar();
+    expect(texto(container())).not.toContain('Categoria inativa.');
+    await salvar();
+    controle.expectOne('/api/recorrencias').flush({ ...ORIGINAL, id: 'nova' });
+    await estabilizar();
   });
 
   it('erros_no_campo__CA_F13_23', async () => {

@@ -211,6 +211,8 @@ describe('RecorrenciasPage', () => {
     const cartoes = Array.from(pagina().querySelectorAll('.cartao'));
     expect(cartoes).toHaveLength(5);
     expect(texto(cartoes[1])).toContain('Vigência terminou em agosto de 2026');
+    expect(texto(cartoes[1])).not.toContain('Próximo mês: Vigência'); // frase inteira (T-031)
+    expect(texto(cartoes[0])).toContain('Próximo mês: outubro de 2026');
     expect(texto(cartoes[0].querySelector('.estado'))).toBe('Ativa');
   });
 

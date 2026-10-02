@@ -3,7 +3,7 @@
 | Campo | Valor |
 |---|---|
 | Documento | `SPECS/02-definicoes-tecnicas.md` |
-| Versão | 1.11 |
+| Versão | 1.12 |
 | Atualizado em | 2026-10-01 |
 | Status | Aprovado para início |
 | Responde | **Com o quê** o sistema é construído: linguagens, bibliotecas, versões, integração com Google, convenções |
@@ -29,6 +29,7 @@
 | Frontend – framework | Angular | `^22.2` | **fixo na major 22** (ADR-10). Suporte ativo até 2027-06, LTS até 2028-06 |
 | Frontend – linguagem | TypeScript | `>=6.0 <6.1` | Faixa exigida pelo Angular 22 |
 | Frontend – UI | Angular Material + CDK | `^22` | Formulários, diálogos, tabela, snackbar |
+| Frontend – fontes | @fontsource/roboto + material-symbols | `^5.3` / `^0.47` | Roboto (só o subconjunto `latin`) e Material Symbols Outlined servidas pelo próprio app, sem Google Fonts (ADR-15) |
 | Frontend – gráficos | chart.js | `^4` | Usado **diretamente**, via diretiva própria em `shared/grafico/` (ADR-11) — sem wrapper de terceiros |
 | Frontend – testes | Vitest | padrão do Angular CLI 22 (`@angular/build:unit-test`) | Karma está descontinuado desde a v21 |
 | Frontend – formatação | prettier | `^3.8` (vem com `ng new` na v22) | Formatador do frontend; `jsdom` acompanha o Vitest como ambiente de DOM (ADR-14) |
@@ -270,6 +271,8 @@ Padrões da suíte do frontend (T-011/T-014): specs que abrem diálogo, menu ou 
 | ADR-13 | Nomes de arquivo do frontend no style guide **2025** (`app.ts`, classe `App`) | Style guide 2016 (`app.component.ts`), que era o que `03` §3 descrevia | É o padrão do CLI 22 e o que `ng generate` usará daqui para frente; manter o estilo antigo exigiria um flag em toda geração e divergiria da documentação do Angular | 2026-09-29 |
 | ADR-14 | Manter o **prettier** que o `ng new` da v22 instala como formatador do frontend (com o `.prettierrc` gerado) | Remover a dependência e não formatar; adotar outro formatador | É o padrão do CLI 22 e `02` §4 manda seguir os padrões do CLI; remover exigiria editar o projeto gerado a cada atualização. **Não** entra na Definição de Pronto: o portão do frontend continua sendo `npm test` + `npm run build` | 2026-09-29 |
 
+| ADR-15 | Servir as fontes **pelo próprio app**: pacotes npm `@fontsource/roboto` (arquivos `latin-300/400/500.css`) e `material-symbols` (`outlined.css`), na lista `styles` do `angular.json`; nada de `fonts.googleapis.com` no `index.html` | Manter o Google Fonts do `ng add`; copiar os arquivos de fonte para `src/` à mão | App 100% local (RNF-01): sem internet, os ícones apareciam como texto ("more_vert"), justamente no caso "sem internet" de REQ-16. Pacotes mantidos pelo npm em vez de binários copiados. Custo: +1,2 kB no CSS inicial (só o subconjunto latino do Roboto; todos os subconjuntos davam +15 kB) e ~3,9 MB da fonte de ícones, carregada do disco local e fora do pacote JS (F-14 Q5, T-031) | 2026-10-01 |
+
 Novas decisões: acrescente uma linha com o próximo ID. Decisões substituídas não são apagadas — marque "Substituída por ADR-xx".
 
 ---
@@ -302,3 +305,4 @@ Novas decisões: acrescente uma linha com o próximo ID. Decisões substituídas
 | 2026-09-30 | 1.9 | §8: padrões da suíte do frontend (`src/testing/`, `provideMaterialParaTestes`) (T-014). |
 | 2026-09-30 | 1.10 | §3: tipo `Montante` para totais e saldo (T-017). |
 | 2026-10-01 | 1.11 | §4: `dados` da `GraficoDirective` também como função das cores do tema (séries com cores do tema diferentes entre si; F-11, T-025). |
+| 2026-10-01 | 1.12 | §1 e §9: fontes servidas pelo próprio app — `@fontsource/roboto` e `material-symbols` (ADR-15; F-14 Q5, T-031). |

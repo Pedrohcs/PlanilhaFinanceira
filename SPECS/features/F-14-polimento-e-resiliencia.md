@@ -122,14 +122,14 @@ Para cada tela/diálogo, a revisão confere os itens abaixo e corrige o que falt
 
 **Refinados — revisão (T-031)**
 
-- [ ] **CA-F14.1** Dado cada uma das 5 páginas, então há estado de carregando (1ª carga), vazio (mensagem própria), erro ("Não foi possível carregar …", sem dado velho) e recarga esmaecida; e resposta antiga é descartada.
-- [ ] **CA-F14.2** Dado a janela de 360 px e a de 1280 px, nos temas claro e escuro, então nenhuma página nem diálogo tem rolagem horizontal, e textos longos quebram (conferência visual — Q4).
-- [ ] **CA-F14.3** Dado qualquer tela, então nenhum texto visível está em inglês e moeda, datas e meses seguem RNF-03.
-- [ ] **CA-F14.4** Dado qualquer diálogo, então ele abre com o foco no primeiro campo (confirmação: em "Cancelar"), fecha com Esc e devolve o foco ao botão que o abriu; todo campo tem rótulo e todo botão só de ícone tem `aria-label`.
-- [ ] **CA-F14.5** Dado um 503 ou o backend fora do ar ao salvar em qualquer dos três formulários, então o diálogo continua aberto com o que foi digitado (RNF-06).
-- [ ] **CA-F14.6** Dado o build, então o pacote inicial fica abaixo de 500 kB e o tamanho é registrado.
-- [ ] **CA-F14.7** (Q5) Dado o app aberto sem internet, então os ícones e a fonte aparecem (servidos localmente), e o `index.html` não referencia `fonts.googleapis.com`.
-- [ ] **CA-F14.8** (Q5) Dado um erro do servidor marcado num campo, quando o usuário interage com esse campo (inclusive escolhendo o mesmo valor), então a mensagem do servidor some e o formulário pode ser enviado de novo.
+- [x] **CA-F14.1** Dado cada uma das 5 páginas, então há estado de carregando (1ª carga), vazio (mensagem própria), erro ("Não foi possível carregar …", sem dado velho) e recarga esmaecida; e resposta antiga é descartada.
+- [x] **CA-F14.2** Dado a janela de 360 px e a de 1280 px, nos temas claro e escuro, então nenhuma página nem diálogo tem rolagem horizontal, e textos longos quebram (conferência visual — Q4). *(T-031: conferido com backend em memória — ver §10.)*
+- [x] **CA-F14.3** Dado qualquer tela, então nenhum texto visível está em inglês e moeda, datas e meses seguem RNF-03.
+- [x] **CA-F14.4** Dado qualquer diálogo, então ele abre com o foco no primeiro campo (confirmação: em "Cancelar"), fecha com Esc e devolve o foco ao botão que o abriu; todo campo tem rótulo e todo botão só de ícone tem `aria-label`.
+- [x] **CA-F14.5** Dado um 503 ou o backend fora do ar ao salvar em qualquer dos três formulários, então o diálogo continua aberto com o que foi digitado (RNF-06).
+- [x] **CA-F14.6** Dado o build, então o pacote inicial fica abaixo de 500 kB e o tamanho é registrado.
+- [x] **CA-F14.7** (Q5) Dado o app aberto sem internet, então os ícones e a fonte aparecem (servidos localmente), e o `index.html` não referencia `fonts.googleapis.com`.
+- [x] **CA-F14.8** (Q5) Dado um erro do servidor marcado num campo, quando o usuário interage com esse campo (inclusive escolhendo o mesmo valor), então a mensagem do servidor some e o formulário pode ser enviado de novo.
 - **CA-F14.9** *(removido — a sugestão do `conftest` não entrou em Q5).*
 
 **Refinados — recarregar, linhas ignoradas, pt-BR, desempenho (T-032)**
@@ -236,6 +236,28 @@ Ordem: T-031 → T-032 (`04`/`05`: T-032 depende de T-031).
 | Entram só as sugestões de fontes locais e do erro do servidor no campo (Q5). | Escolha do usuário; README e `conftest` seguem como sugestões. | Fontes: sim (T-031) |
 | Teste de desempenho real `@integracao` na planilha de teste, com limpeza (Q6). | Mede RNF-04 de verdade sem rodar no `pytest` comum. | Não |
 | Resultado da revisão de T-031 registrado aqui (tela × item). | Deixa claro o que foi conferido e o que foi corrigido, para o roteiro E2E de F-15. | Não |
+| Conferência visual com **backend em memória** (script temporário no scratchpad, fora do repositório: repositórios em memória com dados de exemplo e conexão falsa), não com a planilha de teste (T-031). | `SPREADSHEET_ID_TESTE` estava vazio no `.env`; decidido com o usuário. Nenhuma planilha foi aberta nem credencial lida. Muda a forma de Q4, não o objetivo. | Não |
+| Textos do datepicker em pt-BR fornecidos **nos componentes** que usam calendário (`providers: [DATEPICKER_PT_BR]`), não no `app.config` (T-031). | No `app.config`, o import levava o datepicker inteiro para o pacote inicial (478 → 744 kB, acima do orçamento de 500). O calendário abre num overlay criado a partir do elemento do datepicker, então o provider do componente vale para ele. | Não |
+| Erro do servidor sai no `focusin` do campo (helper `limparErroDoServidorAoFocar` no `<form>`) (T-031). | Cobre digitar, abrir o select e escolher o mesmo valor com um só ponto de ligação por diálogo. | Não |
+| Categorias passam a mostrar o estado de erro também depois de uma recarga que falhou (antes, mantinham a lista velha) (T-031). | Mesmo critério das outras telas (§3.1.1: erro sem dado velho). | Não |
+
+**Resultado da revisão de T-031** (2026-10-01; 360 px e 1280 px; claro e escuro; backend em memória):
+
+| Tela / diálogo | Estados | 360 px | 1280 px | pt-BR | Acessibilidade | Corrigido em T-031 |
+|---|---|---|---|---|---|---|
+| Shell (barra, navegação, banner) | ok (F-04) | ok | ok | ok | ok (`aria-label` nos botões de ícone; navegação com `aria-current`) | fontes locais (ícones sem internet) |
+| `/resumo` | ok | ok | ok | ok | ok (gráficos com `role="img"`) | — |
+| `/lancamentos` | ok | ok (cartões; descrição de 100 caracteres quebra) | ok | ok | ok | — |
+| `/historico` | ok | ok (tabela de 4 colunas cabe) | ok | ok | ok | — |
+| `/categorias` | **sem recarga esmaecida; lista velha após erro** | ok | ok | ok | ok | recarga esmaecida; erro sem lista velha |
+| `/recorrencias` | ok | ok, mas cartão dizia "Próximo mês: Vigência terminou em …" | ok | ok | ok (selo "Pausada" com contraste 7,25:1) | frase do cartão corrigida |
+| Diálogo de lançamento | foco no valor | ok (328 px) | ok | **calendário em inglês** | ok | calendário pt-BR; erro do servidor sai ao voltar ao campo |
+| Diálogo de categoria | foco no nome | ok | ok | ok | ok | erro do servidor sai ao voltar ao campo |
+| Diálogo de recorrência | foco no valor | ok | ok | **calendário em inglês** | ok | calendário pt-BR; erro do servidor sai ao voltar ao campo |
+| Confirmação | foco em "Cancelar" | ok | ok | ok | ok | — |
+| Seletores de mês/período | — | ok | ok | **calendário em inglês** | ok | calendário pt-BR |
+
+Pacote inicial ao fim de T-031: **478,31 kB** (orçamento 500 kB); `dist/index.html` sem `fonts.googleapis.com`.
 
 ---
 
@@ -258,3 +280,4 @@ Ordem: T-031 → T-032 (`04`/`05`: T-032 depende de T-031).
 |---|---|
 | 2026-10-01 | Criação (`/especificar-feature F-14`). Status `Rascunho` — 6 questões em aberto. |
 | 2026-10-01 | Q1–Q6 respondidas → status **Aprovada**. Q1–Q4 e Q6 na opção recomendada; Q5 só com fontes locais e erro do servidor (CA-F14.9 removido; T-031 continua só FE). Cinco decisões em §10. |
+| 2026-10-01 | T-031 concluída: CA-F14.1 a .8 verificados (teste, build e conferência visual com backend em memória — §10). Quatro decisões em §10 e a tabela do resultado da revisão. `02` → 1.12 (ADR-15), `03` → 1.34. |

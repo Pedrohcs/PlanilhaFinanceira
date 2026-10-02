@@ -42,71 +42,78 @@ export const MENSAGEM_RESEED =
 
     @if (store.carregando() && store.todas().length === 0) {
       <app-carregando texto="Carregando categorias…" />
-    } @else if (store.erro() && store.todas().length === 0) {
+    } @else if (store.erro()) {
+      <!-- Sem lista velha depois de uma recarga que falhou (F-14 §3.1.1). -->
       <app-estado-vazio icone="cloud_off" mensagem="Não foi possível carregar as categorias." />
     } @else {
-      @for (secao of secoes; track secao.tipo) {
-        <section class="secao" [attr.aria-labelledby]="'titulo-' + secao.tipo">
-          <header class="cabecalho">
-            <h2 [id]="'titulo-' + secao.tipo">{{ secao.titulo }}</h2>
-            <button matButton="tonal" type="button" (click)="nova(secao.tipo)">
-              <mat-icon>add</mat-icon>
-              Nova categoria
-            </button>
-          </header>
+      <div class="conteudo" [class.recarregando]="store.carregando()">
+        @for (secao of secoes; track secao.tipo) {
+          <section class="secao" [attr.aria-labelledby]="'titulo-' + secao.tipo">
+            <header class="cabecalho">
+              <h2 [id]="'titulo-' + secao.tipo">{{ secao.titulo }}</h2>
+              <button matButton="tonal" type="button" (click)="nova(secao.tipo)">
+                <mat-icon>add</mat-icon>
+                Nova categoria
+              </button>
+            </header>
 
-          @let categorias = store.porTipo(secao.tipo);
-          @if (categorias.length === 0) {
-            <app-estado-vazio [mensagem]="secao.vazio" />
-          } @else {
-            <ul class="lista">
-              @for (categoria of categorias; track categoria.id) {
-                <li class="item" [class.inativa]="!categoria.ativa">
-                  <span
-                    class="cor"
-                    [style.background-color]="categoria.cor"
-                    aria-hidden="true"
-                  ></span>
-                  <span class="nome">{{ categoria.nome }}</span>
-                  @if (!categoria.ativa) {
-                    <span class="selo">Inativa</span>
-                  }
-                  <button
-                    matIconButton
-                    type="button"
-                    [matMenuTriggerFor]="menu"
-                    [attr.aria-label]="'Ações de ' + categoria.nome"
-                  >
-                    <mat-icon>more_vert</mat-icon>
-                  </button>
-                  <mat-menu #menu="matMenu">
-                    <button mat-menu-item type="button" (click)="editar(categoria)">
-                      <mat-icon>edit</mat-icon>
-                      Editar
-                    </button>
-                    <button mat-menu-item type="button" (click)="alternarAtiva(categoria)">
-                      <mat-icon>{{ categoria.ativa ? 'visibility_off' : 'visibility' }}</mat-icon>
-                      {{ categoria.ativa ? 'Desativar' : 'Reativar' }}
-                    </button>
+            @let categorias = store.porTipo(secao.tipo);
+            @if (categorias.length === 0) {
+              <app-estado-vazio [mensagem]="secao.vazio" />
+            } @else {
+              <ul class="lista">
+                @for (categoria of categorias; track categoria.id) {
+                  <li class="item" [class.inativa]="!categoria.ativa">
+                    <span
+                      class="cor"
+                      [style.background-color]="categoria.cor"
+                      aria-hidden="true"
+                    ></span>
+                    <span class="nome">{{ categoria.nome }}</span>
+                    @if (!categoria.ativa) {
+                      <span class="selo">Inativa</span>
+                    }
                     <button
-                      mat-menu-item
+                      matIconButton
                       type="button"
-                      [disabled]="categoria.em_uso && !categoria.ativa"
-                      (click)="excluir(categoria)"
+                      [matMenuTriggerFor]="menu"
+                      [attr.aria-label]="'Ações de ' + categoria.nome"
                     >
-                      <mat-icon>delete</mat-icon>
-                      {{ categoria.em_uso && !categoria.ativa ? 'Excluir (em uso)' : 'Excluir' }}
+                      <mat-icon>more_vert</mat-icon>
                     </button>
-                  </mat-menu>
-                </li>
-              }
-            </ul>
-          }
-        </section>
-      }
+                    <mat-menu #menu="matMenu">
+                      <button mat-menu-item type="button" (click)="editar(categoria)">
+                        <mat-icon>edit</mat-icon>
+                        Editar
+                      </button>
+                      <button mat-menu-item type="button" (click)="alternarAtiva(categoria)">
+                        <mat-icon>{{ categoria.ativa ? 'visibility_off' : 'visibility' }}</mat-icon>
+                        {{ categoria.ativa ? 'Desativar' : 'Reativar' }}
+                      </button>
+                      <button
+                        mat-menu-item
+                        type="button"
+                        [disabled]="categoria.em_uso && !categoria.ativa"
+                        (click)="excluir(categoria)"
+                      >
+                        <mat-icon>delete</mat-icon>
+                        {{ categoria.em_uso && !categoria.ativa ? 'Excluir (em uso)' : 'Excluir' }}
+                      </button>
+                    </mat-menu>
+                  </li>
+                }
+              </ul>
+            }
+          </section>
+        }
+      </div>
     }
   `,
   styles: `
+    .conteudo.recarregando {
+      opacity: 0.6;
+      transition: opacity 150ms;
+    }
     .secao {
       margin-bottom: 24px;
     }

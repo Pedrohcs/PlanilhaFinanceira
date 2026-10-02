@@ -119,6 +119,25 @@ describe('CategoriasPage', () => {
     outro.destroy();
   });
 
+  it('recarga_esmaecida_e_erro_sem_lista_velha__CA_F14_1', async () => {
+    await abrirPagina();
+
+    TestBed.inject(DadosStore).incrementar(); // uma escrita em outra tela
+    await estabilizar();
+    expect(elemento.querySelector('.conteudo.recarregando')).not.toBeNull(); // esmaecida
+
+    controle
+      .expectOne(URL_LISTA)
+      .flush(
+        { erro: { codigo: 'PLANILHA_INDISPONIVEL', mensagem: 'Indisponível.', detalhes: [] } },
+        { status: 503, statusText: 'x' },
+      );
+    await estabilizar();
+
+    expect(elemento.textContent).toContain('Não foi possível carregar as categorias.');
+    expect(elemento.querySelector('section')).toBeNull(); // nada da lista anterior
+  });
+
   it('erro_na_carga_mostra_estado_de_erro', async () => {
     fixture = TestBed.createComponent(CategoriasPage);
     elemento = fixture.nativeElement as HTMLElement;

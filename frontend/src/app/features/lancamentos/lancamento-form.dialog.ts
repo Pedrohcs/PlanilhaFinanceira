@@ -41,6 +41,8 @@ import {
 } from '../../core/utils/parcelas';
 import { formatarValor, interpretarValor } from '../../core/utils/valor';
 import { textoAparado, valorValido } from '../../core/utils/validadores';
+import { DATEPICKER_PT_BR } from '../../core/utils/datepicker-intl';
+import { limparErroDoServidorAoFocar } from '../../core/utils/erro-do-servidor';
 
 export interface DadosFormularioLancamento {
   tipo: TipoLancamento;
@@ -124,6 +126,7 @@ function minimoDasParcelas(controle: AbstractControl<string>): ValidationErrors 
 @Component({
   selector: 'app-lancamento-form-dialog',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  providers: [DATEPICKER_PT_BR],
   imports: [
     ReactiveFormsModule,
     RouterLink,
@@ -137,7 +140,7 @@ function minimoDasParcelas(controle: AbstractControl<string>): ValidationErrors 
   ],
   template: `
     <h2 mat-dialog-title>{{ titulo() }}</h2>
-    <form [formGroup]="formulario" (ngSubmit)="salvar()">
+    <form [formGroup]="formulario" (ngSubmit)="salvar()" (focusin)="aoFocar($event)">
       <mat-dialog-content class="campos">
         @if (edicao; as original) {
           @if (original.parcela_numero) {
@@ -434,6 +437,11 @@ export class LancamentoFormDialog {
 
   protected fechar(): void {
     this.referencia.close();
+  }
+
+  /** O erro do servidor sai quando o usuário volta ao campo (F-14 §3.2.2). */
+  protected aoFocar(evento: FocusEvent): void {
+    limparErroDoServidorAoFocar(evento, this.formulario);
   }
 
   protected async salvar(): Promise<void> {

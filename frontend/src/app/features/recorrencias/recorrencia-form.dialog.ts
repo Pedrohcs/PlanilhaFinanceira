@@ -35,6 +35,8 @@ import {
 } from '../../core/utils/mes';
 import { textoAparado, valorValido } from '../../core/utils/validadores';
 import { formatarValor, interpretarValor } from '../../core/utils/valor';
+import { DATEPICKER_PT_BR } from '../../core/utils/datepicker-intl';
+import { limparErroDoServidorAoFocar } from '../../core/utils/erro-do-servidor';
 
 export interface DadosFormularioRecorrencia {
   /** Presente no modo edição. */
@@ -111,6 +113,7 @@ function vigenciaValida(grupo: AbstractControl): ValidationErrors | null {
 @Component({
   selector: 'app-recorrencia-form-dialog',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  providers: [DATEPICKER_PT_BR],
   imports: [
     ReactiveFormsModule,
     RouterLink,
@@ -124,7 +127,7 @@ function vigenciaValida(grupo: AbstractControl): ValidationErrors | null {
   ],
   template: `
     <h2 mat-dialog-title>{{ edicao ? 'Editar recorrência' : 'Nova recorrência' }}</h2>
-    <form [formGroup]="formulario" (ngSubmit)="salvar()">
+    <form [formGroup]="formulario" (ngSubmit)="salvar()" (focusin)="aoFocar($event)">
       <mat-dialog-content class="campos">
         <mat-form-field>
           <mat-label>Tipo</mat-label>
@@ -479,6 +482,11 @@ export class RecorrenciaFormDialog {
 
   protected fechar(): void {
     this.referencia.close();
+  }
+
+  /** O erro do servidor sai quando o usuário volta ao campo (F-14 §3.2.2). */
+  protected aoFocar(evento: FocusEvent): void {
+    limparErroDoServidorAoFocar(evento, this.formulario);
   }
 
   protected async salvar(): Promise<void> {

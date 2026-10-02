@@ -38,7 +38,7 @@ export const appConfig: ApplicationConfig = {
     // Entende `dd/mm/aaaa` digitado; o nativo usa o formato americano (F-06, T-016).
     { provide: DateAdapter, useClass: AdaptadorDeDataPtBr },
     { provide: MAT_DATE_LOCALE, useValue: 'pt-BR' },
-    // O `index.html` carrega a fonte Material Symbols; sem isto o `<mat-icon>`
+    // A fonte Material Symbols vem do pacote `material-symbols` (ADR-15); sem isto o `<mat-icon>`
     // procuraria a antiga "Material Icons" e mostraria o nome do ícone em texto.
     provideEnvironmentInitializer(() =>
       inject(MatIconRegistry).setDefaultFontSetClass('material-symbols-outlined'),

@@ -17,6 +17,7 @@ import { Categoria, NOME_CATEGORIA_MAXIMO } from '../../core/models/categoria';
 import { TipoLancamento } from '../../core/models/enums';
 import { ErroApi } from '../../core/models/erro-api';
 import { PALETA } from './paleta';
+import { limparErroDoServidorAoFocar } from '../../core/utils/erro-do-servidor';
 
 export interface DadosFormularioCategoria {
   tipo: TipoLancamento;
@@ -58,7 +59,7 @@ function nomeValido(controle: AbstractControl<string>): ValidationErrors | null 
   ],
   template: `
     <h2 mat-dialog-title>{{ dados.categoria ? 'Editar categoria' : 'Nova categoria' }}</h2>
-    <form [formGroup]="formulario" (ngSubmit)="salvar()">
+    <form [formGroup]="formulario" (ngSubmit)="salvar()" (focusin)="aoFocar($event)">
       <mat-dialog-content>
         <p class="tipo">Tipo: {{ dados.tipo === 'GASTO' ? 'Gasto' : 'Receita' }}</p>
 
@@ -159,6 +160,11 @@ export class CategoriaFormDialog {
     const atual = this.dados.categoria?.cor.toUpperCase();
     return atual && !PALETA.includes(atual) ? [...PALETA, atual] : [...PALETA];
   });
+
+  /** O erro do servidor sai quando o usuário volta ao campo (F-14 §3.2.2). */
+  protected aoFocar(evento: FocusEvent): void {
+    limparErroDoServidorAoFocar(evento, this.formulario);
+  }
 
   protected async salvar(): Promise<void> {
     this.formulario.markAllAsTouched();

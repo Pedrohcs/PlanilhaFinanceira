@@ -6,6 +6,7 @@ import { DateAdapter, MAT_DATE_LOCALE, provideNativeDateAdapter } from '@angular
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { provideRouter } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
+import { botoesSemNome, camposSemRotulo } from '../../../testing/acessibilidade';
 import { umaCategoria } from '../../../testing/categorias';
 import { provideMaterialParaTestes } from '../../../testing/material';
 import { Avisos } from '../../core/avisos/avisos';
@@ -216,6 +217,48 @@ describe('LancamentoFormDialog', () => {
     expect(document.activeElement).toBe(campo('valor')); // foco no valor
     expect(await opcoes('categoria_id')).toEqual(['Mercado']); // só ativas de gasto
     expect(campo('forma_pagamento').textContent?.trim()).toBe(''); // nada pré-selecionado (Q4)
+  });
+
+  it('foco_inicial_e_rotulos__CA_F14_4', async () => {
+    await abrir('GASTO');
+
+    expect(document.activeElement).toBe(campo('valor'));
+    expect(camposSemRotulo(container())).toEqual([]);
+    expect(botoesSemNome(container())).toEqual([]);
+  });
+
+  it('erro_do_servidor_some_ao_interagir__CA_F14_8', async () => {
+    await abrir('GASTO');
+    await digitar('valor', '10');
+    await digitar('descricao', 'Almoço');
+    await escolher('categoria_id', 'Mercado');
+    await escolher('forma_pagamento', 'Pix');
+    await salvar();
+    controle
+      .expectOne('/api/lancamentos')
+      .flush(
+        { erro: { codigo: 'CATEGORIA_INATIVA', mensagem: 'Categoria inativa.', detalhes: [] } },
+        { status: 409, statusText: 'x' },
+      );
+    await estabilizar();
+    controle.match(URL_CATEGORIAS).forEach((pedido) => pedido.flush(CATEGORIAS));
+    await estabilizar();
+    expect(container().textContent).toContain('Categoria inativa.');
+
+    // Escolher de novo a mesma categoria: o erro do servidor sai e o envio volta a acontecer.
+    campo('categoria_id').dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
+    await estabilizar();
+    expect(container().textContent).not.toContain('Categoria inativa.');
+    await salvar();
+    controle.expectOne('/api/lancamentos').flush({ ...ORIGINAL, id: 'novo' });
+    await estabilizar();
+  });
+
+  it('botao_do_calendario_em_ptbr__CA_F14_3', async () => {
+    await abrir('GASTO');
+
+    const botao = container().querySelector('mat-datepicker-toggle button');
+    expect(botao?.getAttribute('aria-label')).toBe('Abrir calendário');
   });
 
   it('receita_so_ativas_de_receita__CA_02_1', async () => {

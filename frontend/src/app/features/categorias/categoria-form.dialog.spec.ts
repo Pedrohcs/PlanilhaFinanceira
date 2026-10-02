@@ -4,11 +4,13 @@ import { ApplicationRef } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { firstValueFrom } from 'rxjs';
+import { botoesSemNome, camposSemRotulo } from '../../../testing/acessibilidade';
 import { umaCategoria } from '../../../testing/categorias';
 import { provideMaterialParaTestes } from '../../../testing/material';
 import { Avisos } from '../../core/avisos/avisos';
 import { erroInterceptor } from '../../core/interceptors/erro.interceptor';
 import { Categoria } from '../../core/models/categoria';
+import { ConexaoStore } from '../../core/state/conexao.store';
 import { CategoriaFormDialog, DadosFormularioCategoria } from './categoria-form.dialog';
 import { PALETA } from './paleta';
 
@@ -79,6 +81,55 @@ describe('CategoriaFormDialog', () => {
   function textoDoDialogo(): string {
     return document.querySelector('mat-dialog-container')?.textContent ?? '';
   }
+
+  it('foco_inicial_e_rotulos__CA_F14_4', async () => {
+    await abrir({ tipo: 'GASTO', corInicial: '#E57373' });
+
+    expect(document.activeElement).toBe(campoNome());
+    const container = document.querySelector('mat-dialog-container')!;
+    expect(camposSemRotulo(container)).toEqual([]);
+    expect(botoesSemNome(container)).toEqual([]);
+  });
+
+  it('503_mantem_dados__RNF_06', async () => {
+    await abrir({ tipo: 'GASTO', corInicial: '#E57373' });
+    digitar('Pets');
+    await salvar();
+
+    controle
+      .expectOne('/api/categorias')
+      .flush(
+        { erro: { codigo: 'PLANILHA_INDISPONIVEL', mensagem: 'Fora do ar.', detalhes: [] } },
+        { status: 503, statusText: 'x' },
+      );
+    await estabilizar();
+
+    expect(dialog.openDialogs).toHaveLength(1);
+    expect(campoNome().value).toBe('Pets');
+    expect(TestBed.inject(ConexaoStore).mensagem()).toBe('Fora do ar.');
+  });
+
+  it('erro_do_servidor_some_ao_interagir__CA_F14_8', async () => {
+    await abrir({ tipo: 'GASTO', corInicial: '#E57373' });
+    digitar('Mercado');
+    await salvar();
+    controle
+      .expectOne('/api/categorias')
+      .flush(
+        { erro: { codigo: 'CATEGORIA_DUPLICADA', mensagem: 'Duplicada.', detalhes: [] } },
+        { status: 409, statusText: 'x' },
+      );
+    await estabilizar();
+    expect(document.querySelector('mat-error')?.textContent).toContain('Duplicada.');
+
+    // Voltar ao campo limpa o erro do servidor; dá para tentar de novo com o mesmo nome.
+    campoNome().dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
+    await estabilizar();
+    expect(document.querySelector('mat-error')).toBeNull();
+    await salvar();
+    controle.expectOne('/api/categorias').flush(umaCategoria({ id: 'mercado-2', nome: 'Mercado' }));
+    await estabilizar();
+  });
 
   it('cria_com_nome_e_cor', async () => {
     await abrir({ tipo: 'RECEITA', corInicial: '#9CCC65' });

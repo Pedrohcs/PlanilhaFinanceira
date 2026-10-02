@@ -4,6 +4,7 @@ import { MatDatepicker, MatDatepickerModule } from '@angular/material/datepicker
 import { PeriodoHistorico } from '../../core/models/resumo';
 import { dataParaMes, mesParaData, mesPorExtenso } from '../../core/utils/mes';
 import { comFim, comInicio } from './periodo';
+import { DATEPICKER_PT_BR } from '../../core/utils/datepicker-intl';
 
 /**
  * Período do histórico (F-11 §3.2.1, Q1): "De" e "Até", cada um abrindo o
@@ -16,6 +17,7 @@ import { comFim, comInicio } from './periodo';
 @Component({
   selector: 'app-seletor-intervalo',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  providers: [DATEPICKER_PT_BR],
   imports: [MatButtonModule, MatDatepickerModule],
   template: `
     <span class="ponta">

@@ -96,9 +96,14 @@
               <span class="vigencia">{{ vigencia(item) }}</span>
             </div>
             <div class="linha secundaria">
-              <span
-                >Próximo mês: <span class="proximo">{{ proximo(item) }}</span></span
-              >
+              @if (item.status === 'ATIVA' && !item.proximo_mes) {
+                <!-- "Vigência terminou em …" já é a frase inteira (F-13 Q4; T-031). -->
+                <span class="proximo">{{ proximo(item) }}</span>
+              } @else {
+                <span
+                  >Próximo mês: <span class="proximo">{{ proximo(item) }}</span></span
+                >
+              }
             </div>
           </li>
         }

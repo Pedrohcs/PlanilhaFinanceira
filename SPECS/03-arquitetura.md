@@ -3,7 +3,7 @@
 | Campo | Valor |
 |---|---|
 | Documento | `SPECS/03-arquitetura.md` |
-| Versão | 1.33 |
+| Versão | 1.34 |
 | Atualizado em | 2026-10-01 |
 | Status | Aprovado para início |
 | Responde | **Como** o sistema se organiza: componentes, pastas, camadas, modelo de dados na planilha, contrato da API e fluxos |
@@ -108,7 +108,9 @@ PlanilhaFinanceira/
         │   └── utils/         # mes.ts (YYYY-MM), valor.ts (valor pt-BR), adaptador-de-data.ts
         │                      # (DateAdapter que entende dd/mm/aaaa), parcelas.ts (prévia de
         │                      # RN-07 só para exibir, F-12 Q1), validadores.ts (valor e texto,
-        │                      # comuns aos formulários de lançamento e recorrência)
+        │                      # comuns aos formulários de lançamento e recorrência),
+        │                      # datepicker-intl.ts (textos do calendário em pt-BR, por componente),
+        │                      # erro-do-servidor.ts (erro do servidor sai ao voltar ao campo)
         ├── shared/
         │   ├── components/    # seletor-mes, confirmacao-dialog, estado-vazio, carregando,
         │   │                  # banner-conexao, totais (cards Gastos/Receitas/Saldo)
@@ -532,4 +534,5 @@ Quando o **backend não responde** (status 0, ou 502/504 sem o envelope de §6.2
 | 2026-10-01 | 1.31 | §3: `recorrencia_service`; §6.2: erros de recorrência (campo `mes_fim`/`status`, 404); §6.3: regra de `proximo_mes`, ordem da listagem e transições de status (T-028). |
 | 2026-10-01 | 1.32 | §3: sincronização em `recorrencia_service`; §4.4: algoritmo com trava, mês já gerado pulado, nenhuma escrita sem nada a gerar e categoria não validada (T-029; F-13 Q1, Q2). |
 | 2026-10-01 | 1.33 | §3: `recorrencias.api`, `sincronizacao.ts`, `validadores.ts` e a página de recorrências; §7.2 e §8.2: sincronização na abertura, no "Tentar novamente" e após salvar/reativar (T-030). |
+| 2026-10-01 | 1.34 | §3: `datepicker-intl.ts` e `erro-do-servidor.ts` em `core/utils` (T-031). |
 | 2026-09-29 | 1.1 | Frontend em Angular 22 (zoneless); pasta `shared/grafico/` com diretiva Chart.js própria (§3, §8.2.1). |

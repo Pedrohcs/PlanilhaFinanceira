@@ -10,6 +10,7 @@ import {
   mesPorExtenso,
   proximoMes,
 } from '../../../core/utils/mes';
+import { DATEPICKER_PT_BR } from '../../../core/utils/datepicker-intl';
 
 /**
  * Seletor do mês de referência (REQ-04; F-04 §3.5.2).
@@ -21,6 +22,7 @@ import {
 @Component({
   selector: 'app-seletor-mes',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  providers: [DATEPICKER_PT_BR],
   imports: [MatButtonModule, MatDatepickerModule, MatIconModule],
   template: `
     <button matIconButton type="button" aria-label="Mês anterior" (click)="anterior()">

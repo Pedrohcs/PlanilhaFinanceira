@@ -26,10 +26,10 @@
 | M1 · Registro e consulta | F-05..F-08 | 8 | 0 | 0 | 8 | 100% |
 | M2 · Visão financeira | F-09..F-11 | 5 | 0 | 0 | 5 | 100% |
 | M3 · Automação | F-12..F-13 | 5 | 0 | 0 | 5 | 100% |
-| M4 · Acabamento | F-14..F-15 | 5 | 5 | 0 | 0 | 0% |
-| **Total** | **15** | **35** | **5** | **0** | **30** | **86%** |
+| M4 · Acabamento | F-14..F-15 | 5 | 4 | 0 | 1 | 20% |
+| **Total** | **15** | **35** | **4** | **0** | **31** | **89%** |
 
-**M0 a M3 concluídos (F-01 a F-13).** Caminho crítico em F-14. Desbloqueada: **T-031** (FE, F-14, spec aprovada; próximo passo: `/implementar-tarefa T-031`). Pendentes com o usuário, sem bloquear: seguir o README com a planilha real (CA-F02.13), rodar `pytest -m integracao` (CA-15.1/15.2) e a conferência visual (CA-F04.7, CA-F04.30, CA-F05.20, F-06 borda 16, CA-F07.18, menu ⋮ de F-08 e caixa "Compra parcelada" de F-12 em 360 px, resumo de F-09, gráficos de F-10, histórico de F-11 e recorrências de F-13 em 360 px, claro e escuro).
+**M0 a M3 concluídos (F-01 a F-13).** F-14 iniciada (T-031 concluída). Caminho crítico em F-14. Desbloqueada: **T-032** (BE+FE, F-14, spec aprovada; próximo passo: `/implementar-tarefa T-032`). Pendentes com o usuário, sem bloquear: seguir o README com a planilha real (CA-F02.13), rodar `pytest -m integracao` (CA-15.1/15.2; precisa de `SPREADSHEET_ID_TESTE` no `.env`, hoje vazio). A conferência visual pendente das features anteriores (360/1280 px, claro e escuro) foi feita em T-031 com backend em memória — resultado em F-14 §10; falta só repeti-la com a planilha real no roteiro E2E de F-15.
 
 ---
 
@@ -50,7 +50,7 @@
 | F-11 | Histórico | M2 | Concluída | [`F-11-historico.md`](features/F-11-historico.md) (Concluída) |
 | F-12 | Parcelamentos | M3 | Concluída | [`F-12-parcelamentos.md`](features/F-12-parcelamentos.md) (Concluída) |
 | F-13 | Recorrências | M3 | Concluída | [`F-13-recorrencias.md`](features/F-13-recorrencias.md) (Concluída) |
-| F-14 | Polimento e resiliência | M4 | Não iniciada | [`F-14-polimento-e-resiliencia.md`](features/F-14-polimento-e-resiliencia.md) (Aprovada) |
+| F-14 | Polimento e resiliência | M4 | Iniciada | [`F-14-polimento-e-resiliencia.md`](features/F-14-polimento-e-resiliencia.md) (Aprovada) |
 | F-15 | Entrega local e verificação E2E | M4 | Não iniciada | — |
 
 Status da feature: `Não iniciada` (nenhuma tarefa iniciada) · `Iniciada` (alguma tarefa iniciada ou concluída) · `Concluída` (todas concluídas). Na coluna *Spec da feature*, coloque o link do arquivo em `SPECS/features/` quando ele for criado.
@@ -81,7 +81,8 @@ flowchart LR
     classDef naoIniciada fill:#eeeeee,stroke:#9e9e9e,color:#424242;
     classDef iniciada fill:#fff3cd,stroke:#f0ad4e,color:#5c4400;
     classDef concluida fill:#d4edda,stroke:#28a745,color:#155724;
-    class F14,F15 naoIniciada;
+    class F15 naoIniciada;
+    class F14 iniciada;
     class F01,F02,F03,F04,F05,F06,F07,F08,F09,F10,F11,F12,F13 concluida;
 ```
 
@@ -145,7 +146,7 @@ Camadas: **BE** = backend · **FE** = frontend · **DOC** = documentação/infra
 
 | ID | Tarefa (escopo) | Feature | Camada | Depende de | Status | Início | Conclusão | Notas |
 |---|---|---|---|---|---|---|---|---|
-| T-031 | Revisão de todas as telas: carregando/vazio/erro, responsividade ≥ 360 px, mensagens em pt-BR, acessibilidade básica (labels, foco no diálogo). | F-14 | FE | T-020, T-023, T-025, T-027, T-030 | Não iniciada | | | |
+| T-031 | Revisão de todas as telas: carregando/vazio/erro, responsividade ≥ 360 px, mensagens em pt-BR, acessibilidade básica (labels, foco no diálogo). | F-14 | FE | T-020, T-023, T-025, T-027, T-030 | Concluída | 2026-10-01 | 2026-10-01 | Revisão das 5 telas, do shell e dos 4 diálogos (tabela em F-14 §10), com conferência visual em 360/1280 px, claro e escuro, no Chrome com backend em memória. Corrigidos: fontes locais (`@fontsource/roboto` latino + `material-symbols`, ADR-15); calendário em pt-BR (`DATEPICKER_PT_BR` nos 4 componentes com datepicker — no `app.config` o pacote inicial ia a 744 kB); erro do servidor sai ao voltar ao campo nos 3 diálogos (`limparErroDoServidorAoFocar`); Categorias com recarga esmaecida e sem lista velha após erro; frase "Vigência terminou…" no cartão de recorrência. Helper `src/testing/acessibilidade.ts`. 11 testes novos (259 no total; ver Log sobre a suíte sob carga); build 478,31 kB inicial, sem `fonts.googleapis.com`. CA-F14.1..8. |
 | T-032 | `POST /api/sistema/recarregar` + botão "Recarregar dados"; aviso de `linhas_ignoradas` na interface; teste de desempenho com 5.000 linhas (RNF-04) usando repositório em memória e planilha de teste. | F-14 | BE+FE | T-031 | Não iniciada | | | |
 | T-033 | `scripts/start-backend.ps1`, `scripts/start-frontend.ps1`, `scripts/start.ps1` (sobe ambos e abre o navegador). | F-15 | DOC | T-032 | Não iniciada | | | |
 | T-034 | Suíte `tests/integracao/` completa contra `SPREADSHEET_ID_TESTE` (bootstrap, CRUD, parcelamento, sincronização). | F-15 | BE | T-032 | Não iniciada | | | |
@@ -157,6 +158,9 @@ Camadas: **BE** = backend · **FE** = frontend · **DOC** = documentação/infra
 
 | Data | Tarefa/Feature | Mudança | Observação |
 |---|---|---|---|
+| 2026-10-01 | T-031 | `Iniciada` → `Concluída` | Revisão das telas. `02` → 1.12 (ADR-15, fontes locais), `03` → 1.34 (§3). Dependências novas: `@fontsource/roboto` e `material-symbols` (ADR-15). Conferência visual com backend em memória (script temporário fora do repositório), porque `SPREADSHEET_ID_TESTE` estava vazio — decidido com o usuário. A suíte completa do frontend (259) passou durante a tarefa; nas rodadas finais, 4–6 testes que abrem rota sob demanda esgotaram o tempo de 5 s com a CPU da máquina em 92% (outros programas), e passam isolados (`app.spec`, `mes-selecionado.store.spec`, `lancamentos.page.spec`). |
+| 2026-10-01 | T-031 | Sugestão anotada | Se a suíte continuar lenta em máquina carregada, avaliar aumentar o tempo-limite dos testes que abrem rotas lazy (hoje o padrão de 5 s do Vitest). |
+| 2026-10-01 | T-031 | `Não iniciada` → `Iniciada` | Dependências T-020, T-023, T-025, T-027 e T-030 `Concluída`; spec F-14 `Aprovada`. F-14 passa a `Iniciada` (§2) e o mapa (§3) foi atualizado. |
 | 2026-10-01 | F-14 | Spec da feature criada e **aprovada** | `features/F-14-polimento-e-resiliencia.md`: Q1–Q6 respondidas (Q1–Q4 e Q6 na opção recomendada; Q5 só com fontes locais e erro do servidor no campo). Sugestões **não** escolhidas — README da aba "Página1" (T-008) e `conftest` com credencial falsa (T-009) — seguem em aberto no Log. Nenhuma mudança em 01–03 (fontes locais terão ADR em T-031). Nenhum status de tarefa alterado. |
 | 2026-10-01 | M3 | **Marco concluído** | F-12 e F-13 `Concluída`. Caminho crítico segue em F-14 (sem spec) → F-15. |
 | 2026-10-01 | F-13 | `Iniciada` → `Concluída` | Última tarefa (T-030) concluída; §2 e mapa (§3) atualizados. |

@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { MAT_DATE_LOCALE, provideNativeDateAdapter } from '@angular/material/core';
-import { MatDatepicker } from '@angular/material/datepicker';
+import { MatDatepicker, MatDatepickerIntl } from '@angular/material/datepicker';
 import { By } from '@angular/platform-browser';
 import { provideRouter, Router } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
@@ -59,6 +59,15 @@ describe('SeletorMes', () => {
     await clicar('Mês anterior');
     expect(botao('Escolher mês').textContent?.trim()).toBe('dezembro de 2026');
     expect(TestBed.inject(Router).url).toBe('/resumo?mes=2026-12');
+  });
+
+  it('calendario_em_ptbr__CA_F14_3', async () => {
+    await abrir('/lancamentos?mes=2026-09');
+
+    const intl = harness.fixture.debugElement
+      .query(By.directive(MatDatepicker))
+      .injector.get(MatDatepickerIntl);
+    expect(intl.switchToMultiYearViewLabel).toBe('Escolher mês e ano');
   });
 
   it('datepicker_escolhe_mes_e_fecha__CA_F04_31', async () => {
