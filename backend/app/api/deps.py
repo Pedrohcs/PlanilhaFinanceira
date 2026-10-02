@@ -52,6 +52,11 @@ def obter_conexao(request: Request) -> ConexaoPlanilha:
     return request.app.state.conexao
 
 
+def obter_cache(request: Request) -> CacheAbas:
+    """Cache único do processo, o mesmo dos repositórios da planilha (`main.py`)."""
+    return request.app.state.cache
+
+
 def obter_repositorios(request: Request) -> Repositorios:
     """Repositórios criados no lifespan (`main.py`)."""
     return request.app.state.repositorios
@@ -92,6 +97,7 @@ def obter_resumo_service(
 
 
 ConexaoDep = Annotated[ConexaoPlanilha, Depends(obter_conexao)]
+CacheDep = Annotated[CacheAbas, Depends(obter_cache)]
 CategoriaServiceDep = Annotated[CategoriaService, Depends(obter_categoria_service)]
 LancamentoServiceDep = Annotated[LancamentoService, Depends(obter_lancamento_service)]
 ParcelamentoServiceDep = Annotated[ParcelamentoService, Depends(obter_parcelamento_service)]

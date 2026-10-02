@@ -10,6 +10,17 @@
   <span class="espaco"></span>
 
   <button
+    matIconButton
+    type="button"
+    aria-label="Recarregar dados da planilha"
+    title="Recarregar dados da planilha"
+    [disabled]="recarregando()"
+    (click)="recarregarDados()"
+  >
+    <mat-icon>refresh</mat-icon>
+  </button>
+
+  <button
     matButton="filled"
     type="button"
     class="registrar"

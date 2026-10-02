@@ -3,6 +3,8 @@
   <app-seletor-mes />
 </header>
 
+<app-aviso-linhas-ignoradas [quantidade]="resumo()?.linhas_ignoradas ?? 0" />
+
 @if (resumo() === null && carregando()) {
   <app-carregando texto="Carregando resumo…" />
 } @else if (erro()) {

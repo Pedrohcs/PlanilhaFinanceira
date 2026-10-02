@@ -398,6 +398,25 @@ def test_get_uma_leitura_por_aba__RNF_04(monkeypatch: pytest.MonkeyPatch) -> Non
     assert duracao < 3
 
 
+def test_registrar_com_5000_linhas__RNF_04(monkeypatch: pytest.MonkeyPatch) -> None:
+    """CA-F14.15: com a aba cheia, registrar lê só `Categorias`, escreve uma vez e leva < 3 s."""
+    linhas = [linha(f"l{n}", f"2026-{(n % 12) + 1:02d}-15", 1.25) for n in range(5000)]
+    cliente, documento = cliente_com_planilha(monkeypatch, *linhas)
+
+    with cliente:
+        escritas_antes = len(documento.escritas)
+        documento.leituras.clear()
+        inicio = time.perf_counter()
+        resposta = cliente.post("/api/lancamentos", json=entrada(categoria_id="alimentacao"))
+        duracao = time.perf_counter() - inicio
+
+    assert resposta.status_code == 201
+    assert documento.leituras == {"Categorias": 1}
+    assert [e[0] for e in documento.escritas[escritas_antes:]] == ["append_rows"]
+    assert len(documento.worksheet(ABA_LANCAMENTOS.nome).valores) == 1 + 5000 + 1
+    assert duracao < 3
+
+
 def test_get_503__CA_F07_9(cliente: TestClient) -> None:
     resposta = cliente.get("/api/lancamentos?mes=2026-09")
 

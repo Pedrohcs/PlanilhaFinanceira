@@ -18,6 +18,7 @@ import { MesSelecionadoStore } from '../../core/state/mes-selecionado.store';
 import { mesPorExtenso } from '../../core/utils/mes';
 import { formatarMontante, formatarPercentual } from '../../core/utils/valor';
 import { Carregando } from '../../shared/components/carregando/carregando';
+import { AvisoLinhasIgnoradas } from '../../shared/components/aviso-linhas-ignoradas/aviso-linhas-ignoradas';
 import { EstadoVazio } from '../../shared/components/estado-vazio/estado-vazio';
 import { SeletorMes } from '../../shared/components/seletor-mes/seletor-mes';
 import { Totais } from '../../shared/components/totais/totais';
@@ -65,7 +66,7 @@ const OPCOES_LINHA: ChartOptions<'line'> = {
 @Component({
   selector: 'app-resumo-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [SeletorMes, Totais, Carregando, EstadoVazio, GraficoDirective],
+  imports: [SeletorMes, Totais, Carregando, EstadoVazio, AvisoLinhasIgnoradas, GraficoDirective],
   templateUrl: './resumo.page.html',
   styleUrl: './resumo.page.scss',
 })

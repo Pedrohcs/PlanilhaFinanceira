@@ -33,6 +33,7 @@ import { exibirData } from '../../core/utils/adaptador-de-data';
 import { mesPorExtenso } from '../../core/utils/mes';
 import { formatarValor } from '../../core/utils/valor';
 import { Carregando } from '../../shared/components/carregando/carregando';
+import { AvisoLinhasIgnoradas } from '../../shared/components/aviso-linhas-ignoradas/aviso-linhas-ignoradas';
 import { EstadoVazio } from '../../shared/components/estado-vazio/estado-vazio';
 import { confirmar } from '../../shared/components/confirmacao-dialog/confirmacao.dialog';
 import { SeletorMes } from '../../shared/components/seletor-mes/seletor-mes';
@@ -69,6 +70,7 @@ interface GrupoDeCategorias {
     Totais,
     Carregando,
     EstadoVazio,
+    AvisoLinhasIgnoradas,
   ],
   templateUrl: './lancamentos.page.html',
   styleUrl: './lancamentos.page.scss',

@@ -4,12 +4,12 @@
 |---|---|
 | Feature | F-14 |
 | Marco | M4 |
-| Status | Aprovada |
+| Status | Concluída |
 | Requisitos | REQ-16 (CA-16.2, CA-16.3) |
 | Regras | RN-14; RNF-03, RNF-04, RNF-06, RNF-07 |
 | Depende de | F-08, F-10, F-11, F-12, F-13 (todas **Concluída**) |
 | Tarefas | T-031, T-032 |
-| Atualizado em | 2026-10-01 |
+| Atualizado em | 2026-10-02 |
 
 > **IDs de critério:** herdados de `01` mantêm o ID original (**CA-16.3** …). Os refinados usam **`CA-F14.y`**.
 >
@@ -97,13 +97,15 @@ Para cada tela/diálogo, a revisão confere os itens abaixo e corrige o que falt
    | `missing` | "Campo obrigatório." |
    | `greater_than` / `greater_than_equal` | "Deve ser maior que {gt}." / "Deve ser no mínimo {ge}." |
    | `less_than_equal` | "Deve ser no máximo {le}." |
-   | `string_too_short` / `string_too_long` | "Texto obrigatório." / "Use no máximo {max_length} caracteres." |
+   | `string_too_short` / `string_too_long` (e `too_short` / `too_long`, que o Pydantic usa em texto com `BeforeValidator`, ex.: `descricao`) | "Texto obrigatório." / "Use no máximo {max_length} caracteres." |
    | `string_pattern_mismatch` | "Formato inválido." |
    | `decimal_max_places` | "Use no máximo 2 casas decimais." |
-   | `int_parsing`, `decimal_parsing`, `float_parsing`, `int_type`, … | "Número inválido." |
+   | `decimal_whole_digits` / `decimal_max_digits` | "Valor acima do máximo permitido." |
+   | `int_parsing`, `int_from_float`, `int_type`, `decimal_parsing`, `decimal_type`, `float_parsing`, `float_type` | "Número inválido." |
    | `date_parsing`, `date_from_datetime_parsing`, `date_type` | "Data inválida." |
    | `enum`, `literal_error` | "Valor não permitido." |
-   | outro | "Valor inválido." |
+   | `value_error` (validadores do domínio, já em pt-BR — ex.: `Data`) | O texto do próprio validador, sem o prefixo "Value error, ", com inicial maiúscula e ponto final (ex.: "Data deve estar no formato AAAA-MM-DD."). |
+   | outro (ex.: `string_type`, `bool_parsing`) | "Valor inválido." |
 2. A mensagem geral continua "Dados inválidos.". Mensagens que o domínio já escreve em pt-BR (`ErroValidacao.no_campo`) não mudam.
 
 ### 3.6 Desempenho (T-032, RNF-04)
@@ -117,8 +119,8 @@ Para cada tela/diálogo, a revisão confere os itens abaixo e corrige o que falt
 
 **Herdados de `01`**
 
-- [ ] **CA-16.2** Dado uma falha temporária, então o usuário pode tentar novamente sem reiniciar o aplicativo. *(F-04 já cobre o "Tentar novamente"; F-14 acrescenta "Recarregar dados" para edições manuais e confere RNF-06 nos formulários.)*
-- [ ] **CA-16.3** Dado uma linha editada manualmente na planilha com dado inválido, então o sistema continua funcionando, ignora a linha nos cálculos e informa quantas linhas foram ignoradas.
+- [x] **CA-16.2** Dado uma falha temporária, então o usuário pode tentar novamente sem reiniciar o aplicativo. *(F-04 já cobre o "Tentar novamente"; F-14 acrescenta "Recarregar dados" para edições manuais e confere RNF-06 nos formulários.)* *(T-031: RNF-06; T-032: "Recarregar dados", inclusive com o banner aberto.)*
+- [x] **CA-16.3** Dado uma linha editada manualmente na planilha com dado inválido, então o sistema continua funcionando, ignora a linha nos cálculos e informa quantas linhas foram ignoradas. *(Contagem no backend desde F-07/F-09/F-11; faixa nas 3 telas em T-032.)*
 
 **Refinados — revisão (T-031)**
 
@@ -134,13 +136,13 @@ Para cada tela/diálogo, a revisão confere os itens abaixo e corrige o que falt
 
 **Refinados — recarregar, linhas ignoradas, pt-BR, desempenho (T-032)**
 
-- [ ] **CA-F14.10** Dado `POST /api/sistema/recarregar`, então `204`, o cache de todas as abas é invalidado e nenhuma chamada ao Google é feita; a leitura seguinte de cada aba vai à planilha (RN-14).
-- [ ] **CA-F14.11** Dado a planilha inacessível, então `POST /api/sistema/recarregar` ainda responde 204.
-- [ ] **CA-F14.12** Dado o botão "Recarregar dados" na barra (Q1), quando clicado, então ele fica desabilitado durante o pedido, e no 204 as telas recarregam (`versao++`) e aparece "Dados recarregados da planilha."; com o backend fora, o banner aparece e não há aviso de sucesso.
-- [ ] **CA-F14.13** Dado `linhas_ignoradas` = 1 / 3 na resposta de lançamentos, resumo ou histórico, então a faixa mostra o texto no singular / plural de §3.4.2 com `role="status"`; dado 0, nenhuma faixa (CA-16.3).
-- [ ] **CA-F14.14** Dado um corpo com `dia_do_mes` = 32, `valor` com 3 casas, `descricao` vazia, `mes_inicio` "julho" ou campo obrigatório faltando, então `detalhes[].mensagem` vem em pt-BR (§3.5).
-- [ ] **CA-F14.15** Dado 5.000 lançamentos na planilha falsa, então registrar um lançamento faz uma leitura de `Categorias`, uma escrita e leva < 3 s (RNF-04).
-- [ ] **CA-F14.16** (Q6) Dado `SPREADSHEET_ID_TESTE`, quando `pytest -m integracao` roda o teste de desempenho, então resumo, histórico e registro levam < 3 s cada com 5.000 lançamentos, e as linhas criadas são removidas ao final.
+- [x] **CA-F14.10** Dado `POST /api/sistema/recarregar`, então `204`, o cache de todas as abas é invalidado e nenhuma chamada ao Google é feita; a leitura seguinte de cada aba vai à planilha (RN-14).
+- [x] **CA-F14.11** Dado a planilha inacessível, então `POST /api/sistema/recarregar` ainda responde 204.
+- [x] **CA-F14.12** Dado o botão "Recarregar dados" na barra (Q1), quando clicado, então ele fica desabilitado durante o pedido, e no 204 as telas recarregam (`versao++`) e aparece "Dados recarregados da planilha."; com o backend fora, o banner aparece e não há aviso de sucesso.
+- [x] **CA-F14.13** Dado `linhas_ignoradas` = 1 / 3 na resposta de lançamentos, resumo ou histórico, então a faixa mostra o texto no singular / plural de §3.4.2 com `role="status"`; dado 0, nenhuma faixa (CA-16.3).
+- [x] **CA-F14.14** Dado um corpo com `dia_do_mes` = 32, `valor` com 3 casas, `descricao` vazia, `mes_inicio` "julho" ou campo obrigatório faltando, então `detalhes[].mensagem` vem em pt-BR (§3.5).
+- [x] **CA-F14.15** Dado 5.000 lançamentos na planilha falsa, então registrar um lançamento faz uma leitura de `Categorias`, uma escrita e leva < 3 s (RNF-04).
+- [ ] **CA-F14.16** (Q6) Dado `SPREADSHEET_ID_TESTE`, quando `pytest -m integracao` roda o teste de desempenho, então resumo, histórico e registro levam < 3 s cada com 5.000 lançamentos, e as linhas criadas são removidas ao final. *(T-032: teste escrito e coletado; a limpeza foi conferida contra a planilha falsa. **Execução pendente com o usuário** — `SPREADSHEET_ID_TESTE` vazio, como CA-15.1/15.2.)*
 
 ---
 
@@ -240,6 +242,11 @@ Ordem: T-031 → T-032 (`04`/`05`: T-032 depende de T-031).
 | Textos do datepicker em pt-BR fornecidos **nos componentes** que usam calendário (`providers: [DATEPICKER_PT_BR]`), não no `app.config` (T-031). | No `app.config`, o import levava o datepicker inteiro para o pacote inicial (478 → 744 kB, acima do orçamento de 500). O calendário abre num overlay criado a partir do elemento do datepicker, então o provider do componente vale para ele. | Não |
 | Erro do servidor sai no `focusin` do campo (helper `limparErroDoServidorAoFocar` no `<form>`) (T-031). | Cobre digitar, abrir o select e escolher o mesmo valor com um só ponto de ligação por diálogo. | Não |
 | Categorias passam a mostrar o estado de erro também depois de uma recarga que falhou (antes, mantinham a lista velha) (T-031). | Mesmo critério das outras telas (§3.1.1: erro sem dado velho). | Não |
+| O cache fica em `app.state.cache` (o mesmo dos repositórios) e chega ao router por `CacheDep` em `api/deps.py` (T-032). | O router não importa `app.infra` (`03` §4.2); os testes de API com repositórios em memória continuam funcionando sem mudança. | Não |
+| `value_error` usa o texto do validador do domínio (inicial maiúscula, ponto final); tipos novos que o Pydantic gera nos schemas atuais entraram na tabela de §3.5 (T-032, aprovado pelo usuário). | Os validadores do domínio já falam pt-BR; os tipos foram levantados testando os schemas, não supostos. | Não |
+| A faixa de linhas ignoradas fica entre o cabeçalho e o conteúdo e lê `linhas_ignoradas ?? 0` do dado da tela; como as 3 telas zeram o dado no erro, ela some junto (T-032). | Sem número velho no estado de erro (§3.1.1). | Não |
+| O teste `@integracao` de desempenho usa o próprio `POST /api/sistema/recarregar` para medir cada chamada com o cache frio e apaga as linhas pela marca na descrição (T-032). | Mede o caminho real (Google + cache vazio) e limpa até as linhas do `POST` medido. | Não |
+| Conferência visual do botão novo e da faixa **não feita** em T-032: a extensão do Chrome não estava conectada (T-032). | Testes cobrem comportamento e texto; a largura da barra em 360 px (agora com ↻) fica para o roteiro E2E de F-15. | Não |
 
 **Resultado da revisão de T-031** (2026-10-01; 360 px e 1280 px; claro e escuro; backend em memória):
 
@@ -281,3 +288,5 @@ Pacote inicial ao fim de T-031: **478,31 kB** (orçamento 500 kB); `dist/index.h
 | 2026-10-01 | Criação (`/especificar-feature F-14`). Status `Rascunho` — 6 questões em aberto. |
 | 2026-10-01 | Q1–Q6 respondidas → status **Aprovada**. Q1–Q4 e Q6 na opção recomendada; Q5 só com fontes locais e erro do servidor (CA-F14.9 removido; T-031 continua só FE). Cinco decisões em §10. |
 | 2026-10-01 | T-031 concluída: CA-F14.1 a .8 verificados (teste, build e conferência visual com backend em memória — §10). Quatro decisões em §10 e a tabela do resultado da revisão. `02` → 1.12 (ADR-15), `03` → 1.34. |
+| 2026-10-02 | T-032: tabela de §3.5 completada com os tipos que os schemas realmente geram (`too_short`/`too_long`, `decimal_whole_digits`/`decimal_max_digits`, `int_from_float`, `decimal_type`, `value_error`) — aprovado pelo usuário. |
+| 2026-10-02 | T-032 concluída: CA-16.2, CA-16.3 e CA-F14.10 a .15 verificados por teste; CA-F14.16 com teste escrito e execução pendente (`SPREADSHEET_ID_TESTE` vazio). Cinco decisões em §10. Status **Concluída**. `02` → 1.13, `03` → 1.35. |

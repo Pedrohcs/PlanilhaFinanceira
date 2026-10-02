@@ -7,12 +7,13 @@ import { MatDialog } from '@angular/material/dialog';
 import { MatSidenav } from '@angular/material/sidenav';
 import { By } from '@angular/platform-browser';
 import { provideRouter, Router } from '@angular/router';
-import { App, ITENS_DE_NAVEGACAO } from './app';
+import { App, ITENS_DE_NAVEGACAO, MENSAGEM_DADOS_RECARREGADOS } from './app';
 import { routes } from './app.routes';
 import { Avisos } from './core/avisos/avisos';
 import { erroInterceptor } from './core/interceptors/erro.interceptor';
 import { MENSAGEM_BACKEND_INDISPONIVEL } from './core/models/erro-api';
 import { provideVerificacaoDeConexao } from './core/state/conexao.store';
+import { DadosStore } from './core/state/dados.store';
 import { AdaptadorDeDataPtBr } from './core/utils/adaptador-de-data';
 import { BreakpointsFalsos } from '../testing/breakpoints';
 import { provideMaterialParaTestes } from '../testing/material';
@@ -274,5 +275,54 @@ describe('App (shell)', () => {
       });
       await fixture.whenStable();
     }
+  });
+
+  it('recarregar_dados__CA_F14_12', async () => {
+    await criar(360); // em todas as larguras, inclusive a barra curta (Q1)
+    const controle = TestBed.inject(HttpTestingController);
+    const dados = TestBed.inject(DadosStore);
+    const avisos = TestBed.inject(Avisos);
+    const recarregar = botao('Recarregar dados da planilha');
+    expect(recarregar?.getAttribute('title')).toBe('Recarregar dados da planilha');
+    expect(recarregar?.textContent?.trim()).toBe('refresh');
+    const versaoAntes = dados.versao();
+
+    recarregar?.click();
+    await fixture.whenStable();
+    expect(recarregar?.disabled).toBe(true);
+    recarregar?.click(); // borda 6: duplo clique faz um pedido só
+    const pedido = controle.expectOne('/api/sistema/recarregar');
+    expect(pedido.request.method).toBe('POST');
+    expect(dados.versao()).toBe(versaoAntes);
+
+    pedido.flush(null, { status: 204, statusText: 'No Content' });
+    await vi.waitFor(() => expect(recarregar?.disabled).toBe(false));
+    expect(dados.versao()).toBe(versaoAntes + 1);
+    expect(avisos.mostrar).toHaveBeenCalledExactlyOnceWith(MENSAGEM_DADOS_RECARREGADOS);
+    controle.verify();
+  });
+
+  it('recarregar_com_backend_fora_mostra_banner_sem_aviso__CA_F14_12', async () => {
+    await criar(1280);
+    const controle = TestBed.inject(HttpTestingController);
+    const dados = TestBed.inject(DadosStore);
+    const avisos = TestBed.inject(Avisos);
+    const versaoAntes = dados.versao();
+
+    botao('Recarregar dados da planilha')?.click();
+    controle.expectOne('/api/sistema/recarregar').error(new ProgressEvent('error'));
+    await vi.waitFor(() => expect(botao('Recarregar dados da planilha')?.disabled).toBe(false));
+    await fixture.whenStable();
+
+    expect(banner()?.textContent).toContain(MENSAGEM_BACKEND_INDISPONIVEL);
+    expect(avisos.mostrar).not.toHaveBeenCalled();
+    expect(dados.versao()).toBe(versaoAntes);
+    // Com o banner aberto, o botão continua disponível (F-14 §3.3.2).
+    botao('Recarregar dados da planilha')?.click();
+    controle.expectOne('/api/sistema/recarregar').flush(null, { status: 204, statusText: 'x' });
+    await vi.waitFor(() =>
+      expect(avisos.mostrar).toHaveBeenCalledWith(MENSAGEM_DADOS_RECARREGADOS),
+    );
+    controle.verify();
   });
 });

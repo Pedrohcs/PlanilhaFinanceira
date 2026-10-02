@@ -21,6 +21,7 @@ from app.api.routers import (
     parcelamentos,
     recorrencias,
     resumo,
+    sistema,
 )
 from app.config import Settings, obter_settings
 from app.infra.bootstrap import preparar_planilha
@@ -61,12 +62,12 @@ def criar_app(settings: Settings | None = None, conexao: ConexaoPlanilha | None 
         Conectar inclui o `bootstrap` das abas (`preparar_planilha`), que volta
         a rodar se a conexão só for estabelecida depois, pelo health.
 
-        Cache e repositórios são únicos no processo (`02` §5.5; T-009).
+        Cache e repositórios são únicos no processo (`02` §5.5; T-009). O cache
+        também fica no estado para o "Recarregar dados" (RN-14).
         """
         app.state.conexao = conexao_planilha
-        app.state.repositorios = criar_repositorios_planilha(
-            conexao_planilha, CacheAbas(config.cache_ttl_segundos)
-        )
+        app.state.cache = CacheAbas(config.cache_ttl_segundos)
+        app.state.repositorios = criar_repositorios_planilha(conexao_planilha, app.state.cache)
         conexao_planilha.conectar()
         yield
 
@@ -80,6 +81,7 @@ def criar_app(settings: Settings | None = None, conexao: ConexaoPlanilha | None 
     )
     registrar_handlers(app)
     app.include_router(health.router, prefix=PREFIXO_API)
+    app.include_router(sistema.router, prefix=PREFIXO_API)
     app.include_router(categorias.router, prefix=PREFIXO_API)
     app.include_router(formas_pagamento.router, prefix=PREFIXO_API)
     app.include_router(lancamentos.router, prefix=PREFIXO_API)

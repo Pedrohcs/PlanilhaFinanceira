@@ -594,4 +594,22 @@ describe('LancamentosPage', () => {
     expect(avisos.mostrar).not.toHaveBeenCalledWith('Parcelamento excluído.');
     await responder(lista([ITENS[0], ITENS[2]])); // já não existia: a lista se atualiza
   });
+
+  function faixa(): string | null {
+    const aviso = pagina().querySelector('header + app-aviso-linhas-ignoradas [role="status"] p');
+    return aviso ? aviso.textContent!.replace(/\s+/g, ' ').trim() : null;
+  }
+
+  it('mostra_linhas_ignoradas__CA_16_3', async () => {
+    await abrir('/lancamentos?mes=2026-09', { ...lista(ITENS), linhas_ignoradas: 1 });
+    expect(faixa()).toBe(
+      '1 linha da planilha foi ignorada por estar inválida. Corrija-a na planilha e use Recarregar dados.',
+    );
+
+    // Borda 2: corrigida na planilha e "Recarregar dados" (versao++) → a faixa some.
+    TestBed.inject(DadosStore).incrementar();
+    await estabilizar();
+    await responder(lista(ITENS));
+    expect(faixa()).toBeNull();
+  });
 });

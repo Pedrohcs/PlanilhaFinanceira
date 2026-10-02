@@ -403,4 +403,21 @@ describe('ResumoPage', () => {
       'Gráfico de linha do gasto acumulado dia a dia em setembro de 2026: R$ 1.500,00 no fim do mês.',
     ]);
   });
+
+  function faixa(): string | null {
+    const aviso = pagina().querySelector('header + app-aviso-linhas-ignoradas [role="status"] p');
+    return aviso ? aviso.textContent!.replace(/\s+/g, ' ').trim() : null;
+  }
+
+  it('mostra_linhas_ignoradas__CA_16_3', async () => {
+    await abrir(resumo({ linhas_ignoradas: 3 }));
+    expect(faixa()).toBe(
+      '3 linhas da planilha foram ignoradas por estarem inválidas. Corrija-as na planilha e use Recarregar dados.',
+    );
+
+    TestBed.inject(DadosStore).incrementar();
+    await estabilizar();
+    await responder(resumo());
+    expect(faixa()).toBeNull();
+  });
 });

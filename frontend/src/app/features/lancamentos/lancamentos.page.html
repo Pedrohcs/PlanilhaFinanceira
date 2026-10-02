@@ -3,6 +3,8 @@
   <app-seletor-mes />
 </header>
 
+<app-aviso-linhas-ignoradas [quantidade]="lista()?.linhas_ignoradas ?? 0" />
+
 <section class="filtros" aria-label="Filtros">
   <mat-form-field subscriptSizing="dynamic">
     <mat-label>Tipo</mat-label>

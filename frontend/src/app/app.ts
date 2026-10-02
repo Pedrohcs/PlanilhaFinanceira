@@ -1,13 +1,23 @@
 import { BreakpointObserver } from '@angular/cdk/layout';
-import { ChangeDetectionStrategy, Component, inject, Injector, Signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  inject,
+  Injector,
+  Signal,
+  signal,
+} from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSidenav, MatSidenavModule } from '@angular/material/sidenav';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
-import { map } from 'rxjs';
+import { firstValueFrom, map } from 'rxjs';
+import { SistemaApi } from './core/api/sistema.api';
+import { Avisos } from './core/avisos/avisos';
 import { TipoLancamento } from './core/models/enums';
+import { DadosStore } from './core/state/dados.store';
 import { MesSelecionadoStore } from './core/state/mes-selecionado.store';
 import { BannerConexao } from './shared/components/banner-conexao/banner-conexao';
 
@@ -15,6 +25,9 @@ import { BannerConexao } from './shared/components/banner-conexao/banner-conexao
 export const LARGURA_NAVEGACAO_FIXA = 960;
 /** A partir desta largura, a barra mostra o título e os rótulos completos (F-04 Q1). */
 export const LARGURA_BARRA_COMPLETA = 600;
+
+/** Aviso do "Recarregar dados" bem-sucedido (F-14 §3.3.2). */
+export const MENSAGEM_DADOS_RECARREGADOS = 'Dados recarregados da planilha.';
 
 export interface ItemDeNavegacao {
   rotulo: string;
@@ -34,9 +47,10 @@ export const ITENS_DE_NAVEGACAO: readonly ItemDeNavegacao[] = [
 ];
 
 /**
- * Shell do app (SPECS/03 §8.1): barra superior com as ações de registro,
- * navegação lateral, banner de conexão e a área das páginas. Os botões de
- * registro abrem o diálogo de lançamento (F-06), carregado sob demanda.
+ * Shell do app (SPECS/03 §8.1): barra superior com "Recarregar dados" e as
+ * ações de registro, navegação lateral, banner de conexão e a área das
+ * páginas. Os botões de registro abrem o diálogo de lançamento (F-06),
+ * carregado sob demanda.
  */
 @Component({
   selector: 'app-root',
@@ -57,6 +71,9 @@ export const ITENS_DE_NAVEGACAO: readonly ItemDeNavegacao[] = [
 export class App {
   private readonly breakpoints = inject(BreakpointObserver);
   private readonly injetor = inject(Injector);
+  private readonly sistema = inject(SistemaApi);
+  private readonly dados = inject(DadosStore);
+  private readonly avisos = inject(Avisos);
   protected readonly mesSelecionado = inject(MesSelecionadoStore);
   /** O item ativo depende só do caminho: `/resumo` e `/resumo?mes=…` são a mesma tela. */
   protected readonly comparacaoDoAtivo = {
@@ -69,6 +86,29 @@ export class App {
   protected readonly itensDeNavegacao = ITENS_DE_NAVEGACAO;
   protected readonly navegacaoFixa = this.aPartirDe(LARGURA_NAVEGACAO_FIXA);
   protected readonly barraCompleta = this.aPartirDe(LARGURA_BARRA_COMPLETA);
+  /** Pedido de "Recarregar dados" em andamento: o botão fica desabilitado (borda 6). */
+  protected readonly recarregando = signal(false);
+
+  /**
+   * "Recarregar dados" (RN-14; F-14 §3.3.2): esvazia o cache do backend e
+   * faz as telas e o `CategoriasStore` buscarem de novo (`versao++`). Se
+   * falhar, o interceptor já mostrou a causa (banner) — sem aviso de sucesso.
+   */
+  protected async recarregarDados(): Promise<void> {
+    if (this.recarregando()) {
+      return;
+    }
+    this.recarregando.set(true);
+    try {
+      await firstValueFrom(this.sistema.recarregar(), { defaultValue: undefined });
+      this.dados.incrementar();
+      void this.avisos.mostrar(MENSAGEM_DADOS_RECARREGADOS);
+    } catch {
+      // Causa já mostrada pelo interceptor.
+    } finally {
+      this.recarregando.set(false);
+    }
+  }
 
   /**
    * "Registrar gasto/receita" (REQ-01, REQ-02). O código do diálogo só é

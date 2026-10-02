@@ -4,6 +4,7 @@
 """
 
 import logging
+from collections.abc import Mapping
 from typing import Any
 
 from fastapi import FastAPI, Request, status
@@ -57,6 +58,58 @@ def _campo_de(localizacao: tuple[Any, ...]) -> str:
     return ".".join(partes) or "(corpo)"
 
 
+MENSAGEM_VALOR_INVALIDO = "Valor inválido."
+
+# Mensagens em pt-BR por tipo de erro do Pydantic (F-14 §3.5). `{...}` vem do
+# `ctx` do erro. `too_short`/`too_long` são os nomes que o Pydantic usa em
+# texto com `BeforeValidator` (ex.: `descricao`).
+MENSAGENS_PYDANTIC = {
+    "missing": "Campo obrigatório.",
+    "greater_than": "Deve ser maior que {gt}.",
+    "greater_than_equal": "Deve ser no mínimo {ge}.",
+    "less_than_equal": "Deve ser no máximo {le}.",
+    "string_too_short": "Texto obrigatório.",
+    "too_short": "Texto obrigatório.",
+    "string_too_long": "Use no máximo {max_length} caracteres.",
+    "too_long": "Use no máximo {max_length} caracteres.",
+    "string_pattern_mismatch": "Formato inválido.",
+    "decimal_max_places": "Use no máximo 2 casas decimais.",
+    "decimal_whole_digits": "Valor acima do máximo permitido.",
+    "decimal_max_digits": "Valor acima do máximo permitido.",
+    **dict.fromkeys(
+        (
+            "int_parsing",
+            "int_from_float",
+            "int_type",
+            "decimal_parsing",
+            "decimal_type",
+            "float_parsing",
+            "float_type",
+        ),
+        "Número inválido.",
+    ),
+    **dict.fromkeys(("date_parsing", "date_from_datetime_parsing", "date_type"), "Data inválida."),
+    **dict.fromkeys(("enum", "literal_error"), "Valor não permitido."),
+}
+
+
+def mensagem_em_ptbr(item: Mapping[str, Any]) -> str:
+    """Mensagem curta em pt-BR para um erro do Pydantic, pelo `type` (F-14 §3.5)."""
+    tipo = item.get("type", "")
+    contexto = item.get("ctx") or {}
+    if tipo == "value_error":
+        # Validadores do domínio já falam pt-BR (ex.: `Data`): usa o texto deles.
+        texto = str(contexto.get("error", "")).strip().rstrip(".")
+        return f"{texto[0].upper()}{texto[1:]}." if texto else MENSAGEM_VALOR_INVALIDO
+    modelo = MENSAGENS_PYDANTIC.get(tipo)
+    if modelo is None:
+        return MENSAGEM_VALOR_INVALIDO
+    try:
+        return modelo.format(**contexto)
+    except (KeyError, IndexError):
+        return MENSAGEM_VALOR_INVALIDO
+
+
 async def tratar_erro_dominio(_: Request, erro: Exception) -> JSONResponse:
     """`ErroDominio` → status do mapa, com a mensagem em pt-BR do domínio."""
     assert isinstance(erro, ErroDominio)
@@ -67,10 +120,10 @@ async def tratar_erro_dominio(_: Request, erro: Exception) -> JSONResponse:
 
 
 async def tratar_erro_validacao(_: Request, erro: Exception) -> JSONResponse:
-    """Erro do Pydantic → 422 `VALIDACAO`, um item de `detalhes` por campo."""
+    """Erro do Pydantic → 422 `VALIDACAO`, um item de `detalhes` por campo, em pt-BR."""
     assert isinstance(erro, RequestValidationError)
     detalhes = [
-        {"campo": _campo_de(item.get("loc", ())), "mensagem": str(item.get("msg", ""))}
+        {"campo": _campo_de(item.get("loc", ())), "mensagem": mensagem_em_ptbr(item)}
         for item in erro.errors()
     ]
     return JSONResponse(

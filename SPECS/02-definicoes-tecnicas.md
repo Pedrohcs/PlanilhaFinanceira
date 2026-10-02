@@ -3,8 +3,8 @@
 | Campo | Valor |
 |---|---|
 | Documento | `SPECS/02-definicoes-tecnicas.md` |
-| Versão | 1.12 |
-| Atualizado em | 2026-10-01 |
+| Versão | 1.13 |
+| Atualizado em | 2026-10-02 |
 | Status | Aprovado para início |
 | Responde | **Com o quê** o sistema é construído: linguagens, bibliotecas, versões, integração com Google, convenções |
 | Depende de | `01-requisitos.md` (RNF-xx) |
@@ -240,7 +240,7 @@ Limites da Sheets API: **60 requisições de leitura e 60 de escrita por minuto 
 |---|---|---|---|
 | Unitário backend | `backend/tests/unit/` | Serviços e regras (RN-xx) usando **repositórios em memória** | `pytest` (sempre) |
 | API backend | `backend/tests/api/` | Endpoints com `TestClient` + `dependency_overrides` para repositórios em memória; formato de erro | `pytest` (sempre) |
-| Integração | `backend/tests/integracao/` | Repositórios gspread contra `SPREADSHEET_ID_TESTE` | `pytest -m integracao` (manual; pulado sem a variável) |
+| Integração | `backend/tests/integracao/` | Repositórios gspread e desempenho com 5.000 lançamentos (RNF-04, T-032) contra `SPREADSHEET_ID_TESTE`; linhas criadas são apagadas no fim | `pytest -m integracao` (manual; pulado sem a variável) |
 | Unitário frontend | `*.spec.ts` (Vitest) | Services (com `HttpTestingController`), formulários, pipes/utilitários, `GraficoDirective` | `npm test` (`ng test`, execução única com `--watch=false`) |
 | Ponta a ponta | roteiro manual em `SPECS/features/F-15-*.md` | Fluxos principais com a planilha real de teste | manual |
 
@@ -306,3 +306,4 @@ Novas decisões: acrescente uma linha com o próximo ID. Decisões substituídas
 | 2026-09-30 | 1.10 | §3: tipo `Montante` para totais e saldo (T-017). |
 | 2026-10-01 | 1.11 | §4: `dados` da `GraficoDirective` também como função das cores do tema (séries com cores do tema diferentes entre si; F-11, T-025). |
 | 2026-10-01 | 1.12 | §1 e §9: fontes servidas pelo próprio app — `@fontsource/roboto` e `material-symbols` (ADR-15; F-14 Q5, T-031). |
+| 2026-10-02 | 1.13 | §8: a suíte de integração também mede desempenho com 5.000 lançamentos (`test_desempenho.py`, T-032). Nenhuma dependência nova. |

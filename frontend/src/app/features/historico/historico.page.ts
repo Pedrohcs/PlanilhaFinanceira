@@ -17,6 +17,7 @@ import { DadosStore } from '../../core/state/dados.store';
 import { mesAbreviado, mesPorExtenso } from '../../core/utils/mes';
 import { formatarMontante } from '../../core/utils/valor';
 import { Carregando } from '../../shared/components/carregando/carregando';
+import { AvisoLinhasIgnoradas } from '../../shared/components/aviso-linhas-ignoradas/aviso-linhas-ignoradas';
 import { EstadoVazio } from '../../shared/components/estado-vazio/estado-vazio';
 import { CoresDoTema, DadosDoGrafico } from '../../shared/grafico/grafico.config';
 import { GraficoDirective } from '../../shared/grafico/grafico.directive';
@@ -38,7 +39,7 @@ function mesmoPeriodo(a: PeriodoHistorico | null, b: PeriodoHistorico | null): b
 @Component({
   selector: 'app-historico-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [SeletorIntervalo, Carregando, EstadoVazio, GraficoDirective],
+  imports: [SeletorIntervalo, Carregando, EstadoVazio, AvisoLinhasIgnoradas, GraficoDirective],
   templateUrl: './historico.page.html',
   styleUrl: './historico.page.scss',
 })

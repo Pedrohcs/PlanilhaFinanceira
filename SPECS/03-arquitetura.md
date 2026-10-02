@@ -3,8 +3,8 @@
 | Campo | Valor |
 |---|---|
 | Documento | `SPECS/03-arquitetura.md` |
-| Versão | 1.34 |
-| Atualizado em | 2026-10-01 |
+| Versão | 1.35 |
+| Atualizado em | 2026-10-02 |
 | Status | Aprovado para início |
 | Responde | **Como** o sistema se organiza: componentes, pastas, camadas, modelo de dados na planilha, contrato da API e fluxos |
 | Depende de | `01-requisitos.md`, `02-definicoes-tecnicas.md` |
@@ -62,8 +62,9 @@ PlanilhaFinanceira/
 │   │   ├── main.py                # cria o app, CORS, handlers de erro, lifespan (bootstrap)
 │   │   ├── config.py              # Settings (pydantic-settings)
 │   │   ├── api/
-│   │   │   ├── deps.py            # `Repositorios` (planilha ou memória) e serviços (Depends)
-│   │   │   ├── erros.py           # exception handlers → formato padrão (§6.2)
+│   │   │   ├── deps.py            # `Repositorios` (planilha ou memória), cache e serviços (Depends)
+│   │   │   ├── erros.py           # exception handlers → formato padrão (§6.2); mensagens
+│   │   │   │                      # do Pydantic traduzidas para pt-BR por tipo (F-14 §3.5)
 │   │   │   ├── schemas.py         # DTOs de entrada/saída da API
 │   │   │   └── routers/           # health, sistema, formas_pagamento, categorias,
 │   │   │                          # lancamentos, parcelamentos, recorrencias, resumo
@@ -99,8 +100,8 @@ PlanilhaFinanceira/
         ├── app.config.ts  app.routes.ts  app.ts (classe `App`)  # shell
         ├── core/
         │   ├── models/        # interfaces espelhando o JSON da API
-        │   ├── api/           # um serviço HTTP por recurso (health, categorias, lancamentos,
-        │   │                  # parcelamentos, recorrencias, resumo, formas-pagamento)
+        │   ├── api/           # um serviço HTTP por recurso (health, sistema, categorias,
+        │   │                  # lancamentos, parcelamentos, recorrencias, resumo, formas-pagamento)
         │   ├── state/         # mes-selecionado, conexao, dados, categorias, formas-pagamento .store.ts;
         │   │                  # sincronizacao.ts (recorrências na abertura e após salvar, F-13)
         │   ├── interceptors/  # erro.interceptor.ts
@@ -113,7 +114,8 @@ PlanilhaFinanceira/
         │                      # erro-do-servidor.ts (erro do servidor sai ao voltar ao campo)
         ├── shared/
         │   ├── components/    # seletor-mes, confirmacao-dialog, estado-vazio, carregando,
-        │   │                  # banner-conexao, totais (cards Gastos/Receitas/Saldo)
+        │   │                  # banner-conexao, totais (cards Gastos/Receitas/Saldo),
+        │   │                  # aviso-linhas-ignoradas (faixa de CA-16.3, F-14)
         │   └── grafico/       # grafico.directive.ts + grafico.config.ts (Chart.js, ADR-11;
         │                      # tokens FABRICA_GRAFICO e CORES_DO_TEMA para testes; `dados`
         │                      # também como função das cores do tema, F-11)
@@ -208,7 +210,7 @@ Ao **reativar** uma recorrência pausada: `ultimo_mes_gerado = max(ultimo_mes_ge
 ### 4.5 Inicialização (lifespan)
 
 1. Carregar `Settings`; validar existência do arquivo de credenciais.
-2. Criar **uma** `CacheAbas(CACHE_TTL_SEGUNDOS)` e **uma** instância de cada repositório de planilha para o processo inteiro (`app.state.repositorios`; os routers os recebem por `api/deps.py`, e os testes de API os trocam pelos de memória).
+2. Criar **uma** `CacheAbas(CACHE_TTL_SEGUNDOS)` e **uma** instância de cada repositório de planilha para o processo inteiro (`app.state.cache` e `app.state.repositorios`; os routers os recebem por `api/deps.py` — o cache só o `POST /api/sistema/recarregar` —, e os testes de API trocam os repositórios pelos de memória).
 3. Conectar e abrir a planilha por ID. Falha **não derruba** o servidor: o erro é guardado e `GET /api/health` o reporta (REQ-16); demais endpoints respondem 503.
 4. `bootstrap`: para cada aba do schema, criar se não existir e escrever cabeçalho; se existir, validar cabeçalho (colunas faltando no fim são acrescentadas; colunas extras depois da última do schema são ignoradas; divergência de nome ou ordem → `SchemaPlanilhaInvalido`, sem alterar nada). Aba `Categorias` vazia → seed RN-15. Idempotente (CA-15.2).
 
@@ -327,14 +329,14 @@ Base: `/api`. JSON em `snake_case`. Valores monetários como número com 2 casas
   "erro": {
     "codigo": "VALIDACAO",
     "mensagem": "Valor deve ser maior que zero.",
-    "detalhes": [{ "campo": "valor", "mensagem": "deve ser maior que zero" }]
+    "detalhes": [{ "campo": "valor", "mensagem": "Deve ser maior que 0." }]
   }
 }
 ```
 
 | HTTP | `codigo` | Quando |
 |---|---|---|
-| 422 | `VALIDACAO` | Entrada inválida (inclui erros do Pydantic, convertidos para este formato) |
+| 422 | `VALIDACAO` | Entrada inválida (inclui erros do Pydantic, convertidos para este formato com `mensagem` "Dados inválidos." e `detalhes[].mensagem` em pt-BR por tipo de erro — tabela em F-14 §3.5) |
 | 404 | `NAO_ENCONTRADO` | `id` inexistente |
 | 409 | `CATEGORIA_DUPLICADA`, `CATEGORIA_EM_USO`, `CATEGORIA_INATIVA`, `CATEGORIA_TIPO_INCOMPATIVEL` | Conflitos de regra |
 
@@ -476,7 +478,7 @@ O **shell** (`app.ts`, classe `App`) tem barra superior com os botões **"Regist
 |---|---|---|
 | `MesSelecionadoStore` | `signal<string>` `YYYY-MM` | Sincronizado com o query param `mes` (REQ-04) |
 | `CategoriasStore` | lista de categorias carregada uma vez; recarrega após alterações | Usado pelos formulários |
-| `DadosStore` | `versao = signal(0)` incrementada após qualquer escrita | Páginas reagem e recarregam dados |
+| `DadosStore` | `versao = signal(0)` incrementada após qualquer escrita e após "Recarregar dados" (barra superior, `POST /api/sistema/recarregar`, F-14) | Páginas e `CategoriasStore` reagem e recarregam dados |
 | `ConexaoStore` | estado do `health` e mensagem de erro | Alimenta o banner; na abertura e no "Tentar novamente" que reconecta, chama a sincronização (`SincronizacaoRecorrencias`, F-13) |
 
 A aplicação é **zoneless**: toda mudança de estado que deve refletir na tela passa por um signal. Não usar APIs marcadas como *experimental* ou *developer preview* na v22 (ex.: Signal Forms) — ver `02` §4.
@@ -535,4 +537,5 @@ Quando o **backend não responde** (status 0, ou 502/504 sem o envelope de §6.2
 | 2026-10-01 | 1.32 | §3: sincronização em `recorrencia_service`; §4.4: algoritmo com trava, mês já gerado pulado, nenhuma escrita sem nada a gerar e categoria não validada (T-029; F-13 Q1, Q2). |
 | 2026-10-01 | 1.33 | §3: `recorrencias.api`, `sincronizacao.ts`, `validadores.ts` e a página de recorrências; §7.2 e §8.2: sincronização na abertura, no "Tentar novamente" e após salvar/reativar (T-030). |
 | 2026-10-01 | 1.34 | §3: `datepicker-intl.ts` e `erro-do-servidor.ts` em `core/utils` (T-031). |
+| 2026-10-02 | 1.35 | `POST /api/sistema/recarregar` implementado (§6.1 sem mudança de contrato). §3: router `sistema`, cache em `deps.py`, mensagens pt-BR em `erros.py`, `sistema.api` e `aviso-linhas-ignoradas`; §4.5: `app.state.cache`; §6.2: `detalhes[].mensagem` do Pydantic em pt-BR; §8.2: "Recarregar dados" incrementa `versao` (T-032). |
 | 2026-09-29 | 1.1 | Frontend em Angular 22 (zoneless); pasta `shared/grafico/` com diretiva Chart.js própria (§3, §8.2.1). |

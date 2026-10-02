@@ -5,6 +5,8 @@
   }
 </header>
 
+<app-aviso-linhas-ignoradas [quantidade]="historico()?.linhas_ignoradas ?? 0" />
+
 @if (historico() === null && carregando()) {
   <app-carregando texto="Carregando histórico…" />
 } @else if (erro()) {

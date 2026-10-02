@@ -412,4 +412,21 @@ describe('HistoricoPage', () => {
       'Mês final do período: setembro de 2026',
     ]);
   });
+
+  function faixa(): string | null {
+    const aviso = pagina().querySelector('header + app-aviso-linhas-ignoradas [role="status"] p');
+    return aviso ? aviso.textContent!.replace(/\s+/g, ' ').trim() : null;
+  }
+
+  it('mostra_linhas_ignoradas__CA_16_3', async () => {
+    await abrir(historico({ linhas_ignoradas: 1 }));
+    expect(faixa()).toBe(
+      '1 linha da planilha foi ignorada por estar inválida. Corrija-a na planilha e use Recarregar dados.',
+    );
+
+    TestBed.inject(DadosStore).incrementar();
+    await estabilizar();
+    await responder(historico());
+    expect(faixa()).toBeNull();
+  });
 });
