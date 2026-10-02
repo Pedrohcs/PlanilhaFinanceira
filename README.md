@@ -153,14 +153,21 @@ Abre em <http://localhost:4200>. As chamadas a `/api` são encaminhadas ao backe
 # backend (em ./backend, com a .venv ativa)
 pytest                                    # unitários e de API; não acessa a rede
 ruff check . ; ruff format .
-$env:SPREADSHEET_ID_TESTE = "<id>" ; pytest -m integracao   # planilha real de teste
+pytest -m integracao                      # planilha de teste (SPREADSHEET_ID_TESTE)
 
 # frontend (em ./frontend)
 npm test
 npm run build
 ```
 
-Os testes de integração ficam de fora da execução normal de propósito: eles escrevem numa planilha de verdade. Use **uma planilha separada**, nunca a que guarda seus dados, compartilhada com a conta de serviço como **Editor** (passo 2.3), e informe o ID dela na variável `SPREADSHEET_ID_TESTE` **do terminal**, como acima — sem ela os testes são pulados. A credencial usada é a mesma do app (`GOOGLE_CREDENTIALS_PATH` do terminal, se existir; senão `../credentials.json`). O teste cria as abas na planilha de teste e apaga o lançamento que criar.
+Os testes de integração ficam de fora da execução normal de propósito: eles usam o app de verdade contra uma planilha de verdade. Use **uma planilha separada**, nunca a que guarda seus dados, compartilhada com a conta de serviço como **Editor** (passo 2.3), e informe o ID dela em `SPREADSHEET_ID_TESTE` — no `backend/.env` ou no terminal (`$env:SPREADSHEET_ID_TESTE = "<id>"`, que vale mais que o `.env`). Sem ela, os testes são pulados. A credencial usada é a mesma do app (`GOOGLE_CREDENTIALS_PATH` do terminal, se existir; senão `../credentials.json`).
+
+O que a suíte faz na planilha de teste:
+
+- **apaga e recria as abas do app** (`Lancamentos`, `Categorias`, `Recorrencias`, `Config`), para provar a preparação de uma planilha vazia — o que houver nelas se perde;
+- grava lançamentos, categorias e recorrências marcados com `teste-integracao-` (e 5.000 linhas `teste-desempenho-` no teste de desempenho) e apaga todos no fim, mesmo se um teste falhar; o que sobrar de uma execução interrompida é apagado na seguinte.
+
+Por segurança, se `SPREADSHEET_ID_TESTE` for igual ao `SPREADSHEET_ID` do app, a suíte para antes de abrir a planilha: "SPREADSHEET_ID_TESTE aponta para a mesma planilha do app. Use uma planilha separada."
 
 ---
 

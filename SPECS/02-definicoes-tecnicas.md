@@ -3,7 +3,7 @@
 | Campo | Valor |
 |---|---|
 | Documento | `SPECS/02-definicoes-tecnicas.md` |
-| Versão | 1.13 |
+| Versão | 1.14 |
 | Atualizado em | 2026-10-02 |
 | Status | Aprovado para início |
 | Responde | **Com o quê** o sistema é construído: linguagens, bibliotecas, versões, integração com Google, convenções |
@@ -240,13 +240,13 @@ Limites da Sheets API: **60 requisições de leitura e 60 de escrita por minuto 
 |---|---|---|---|
 | Unitário backend | `backend/tests/unit/` | Serviços e regras (RN-xx) usando **repositórios em memória** | `pytest` (sempre) |
 | API backend | `backend/tests/api/` | Endpoints com `TestClient` + `dependency_overrides` para repositórios em memória; formato de erro | `pytest` (sempre) |
-| Integração | `backend/tests/integracao/` | Repositórios gspread e desempenho com 5.000 lançamentos (RNF-04, T-032) contra `SPREADSHEET_ID_TESTE`; linhas criadas são apagadas no fim | `pytest -m integracao` (manual; pulado sem a variável) |
+| Integração | `backend/tests/integracao/` | App real (`criar_app` + `TestClient`) contra `SPREADSHEET_ID_TESTE`: bootstrap de planilha vazia (apaga e recria as abas do app **só na planilha de teste**), lançamentos, categorias, parcelamento, recorrências, edição manual e desempenho com 5.000 lançamentos (F-15, T-032/T-034); linhas marcadas `teste-integracao-`/`teste-desempenho-` apagadas no início e no fim | `pytest -m integracao` (manual; pulado sem a variável) |
 | Unitário frontend | `*.spec.ts` (Vitest) | Services (com `HttpTestingController`), formulários, pipes/utilitários, `GraficoDirective` | `npm test` (`ng test`, execução única com `--watch=false`) |
 | Ponta a ponta | roteiro manual em `SPECS/features/F-15-*.md` | Fluxos principais com a planilha real de teste | manual |
 
 Definição de pronto de qualquer tarefa: testes do nível correspondente passando + `ruff check` limpo (backend) + `ng build` sem erros (frontend).
 
-Padrões da suíte do backend (`backend/pyproject.toml`, definidos em T-002): `addopts = "-m 'not integracao'"` — um `pytest` simples **nunca** toca a planilha real, mesmo com `SPREADSHEET_ID_TESTE` definida (para rodar, `pytest -m integracao`, que sobrescreve o padrão); além disso o `conftest` **pula** os testes `integracao` quando a variável não existe, e `filterwarnings` transforma marcador não declarado em falha.
+Padrões da suíte do backend (`backend/pyproject.toml`, definidos em T-002): `addopts = "-m 'not integracao'"` — um `pytest` simples **nunca** toca a planilha real, mesmo com `SPREADSHEET_ID_TESTE` definida (para rodar, `pytest -m integracao`, que sobrescreve o padrão); além disso o `conftest` **pula** os testes `integracao` quando a variável não existe — ela é lida do terminal ou, sem ele, do `backend/.env` (T-034) —, uma trava encerra a suíte antes de abrir a planilha se `SPREADSHEET_ID_TESTE` for igual ao `SPREADSHEET_ID` do app, e `filterwarnings` transforma marcador não declarado em falha.
 
 Padrões da suíte do frontend (T-011/T-014): specs que abrem diálogo, menu ou datepicker do Material usam `provideMaterialParaTestes()` (`frontend/src/testing/material.ts`) — o jsdom não dispara fim de animação CSS e dá tamanho zero a todo elemento. Dados de exemplo compartilhados ficam em `frontend/src/testing/` (ex.: `umaCategoria`).
 
@@ -307,3 +307,4 @@ Novas decisões: acrescente uma linha com o próximo ID. Decisões substituídas
 | 2026-10-01 | 1.11 | §4: `dados` da `GraficoDirective` também como função das cores do tema (séries com cores do tema diferentes entre si; F-11, T-025). |
 | 2026-10-01 | 1.12 | §1 e §9: fontes servidas pelo próprio app — `@fontsource/roboto` e `material-symbols` (ADR-15; F-14 Q5, T-031). |
 | 2026-10-02 | 1.13 | §8: a suíte de integração também mede desempenho com 5.000 lançamentos (`test_desempenho.py`, T-032). Nenhuma dependência nova. |
+| 2026-10-02 | 1.14 | §8: suíte de integração completa pelo app real, `SPREADSHEET_ID_TESTE` também do `backend/.env`, trava contra a planilha do app e limpeza das linhas marcadas (T-034; F-15 Q5, Q6). Nenhuma dependência nova (`pydantic-settings` já usado). |

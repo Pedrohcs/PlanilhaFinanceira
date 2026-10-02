@@ -7,7 +7,13 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
-VARIAVEL_PLANILHA_TESTE = "SPREADSHEET_ID_TESTE"
+# Antes das trocas abaixo: o módulo guarda o `SPREADSHEET_ID` e a credencial do
+# terminal, para a trava e a credencial da integração (F-15 §3.2).
+from tests.integracao.ambiente import (
+    VARIAVEL_PLANILHA_TESTE,
+    caminho_da_credencial,
+    ler_planilha_teste,
+)
 
 # A suíte não depende de um `backend/.env` real: basta existir um id qualquer.
 # Precisa vir antes de qualquer import de `app.main`, que instancia `Settings`.
@@ -18,17 +24,19 @@ os.environ.setdefault("SPREADSHEET_ID", "planilha-de-teste")
 # autenticar no Google a cada `pytest`. Assim a carga falha na hora, sem rede e
 # sem tocar na credencial (RNF-05). Quem precisa de conexão boa injeta um dublê.
 #
-# O caminho que existia antes é guardado para os testes `integracao`, os únicos
-# que falam com o Google de verdade. Só o **caminho**: o conteúdo nunca é lido
-# pelos testes — quem abre o arquivo é o `google-auth`, como no app.
-CREDENCIAL_DO_AMBIENTE = os.environ.get("GOOGLE_CREDENTIALS_PATH")
+# O caminho que existia antes fica guardado em `tests.integracao.ambiente`, para
+# os testes `integracao`, os únicos que falam com o Google de verdade. Só o
+# **caminho**: o conteúdo nunca é lido pelos testes — quem abre o arquivo é o
+# `google-auth`, como no app.
 os.environ.setdefault("GOOGLE_CREDENTIALS_PATH", "credencial-inexistente-de-teste.json")
-PASTA_BACKEND = Path(__file__).resolve().parents[1]
 
 
 def pytest_collection_modifyitems(items: list[pytest.Item]) -> None:
-    """Pula os testes marcados como `integracao` quando falta a planilha de teste."""
-    if os.getenv(VARIAVEL_PLANILHA_TESTE):
+    """Pula os testes marcados como `integracao` quando falta a planilha de teste.
+
+    A planilha vem do terminal ou, sem ela, do `backend/.env` (F-15 Q5).
+    """
+    if ler_planilha_teste(os.environ):
         return
     motivo = pytest.mark.skip(reason=f"{VARIAVEL_PLANILHA_TESTE} não definida")
     for item in items:
@@ -51,9 +59,5 @@ def cliente() -> Iterator[TestClient]:
 
 @pytest.fixture
 def credencial_real() -> Path:
-    """Caminho da credencial para os testes `integracao` (padrão do `.env.example`).
-
-    Relativo à pasta `backend/`, como no app (`SPECS/02` §6).
-    """
-    caminho = Path(CREDENCIAL_DO_AMBIENTE or "../credentials.json")
-    return caminho if caminho.is_absolute() else PASTA_BACKEND / caminho
+    """Caminho da credencial para os testes `integracao` (ver `caminho_da_credencial`)."""
+    return caminho_da_credencial()

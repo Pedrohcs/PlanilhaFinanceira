@@ -1,16 +1,14 @@
 """Bootstrap e repositório contra a planilha real de teste (`SPECS/02` §8; F-03 §8).
 
 Só roda com `pytest -m integracao` e `SPREADSHEET_ID_TESTE` definida no
-terminal. Usa uma planilha **separada** da do usuário; cria as abas nela (se
+terminal ou no `backend/.env`. Usa uma planilha **separada** da do usuário; cria as abas nela (se
 faltarem) e apaga o lançamento que criar, mesmo se uma asserção falhar.
 """
 
-import os
 from collections.abc import Callable
 from contextlib import suppress
 from datetime import date, datetime
 from decimal import Decimal
-from pathlib import Path
 from typing import Any
 from uuid import uuid4
 
@@ -24,7 +22,7 @@ from app.domain.modelos import Lancamento
 from app.infra.bootstrap import preparar_planilha
 from app.infra.cache import CacheAbas
 from app.infra.schema_planilha import ABA_CATEGORIAS, ABAS
-from app.infra.sheets_client import abrir_planilha, executar_com_retry
+from app.infra.sheets_client import executar_com_retry
 from app.repositories.planilha import LancamentoRepositoryPlanilha
 
 
@@ -64,9 +62,11 @@ def lancamento(id_: str, descricao: str) -> Lancamento:
 
 
 @pytest.mark.integracao
-def test_bootstrap_e_crud_em_planilha_de_teste__CA_15_1(credencial_real: Path) -> None:
+def test_bootstrap_e_crud_em_planilha_de_teste__CA_15_1(
+    documento_teste: gspread.Spreadsheet,
+) -> None:
     """CA-15.1, CA-15.2, CA-F03.9 e CA-F03.22 numa planilha do Google de verdade."""
-    documento = abrir_planilha(credencial_real, os.environ["SPREADSHEET_ID_TESTE"]).documento
+    documento = documento_teste
 
     # CA-15.1 / CA-F03.9: abas e cabeçalhos exatamente como `03` §5.
     preparar_planilha(documento)

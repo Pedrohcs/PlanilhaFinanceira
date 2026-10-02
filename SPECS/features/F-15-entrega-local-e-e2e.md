@@ -80,12 +80,12 @@ Todos em PowerShell (Windows, `02` §1), com caminhos relativos ao próprio scri
    | Arquivo | Cenário | Cobre |
    |---|---|---|
    | `test_planilha_real.py` (existe) | bootstrap idempotente + CRUD pelo repositório com `=SOMA(…)` como texto | CA-15.2, CA-F03.9, CA-F03.22 |
-   | `test_bootstrap.py` **(Q6)** | apaga as 4 abas do app na planilha de teste (criando antes uma aba vazia de apoio, se preciso: o Google exige ao menos uma aba), sobe o app e confere abas, cabeçalhos e as 15 categorias de RN-15; sobe de novo e nada muda | CA-15.1, CA-15.2, RN-15 |
-   | `test_lancamentos_e2e.py` | `POST` gasto e receita sem forma → aparecem no `GET` do mês e no resumo, centavo a centavo; `PUT` muda só a linha do `id` (outra linha marcada fica igual) e a troca de mês move o lançamento; `DELETE` remove a linha e os totais voltam | CA-01.2, CA-01.5, CA-02.2, CA-05.2, CA-05.3, CA-06.2, CA-12.1, RN-13, RN-16 |
+   | `test_bootstrap_e2e.py` **(Q6)** | apaga as 4 abas do app na planilha de teste (criando antes uma aba vazia de apoio, se preciso: o Google exige ao menos uma aba), sobe o app e confere abas, cabeçalhos e as 15 categorias de RN-15; sobe de novo e nada muda | CA-15.1, CA-15.2, RN-15 |
+   | `test_lancamentos_e2e.py` | num mês isolado (2098-03), gastos de 0,10 e 0,20 e receita de 1.000,00 sem forma → totais 0,30 / 1.000,00 / 999,70 no `GET` do mês e no resumo, centavo a centavo; `PUT` muda só a linha do `id` (outra linha marcada fica igual) e a troca de mês move o lançamento; `DELETE` remove a linha e os totais voltam | CA-01.2, CA-01.5, CA-02.2, CA-05.2, CA-05.3, CA-06.2, CA-12.1, RN-13, RN-16 |
    | `test_categorias_e2e.py` | criar, renomear (o lançamento antigo mostra o nome novo), duplicado sem acento/maiúscula → 409, excluir em uso → 409, desativar, excluir sem uso → 204 | CA-11.1 a CA-11.4, RN-12 |
-   | `test_parcelamento_e2e.py` | R$ 1.000,00 em 3 a partir de 15/01 → 333,34 / 333,33 / 333,33 em três meses; compra em 31/01 em 2 → 28/02 ou 29/02; `DELETE /api/parcelamentos/{id}` remove todas, em qualquer mês | CA-07.1, CA-07.2, CA-08.2, RN-07, RN-08 |
-   | `test_recorrencias_e2e.py` | recorrência ativa com início 2 meses antes do corrente → `sincronizar` gera 3; de novo → 0; excluir um gerado e sincronizar → 0; nada em mês futuro; pausar → 0; reativar no mês seguinte não gera o período pausado (verificado pelo `ultimo_mes_gerado`) | CA-10.1 a CA-10.4, RN-09 a RN-11 |
-   | `test_edicao_manual_e2e.py` | grava direto na aba uma linha marcada com valor "abc" → `GET` traz `linhas_ignoradas` ≥ 1 e a linha fora dos totais; corrige na aba e `POST /api/sistema/recarregar` → a linha entra na hora | CA-16.3, RN-14 |
+   | `test_parcelamento_e2e.py` | R$ 1.000,00 em 3 a partir de 15/01/2098 → 333,34 / 333,33 / 333,33 em três meses, com "k/N"; 31/01/2096 em 2 → 29/02/2096 e 31/01/2097 em 2 → 28/02/2097; `DELETE /api/parcelamentos/{id}` remove todas, em qualquer mês | CA-07.1 a CA-07.3, CA-08.2, RN-07, RN-08 |
+   | `test_recorrencias_e2e.py` | recorrência ativa, dia 31, com início 2 meses antes do corrente → `sincronizar` gera 3 (último dia de cada mês); de novo → 0; excluir um gerado e sincronizar → 0; nada em mês futuro; pausar → 0; reativar → 0 e `ultimo_mes_gerado` igual. O "período pausado não é gerado" ao reativar num mês posterior exige avançar o relógio e fica nos testes unitários de F-13 | CA-10.1 a CA-10.4, RN-09 a RN-11 |
+   | `test_edicao_manual_e2e.py` | grava direto na aba uma linha marcada com valor "abc" (2098-05) → depois de `POST /api/sistema/recarregar`, `linhas_ignoradas` sobe 1 e a linha fica fora dos totais; corrige na aba e `POST /api/sistema/recarregar` → a linha entra na hora | CA-16.3, RN-14 |
    | `test_desempenho.py` (existe) | 5.000 lançamentos, cada chamada < 3 s com o cache frio | CA-F14.16, RNF-04 |
 
 6. **Execução:** `pytest -m integracao` (manual, `02` §8). Um `pytest` simples continua sem tocar a rede.
@@ -156,7 +156,7 @@ Todos em PowerShell (Windows, `02` §1), com caminhos relativos ao próprio scri
 1. **Como rodar** passa a começar por `scripts/start.ps1` (com o comando de §3.1.4). Os comandos manuais continuam como alternativa: `test_readme.py` exige `uvicorn app.main:app` e `npm start`.
 2. **Estrutura:** `scripts/` deixa de ser "(em construção)" (feito já em T-033).
 3. **Se algo der errado** ganha: política de execução do PowerShell, porta ocupada com os scripts, "linhas ignoradas" e o botão "Recarregar dados", e `SPREADSHEET_ID_TESTE` conforme Q5.
-4. **Testes:** a suíte de integração completa, a trava de §3.2.3 e o aviso de que ela escreve na planilha de teste (e, com Q6, apaga e recria as abas do app nela).
+4. **Testes:** a suíte de integração completa, a trava de §3.2.3 e o aviso de que ela escreve na planilha de teste (e, com Q6, apaga e recria as abas do app nela) — o parágrafo de integração já é corrigido em T-034.
 5. **Uso (Q9):** uma seção curta com as 5 telas e o que cada uma faz.
 6. O `.env.example` acompanha Q5 (comentário de `SPREADSHEET_ID_TESTE`).
 
@@ -189,16 +189,16 @@ Todos em PowerShell (Windows, `02` §1), com caminhos relativos ao próprio scri
 
 **Refinados — integração (T-034)**
 
-- [ ] **CA-F15.7** Dado `SPREADSHEET_ID_TESTE` (terminal ou `.env`, Q5), quando `pytest -m integracao` roda, então todos os cenários de §3.2.5 passam.
-- [ ] **CA-F15.8** Dado `SPREADSHEET_ID_TESTE` igual ao `SPREADSHEET_ID`, então a suíte falha no início sem escrever nada (Q5).
-- [ ] **CA-F15.9** Dado o fim da suíte, com sucesso ou falha, então nenhuma linha marcada `teste-integracao-…` resta nas abas da planilha de teste.
-- [ ] **CA-F15.10** Dado `pytest` sem `-m integracao`, então nenhum teste de integração roda e a rede não é tocada (`02` §8, sem regressão).
+- [ ] **CA-F15.7** Dado `SPREADSHEET_ID_TESTE` (terminal ou `.env`, Q5), quando `pytest -m integracao` roda, então todos os cenários de §3.2.5 passam. *(T-034: suíte escrita e coletada (9 testes); leitura do `.env` coberta por `test_conftest_integracao.py`. **Execução pendente com o usuário** — `SPREADSHEET_ID_TESTE` vazio; o usuário escolheu concluir sem rodar.)*
+- [x] **CA-F15.8** Dado `SPREADSHEET_ID_TESTE` igual ao `SPREADSHEET_ID`, então a suíte falha no início sem escrever nada (Q5). *(T-034: unitário + `pytest -m integracao` com os dois IDs iguais no ambiente — parou com a mensagem e código 4, sem abrir planilha.)*
+- [ ] **CA-F15.9** Dado o fim da suíte, com sucesso ou falha, então nenhuma linha marcada `teste-integracao-…` resta nas abas da planilha de teste. *(T-034: lógica da varredura testada na planilha falsa; conferência real junto com CA-F15.7.)*
+- [x] **CA-F15.10** Dado `pytest` sem `-m integracao`, então nenhum teste de integração roda e a rede não é tocada (`02` §8, sem regressão).
 
 **Refinados — roteiro, README e rastreabilidade (T-035)**
 
 - [ ] **CA-F15.11** Dado o roteiro de §3.3.4, então cada item tem resultado e data registrados, e o resumo está em §10.
 - [ ] **CA-F15.12** Dado o README final, então ele cobre os scripts, os comandos manuais, os testes (inclusive integração) e os problemas de §3.4.3, e `test_readme.py` continua passando.
-- [ ] **CA-F15.13** (Q10) Dado uma RN em `01` §4 sem nenhum teste que a cite, então `test_rastreabilidade.py` falha nomeando a RN.
+- [x] **CA-F15.13** (Q10) Dado uma RN em `01` §4 sem nenhum teste que a cite, então `test_rastreabilidade.py` falha nomeando a RN.
 
 ---
 
@@ -218,9 +218,9 @@ Todos em PowerShell (Windows, `02` §1), com caminhos relativos ao próprio scri
 | 8b | `.venv` criada, mas o `pip install` foi interrompido | Na execução seguinte o import falha e a instalação roda de novo (§3.1.1.2) | — |
 | 9 | `SPREADSHEET_ID_TESTE` vazio | Integração pulada, como hoje | `02` §8 |
 | 10 | Teste de integração interrompido (Ctrl+C) | O `finally` limpa as linhas marcadas; o que sobrar tem a marca e é apagado na execução seguinte (varredura por `teste-integracao-` no início) | — |
-| 11 | Planilha de teste com dados de outra execução manual | Os testes só olham e apagam as próprias linhas marcadas; os totais são conferidos por diferença ou num mês só dos testes | — |
+| 11 | Planilha de teste com dados de outra execução manual | Os testes só olham e apagam as próprias linhas marcadas; os totais são conferidos em meses distantes (2096–2098), só dos testes, ou por diferença (`linhas_ignoradas`) | — |
 | 12 | Recorrência de teste criada no fim do mês (dia 31) | Teste usa dia 31 de propósito, para conferir o último dia do mês | RN-09 |
-| 13 | Execução da integração em ano bissexto ou não | Esperado de CA-07.2 calculado pelo ano corrente (28 ou 29/02) | RN-07 |
+| 13 | Fevereiro bissexto e não bissexto | Datas fixas: 31/01/2096 → 29/02/2096 e 31/01/2097 → 28/02/2097, em qualquer ano de execução | RN-07 |
 | 14 | Roteiro: item depende de ação no Google que o Claude não pode fazer (compartilhar/descompartilhar) | Pedido ao usuário; registrado como "OK (usuário)" | — |
 
 ---
@@ -240,7 +240,7 @@ Todos em PowerShell (Windows, `02` §1), com caminhos relativos ao próprio scri
 | GET | `/api/resumo/mensal`, `/api/resumo/historico` | lançamentos, desempenho |
 | POST | `/api/sistema/recarregar` | edição manual, desempenho |
 
-**Planilha** — nenhuma aba ou coluna nova. Os testes escrevem e apagam linhas marcadas nas abas `Lancamentos`, `Categorias` e `Recorrencias` **da planilha de teste**; com Q6, `test_bootstrap.py` apaga e recria as 4 abas do app (`Lancamentos`, `Categorias`, `Recorrencias`, `Config`) **só na planilha de teste**.
+**Planilha** — nenhuma aba ou coluna nova. Os testes escrevem e apagam linhas marcadas nas abas `Lancamentos`, `Categorias` e `Recorrencias` **da planilha de teste**; com Q6, `test_bootstrap_e2e.py` apaga e recria as 4 abas do app (`Lancamentos`, `Categorias`, `Recorrencias`, `Config`) **só na planilha de teste**.
 
 **Configuração** (`02` §6) — sem variável nova. `SPREADSHEET_ID_TESTE` passa a ser lida também do `backend/.env` pelos testes (Q5).
 
@@ -259,9 +259,9 @@ Todos em PowerShell (Windows, `02` §1), com caminhos relativos ao próprio scri
 |---|---|---|
 | Execução de `start.ps1`: nada rodando / já rodando / porta ocupada / sem `.env` / clone novo | manual (registrada no roteiro) | CA-F15.1 a CA-F15.5, bordas 1–8 |
 | `backend/tests/unit/test_scripts.py` › `test_scripts_sem_erro_de_sintaxe__CA_F15_1` (parser do PowerShell) e `test_backend_so_em_localhost_e_sem_ler_segredos__CA_F15_6` | unitário BE | CA-F15.1 a .6 (base), RNF-05, borda 1 |
-| `backend/tests/integracao/conftest.py` › trava de mesma planilha (unitário com `monkeypatch`, fora do marcador `integracao`) — `test_trava_mesma_planilha__CA_F15_8` | unitário BE | CA-F15.8 |
-| `backend/tests/unit/test_conftest_integracao.py` › `test_le_planilha_teste_do_env__CA_F15_7` (Q5) | unitário BE | CA-F15.7, borda 9 |
-| `tests/integracao/test_bootstrap.py::test_planilha_vazia_preparada__CA_15_1` (Q6) | integração | CA-15.1, CA-15.2, RN-15 |
+| `backend/tests/unit/test_conftest_integracao.py` › `test_le_planilha_teste_do_env__CA_F15_7` (Q5) e `test_trava_mesma_planilha__CA_F15_8` (fora do marcador `integracao`) | unitário BE | CA-F15.7, CA-F15.8, borda 9 |
+| `backend/tests/unit/test_conftest_integracao.py` › `test_apaga_so_linhas_marcadas__CA_F15_9` (planilha falsa) | unitário BE | CA-F15.9 (lógica da varredura), borda 10 |
+| `tests/integracao/test_bootstrap_e2e.py::test_planilha_vazia_preparada__CA_15_1` (Q6) | integração | CA-15.1, CA-15.2, RN-15 |
 | `tests/integracao/test_lancamentos_e2e.py::test_crud_e_totais__CA_05_2` | integração | CA-01.2, CA-01.5, CA-02.2, CA-05.2, CA-05.3, CA-06.2, CA-12.1, RN-13, RN-16 |
 | `tests/integracao/test_categorias_e2e.py::test_ciclo_de_categoria__RN_12` | integração | CA-11.1 a CA-11.4 |
 | `tests/integracao/test_parcelamento_e2e.py::test_parcelas_e_exclusao__RN_07` | integração | CA-07.1, CA-07.2, CA-08.2, RN-08 |
@@ -280,7 +280,7 @@ Todos em PowerShell (Windows, `02` §1), com caminhos relativos ao próprio scri
 | Tarefa | Escopo nesta feature | Arquivos principais |
 |---|---|---|
 | **T-033** (DOC) | Scripts de §3.1 (Q1–Q3) e as partes "Como rodar" e "Estrutura" do README que os descrevem; guarda `test_scripts.py`. | `scripts/start-backend.ps1`, `scripts/start-frontend.ps1`, `scripts/start.ps1`, `README.md` (§3, §6), `backend/tests/unit/test_scripts.py` |
-| **T-034** (BE) | Suíte de §3.2 (Q5, Q6): `conftest` com `.env` e trava, varredura de limpeza, os 6 arquivos novos; guarda de rastreabilidade (Q10); execução de `pytest -m integracao` na planilha de teste. | `backend/tests/integracao/{conftest.py,test_bootstrap.py,test_lancamentos_e2e.py,test_categorias_e2e.py,test_parcelamento_e2e.py,test_recorrencias_e2e.py,test_edicao_manual_e2e.py}`, `backend/tests/conftest.py`, `backend/tests/unit/{test_conftest_integracao.py,test_rastreabilidade.py}`, `backend/.env.example` |
+| **T-034** (BE) | Suíte de §3.2 (Q5, Q6): `conftest` com `.env` e trava, varredura de limpeza, os 6 arquivos novos; guarda de rastreabilidade (Q10); parágrafo de integração do README §4; execução de `pytest -m integracao` na planilha de teste. | `backend/tests/integracao/{ambiente.py,conftest.py,test_bootstrap_e2e.py,test_lancamentos_e2e.py,test_categorias_e2e.py,test_parcelamento_e2e.py,test_recorrencias_e2e.py,test_edicao_manual_e2e.py}`, `backend/tests/conftest.py`, `backend/tests/unit/{test_conftest_integracao.py,test_rastreabilidade.py}`, `backend/.env.example`, `README.md` (§4) |
 | **T-035** (DOC) | Roteiro de §3.3 (Q7, Q8): refinar passos, executar, registrar; README final (§3.4, Q9); matriz RN → teste (§3.5). | `SPECS/features/F-15-entrega-local-e-e2e.md`, `README.md`, `SPECS/05-acompanhamento.md` |
 
 Ordem: T-033 e T-034 em qualquer ordem (as duas dependem só de T-032); T-035 depois das duas (`04`/`05`).
@@ -310,6 +310,11 @@ Ordem: T-033 e T-034 em qualquer ordem (as duas dependem só de T-032); T-035 de
 | Reinstalação quando o `import fastapi, gspread, uvicorn` falha na `.venv` ou falta `node_modules\.bin\ng.cmd` (T-033, aprovado). | Preparação interrompida não deixa o ambiente quebrado para sempre. | Não |
 | Scripts em UTF-8 **com BOM** e CRLF, cobertos por `test_scripts.py` (T-033). | O Windows PowerShell 5.1 lê `.ps1` sem BOM como ANSI e estragaria os acentos das mensagens. | Não |
 | Execução real dos cenários feita pelo usuário, não pelo Claude (T-033). | Escolha do usuário: os scripts abrem janelas e o navegador na máquina dele. | Não |
+| Ambiente da integração em `tests/integracao/ambiente.py` (leitura da planilha, trava, varredura, credencial), não no `conftest` (T-034). | Os unitários importam sem rede; e os valores do terminal são guardados num módulo importado uma vez, antes de o `conftest` raiz trocá-los por falsos (importar o `conftest` de novo veria os falsos). | Não |
+| `.env` lido por um `BaseSettings` restrito ao arquivo (sem o ambiente) (T-034). | O `conftest` raiz põe um `SPREADSHEET_ID` falso no ambiente; a trava precisa do valor real do `.env`. Sem dependência nova. | Não |
+| Cenário de bootstrap em `test_bootstrap_e2e.py` (não `test_bootstrap.py`) (T-034). | Já existe `tests/unit/test_bootstrap.py`; sem `__init__.py`, o pytest não aceita dois módulos com o mesmo nome. Mesmo sufixo dos outros cenários. | Não |
+| O cenário de parcelamento também cobre CA-08.1 (editar uma parcela não mexe nas outras) (T-034). | Custa uma chamada a mais e fecha o REQ-08 contra o Google. | Não |
+| Suíte concluída sem execução real (T-034). | Escolha do usuário: `SPREADSHEET_ID_TESTE` vazio; CA-F15.7, CA-F15.9, CA-15.1/15.2 e CA-F14.16 seguem pendentes com ele (`pytest -m integracao`). | Não |
 
 *(O resultado do roteiro e a matriz RN → teste entram aqui em T-035.)*
 
@@ -324,7 +329,7 @@ Ordem: T-033 e T-034 em qualquer ordem (as duas dependem só de T-032); T-035 de
 - [x] **Q3** → os scripts preparam `.venv` e `node_modules` na primeira execução (§3.1.1.2, §3.1.2.2).
 - [x] **Q4** → **P-01** e **P-07** confirmadas (`01` → 1.3); **P-02** e **P-06** continuam "A confirmar" (valem como escritas).
 - [x] **Q5** → `SPREADSHEET_ID_TESTE` também do `backend/.env`, terminal com precedência, trava contra a planilha do app (§3.2.2–3).
-- [x] **Q6** → `test_bootstrap.py` apaga as 4 abas do app só na planilha de teste (§3.2.5).
+- [x] **Q6** → `test_bootstrap_e2e.py` apaga as 4 abas do app só na planilha de teste (§3.2.5).
 - [x] **Q7** → planilha de teste, roteiro conduzido pelo Claude no Chrome, usuário nos passos do Google e na confirmação (§3.3.1–2).
 - [x] **Q8** → defeito pequeno no especificado corrigido em T-035 com teste; o resto vira tarefa nova (§3.3.3).
 - [x] **Q9** → README com seção "Uso" curta (§3.4.5).
@@ -340,3 +345,5 @@ Ordem: T-033 e T-034 em qualquer ordem (as duas dependem só de T-032); T-035 de
 | 2026-10-02 | Q1–Q10 respondidas → status **Aprovada**. Todas na opção recomendada; em Q4, só P-01 e P-07 confirmadas (`01` → 1.3). Dez decisões em §10. |
 | 2026-10-02 | T-033 (aprovado pelo usuário): §3.1 com `-SoPreparar` e preparação antes de contar o tempo, decisão parte por parte no `start.ps1` (reconhecimento do app pelo health e pelo título), reinstalação após preparação interrompida; bordas 5, 8, 8a, 8b; README §6 já em T-033; guarda `test_scripts.py` no plano de testes. |
 | 2026-10-02 | T-033 concluída: CA-F15.1 a .4 e .6 verificados (5 cenários executados pelo usuário + `test_scripts.py`); CA-F15.5 implementado, execução num clone novo no roteiro de T-035. Cinco decisões em §10. |
+| 2026-10-02 | T-034 (aprovado pelo usuário): datas fixas em 2096–2098 (bordas 11 e 13); reativação conferida sem avançar o relógio (o período pausado fica nos unitários de F-13); testes da trava e da varredura em `tests/unit/test_conftest_integracao.py`; `ambiente.py` e README §4 em T-034. |
+| 2026-10-02 | T-034 concluída: CA-F15.8, .10 e .13 verificados; CA-F15.7 e .9 com suíte escrita e execução pendente com o usuário. Cenário de bootstrap renomeado para `test_bootstrap_e2e.py`. Cinco decisões em §10. `02` → 1.14. |
