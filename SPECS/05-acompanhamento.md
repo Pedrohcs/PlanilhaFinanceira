@@ -29,7 +29,7 @@
 | M4 · Acabamento | F-14..F-15 | 5 | 3 | 0 | 2 | 40% |
 | **Total** | **15** | **35** | **3** | **0** | **32** | **91%** |
 
-**M0 a M3 concluídos (F-01 a F-13); F-14 concluída.** Caminho crítico em F-15 (sem spec). Desbloqueadas: **T-033** (DOC) e **T-034** (BE), ambas de F-15 — próximo passo: `/especificar-feature F-15`. Pendentes com o usuário, sem bloquear: seguir o README com a planilha real (CA-F02.13); rodar `pytest -m integracao` (CA-15.1/15.2 e, desde T-032, o desempenho de CA-F14.16; precisa de `SPREADSHEET_ID_TESTE` no `.env`, hoje vazio). Conferência visual: feita em T-031 com backend em memória (F-14 §10); o botão "Recarregar dados" e a faixa de linhas ignoradas de T-032 não foram vistos no navegador (extensão do Chrome desconectada) — entram no roteiro E2E de F-15 junto com a repetição na planilha real.
+**M0 a M3 concluídos (F-01 a F-13); F-14 concluída.** Caminho crítico em F-15 (sem spec). Desbloqueadas: **T-033** (DOC) e **T-034** (BE), ambas de F-15 — spec `Aprovada`; próximo passo: `/implementar-tarefa T-033` (ou T-034). Pendentes com o usuário, sem bloquear: seguir o README com a planilha real (CA-F02.13); rodar `pytest -m integracao` (CA-15.1/15.2 e, desde T-032, o desempenho de CA-F14.16; precisa de `SPREADSHEET_ID_TESTE` no `.env`, hoje vazio). Conferência visual: feita em T-031 com backend em memória (F-14 §10); o botão "Recarregar dados" e a faixa de linhas ignoradas de T-032 não foram vistos no navegador (extensão do Chrome desconectada) — entram no roteiro E2E de F-15 junto com a repetição na planilha real.
 
 ---
 
@@ -51,7 +51,7 @@
 | F-12 | Parcelamentos | M3 | Concluída | [`F-12-parcelamentos.md`](features/F-12-parcelamentos.md) (Concluída) |
 | F-13 | Recorrências | M3 | Concluída | [`F-13-recorrencias.md`](features/F-13-recorrencias.md) (Concluída) |
 | F-14 | Polimento e resiliência | M4 | Concluída | [`F-14-polimento-e-resiliencia.md`](features/F-14-polimento-e-resiliencia.md) (Concluída) |
-| F-15 | Entrega local e verificação E2E | M4 | Não iniciada | — |
+| F-15 | Entrega local e verificação E2E | M4 | Não iniciada | [`F-15-entrega-local-e-e2e.md`](features/F-15-entrega-local-e-e2e.md) (Aprovada) |
 
 Status da feature: `Não iniciada` (nenhuma tarefa iniciada) · `Iniciada` (alguma tarefa iniciada ou concluída) · `Concluída` (todas concluídas). Na coluna *Spec da feature*, coloque o link do arquivo em `SPECS/features/` quando ele for criado.
 
@@ -157,6 +157,8 @@ Camadas: **BE** = backend · **FE** = frontend · **DOC** = documentação/infra
 
 | Data | Tarefa/Feature | Mudança | Observação |
 |---|---|---|---|
+| 2026-10-02 | F-15 | Spec da feature **aprovada** | Q1–Q10 respondidas, todas na opção recomendada. **P-01 e P-07 confirmadas** (`01` → 1.3); P-02 e P-06 seguem "A confirmar". Nenhuma mudança em 02–03. Nenhum status de tarefa alterado. |
+| 2026-10-02 | F-15 | Spec da feature criada (**Rascunho**) | `features/F-15-entrega-local-e-e2e.md`: scripts, suíte de integração, roteiro E2E com os 44 CA de `01`, README final e matriz RN → teste. 10 questões em aberto (Q1–Q10). Achado: o `conftest` só lê `SPREADSHEET_ID_TESTE` do terminal, embora o `.env.example` e o resumo (§1) sugiram o `.env` (Q5). Nenhum status de tarefa alterado. |
 | 2026-10-02 | F-14 | `Iniciada` → `Concluída` | Última tarefa (T-032) concluída; §2 e mapa (§3) atualizados. Caminho crítico segue em F-15 (sem spec). |
 | 2026-10-02 | T-032 | `Iniciada` → `Concluída` | Recarregar dados, linhas ignoradas, mensagens pt-BR e desempenho. `02` → 1.13 (§8), `03` → 1.35 (§3, §4.5, §6.2, §8.2); F-14 §3.5 completada (aprovado pelo usuário) e status `Concluída`. Guarda de rotas com `POST /api/sistema/recarregar`. Nenhuma dependência nova. Conferência visual não feita (extensão do Chrome desconectada); o backend em memória com 3 linhas ignoradas foi preparado no scratchpad, fora do repositório. |
 | 2026-10-02 | T-032 | Sugestão anotada | `npx prettier --check src` acusa 18 arquivos: 17 só por fim de linha CRLF (o `autocrlf` do git converte no checkout; o `.prettierrc` espera LF) e `src/main.ts` por formatação. Avaliar um `.gitattributes` com `eol=lf` para o frontend ou `endOfLine: auto` no `.prettierrc`. |
