@@ -93,65 +93,66 @@ Todos em PowerShell (Windows, `02` §1), com caminhos relativos ao próprio scri
 
 ### 3.3 Roteiro E2E (T-035)
 
-1. **Ambiente (Q7):** o app subido por `scripts/start.ps1`, com o backend apontando para a **planilha de teste**. `SPREADSHEET_ID` é definido no terminal como o ID de teste antes de subir, o que tem precedência sobre o `.env` (pydantic-settings). Assim a planilha real do usuário não recebe dados de teste. CA-15.1 usa a planilha de teste depois de apagar as abas do app **(Q6)**.
+1. **Ambiente (Q7, revisto em 2026-11-12):** na execução, o usuário escolheu rodar o roteiro na **planilha real** (a do `SPREADSHEET_ID` do `.env`), com o app subido por `scripts/start.ps1` sem trocar variável. Tudo o que o roteiro cria tem descrição ou nome começando por "E2E" e é apagado no fim; CA-15.1/15.2 **não** são repetidos na planilha real (apagar as abas dela está fora de questão): valem pela suíte de integração na planilha de teste. O texto original, mantido como registro:
+   *Original:* o app subido por `scripts/start.ps1`, com o backend apontando para a **planilha de teste**. `SPREADSHEET_ID` é definido no terminal como o ID de teste antes de subir, o que tem precedência sobre o `.env` (pydantic-settings). Assim a planilha real do usuário não recebe dados de teste. CA-15.1 usa a planilha de teste depois de apagar as abas do app **(Q6)**.
 2. **Quem executa (Q7):** o Claude conduz no navegador automatizado (Claude in Chrome), em 1280 px e 360 px, tema claro e escuro, e registra cada item. O usuário confirma no final, olhando a planilha e as telas. Itens que dependem de ação no Google (compartilhamento, editar célula à mão) o Claude faz pelo app quando há caminho, ou pede ao usuário.
 3. **Registro:** a tabela de §3.3.4 recebe "OK" ou "Falhou — <o que aconteceu>", com a data, e o resumo vai para §10. Um item que falhar segue **(Q8)**.
 4. **Itens** (passos detalhados são refinados em T-035; o esperado é o do CA):
 
    | # | Verificação | Esperado | Resultado |
    |---|---|---|---|
-   | CA-01.1 | Em cada uma das 5 telas, "Registrar gasto" | Formulário com a data de hoje | |
-   | CA-01.2 | Gasto válido → Salvar | Linha nova na aba `Lancamentos`, diálogo fecha, aviso de sucesso | |
-   | CA-01.3 | Salvar com descrição vazia; depois com valor 0 | Campo marcado, nada gravado na aba | |
-   | CA-01.4 | Backend parado → Salvar | Erro mostrado, dados continuam no formulário | |
-   | CA-01.5 | Depois de CA-01.2, abrir Lançamentos e Resumo do mês | Gasto listado e somado | |
-   | CA-02.1 | "Registrar receita" → Categoria | Só categorias ativas de receita | |
-   | CA-02.2 | Receita sem forma de pagamento → Salvar | Gravada | |
-   | CA-03.1 | Mês com parcela e recorrente | Data, descrição, categoria, forma, valor, "k/N" ou marca de recorrência | |
-   | CA-03.2 | Filtrar por tipo, categoria e forma | Totais = soma do que está visível (gastos e receitas separados) | |
-   | CA-03.3 | Mês sem lançamentos | "Nenhum lançamento…" | |
-   | CA-04.1 | Abrir o app → Resumo e Lançamentos | Mês corrente | |
-   | CA-04.2 | Escolher outro mês e alternar Resumo ↔ Lançamentos | Mesmo mês | |
-   | CA-05.1 | Editar um lançamento | Formulário com os dados atuais | |
-   | CA-05.2 | Alterar a descrição → Salvar | Só aquela linha muda na aba | |
-   | CA-05.3 | Mudar a data para o mês seguinte | Sai do mês atual e aparece no seguinte | |
-   | CA-06.1 | Excluir | Confirmação com descrição e valor | |
-   | CA-06.2 | Confirmar | Linha some da aba; totais recalculados | |
-   | CA-07.1 | R$ 1.000,00 em 3 a partir de 15/01 | 333,34 / 333,33 / 333,33 em 15/01, 15/02, 15/03 | |
-   | CA-07.2 | Compra em 31/01 em 2 | 2ª parcela em 28/02 (29/02 em ano bissexto) | |
-   | CA-07.3 | Listar as parcelas | "k/N" e a descrição original | |
-   | CA-08.1 | Editar uma parcela | Só ela muda | |
-   | CA-08.2 | "Excluir parcelamento inteiro" | Todas somem, em todos os meses | |
-   | CA-09.1 | Tela Recorrências | Estado e próximo mês de cada uma | |
-   | CA-09.2 | Editar o valor de uma recorrência | Lançamentos já gerados mantêm o valor antigo; o próximo usa o novo | |
-   | CA-10.1 | Recorrência ativa com início 2 meses atrás; recarregar a página | Gerados os 3 meses | |
-   | CA-10.2 | Recarregar de novo | Nenhuma duplicata | |
-   | CA-10.3 | Excluir um gerado e recarregar | Não reaparece | |
-   | CA-10.4 | Ver o mês seguinte | Nada gerado no futuro | |
-   | CA-11.1 | Criar "alimentacao" (já existe "Alimentação") | Recusa com mensagem clara | |
-   | CA-11.2 | Renomear categoria com lançamentos antigos | Todos mostram o nome novo | |
-   | CA-11.3 | Excluir categoria em uso | Recusa e sugere desativar | |
-   | CA-11.4 | Desativar | Some dos formulários, continua na listagem e nos relatórios | |
-   | CA-12.1 | Somar à mão a aba do mês | Totais do resumo batem centavo a centavo | |
-   | CA-12.2 | Mês com gastos > receitas | Saldo negativo destacado | |
-   | CA-13.1 | Gráficos do mês | Cores das categorias | |
-   | CA-13.2 | Mês sem gastos | Estado vazio, sem erro | |
-   | CA-14.1 | Histórico padrão | 12 meses, inclusive os zerados | |
-   | CA-14.2 | Mudar o intervalo | Gráficos e totais atualizam | |
-   | CA-14.3 | Período exibido | Total gasto e média mensal | |
-   | CA-15.1 | Planilha de teste sem as abas do app → subir | Abas, cabeçalhos e categorias padrão criados | |
-   | CA-15.2 | Subir de novo | Nada duplicado nem sobrescrito | |
-   | CA-16.1 | Planilha não compartilhada (ID de outra planilha da mesma conta Google, sem compartilhar) | Banner pede para compartilhar com o e-mail da conta de serviço | |
-   | CA-16.2 | Desligar a internet (ou o backend) → "Tentar novamente" depois de religar | Volta sem reiniciar o app | |
-   | CA-16.3 | Editar à mão uma célula de valor para "abc" → "Recarregar dados" | Faixa "1 linha … ignorada"; corrigir → "Recarregar dados" → faixa some | |
-   | RNF-01 | `scripts/start.ps1` numa janela nova | Sobe os dois, abre o navegador; nada fora da máquina | |
-   | RNF-03 | Todas as telas | pt-BR, `R$ 1.234,56`, `dd/mm/aaaa`, meses por extenso | |
-   | RNF-04 | Registrar, Resumo e Histórico com a planilha de teste | < 3 s (com 5.000 linhas, pelo `test_desempenho`) | |
-   | RNF-05 | `git status` / DevTools → Rede | Nenhuma credencial versionada nem enviada ao navegador; backend só em 127.0.0.1 | |
-   | RNF-06 | Backend parado ao salvar nos 3 formulários | Dados preservados, nova tentativa possível | |
-   | RNF-07 | 5 telas e 4 diálogos em 360 px, claro e escuro, incluindo o botão "Recarregar dados" e a faixa de T-032 | Sem rolagem horizontal; textos quebram | |
-   | CA-F02.13 | Seguir o README do zero com a planilha real | Passos suficientes, sem conhecimento prévio | |
-   | CA-F15.5 | Clone novo (sem `.venv` e sem `node_modules`) + `.env` → `scripts\start.ps1` | Prepara o ambiente e sobe | |
+   | CA-01.1 | Em cada uma das 5 telas, "Registrar gasto" | Formulário com a data de hoje | OK (2026-11-12) — 5 rotas, data 12/11/2026, foco no valor |
+   | CA-01.2 | Gasto válido → Salvar | Linha nova na aba `Lancamentos`, diálogo fecha, aviso de sucesso | OK (2026-11-12) — "Gasto registrado."; linha conferida pela API |
+   | CA-01.3 | Salvar com descrição vazia; depois com valor 0 | Campo marcado, nada gravado na aba | OK (2026-11-12) — "Informe a descrição." / "Informe um valor maior que zero."; 0 linhas gravadas |
+   | CA-01.4 | Backend parado → Salvar | Erro mostrado, dados continuam no formulário | OK (2026-11-12) — backend parado: banner, diálogo aberto com os dados |
+   | CA-01.5 | Depois de CA-01.2, abrir Lançamentos e Resumo do mês | Gasto listado e somado | OK (2026-11-12) |
+   | CA-02.1 | "Registrar receita" → Categoria | Só categorias ativas de receita | OK (2026-11-12) — Freelance, Outras receitas, Rendimentos, Salário |
+   | CA-02.2 | Receita sem forma de pagamento → Salvar | Gravada | OK (2026-11-12) — forma vazia, mostrada como — |
+   | CA-03.1 | Mês com parcela e recorrente | Data, descrição, categoria, forma, valor, "k/N" ou marca de recorrência | OK (2026-11-12) — "2/3" nas parcelas e ícone "Lançamento recorrente" |
+   | CA-03.2 | Filtrar por tipo, categoria e forma | Totais = soma do que está visível (gastos e receitas separados) | OK (2026-11-12) — tipo, categoria e forma combinados; totais iguais à soma do visível |
+   | CA-03.3 | Mês sem lançamentos | "Nenhum lançamento…" | OK (2026-11-12) — "Nenhum lançamento em outubro de 2026." |
+   | CA-04.1 | Abrir o app → Resumo e Lançamentos | Mês corrente | OK (2026-11-12) |
+   | CA-04.2 | Escolher outro mês e alternar Resumo ↔ Lançamentos | Mesmo mês | OK (2026-11-12) — outubro mantido entre Resumo e Lançamentos (`?mes=`) |
+   | CA-05.1 | Editar um lançamento | Formulário com os dados atuais | OK (2026-11-12) — contadores já contam o texto carregado (13/100) |
+   | CA-05.2 | Alterar a descrição → Salvar | Só aquela linha muda na aba | OK (2026-11-12) — só a linha editada mudou entre 5 |
+   | CA-05.3 | Mudar a data para o mês seguinte | Sai do mês atual e aparece no seguinte | OK (2026-11-12) — aviso "Agora ele está em março de 2026." |
+   | CA-06.1 | Excluir | Confirmação com descrição e valor | OK (2026-11-12) — descrição, valor, data e aviso da parcela |
+   | CA-06.2 | Confirmar | Linha some da aba; totais recalculados | OK (2026-11-12) |
+   | CA-07.1 | R$ 1.000,00 em 3 a partir de 15/01 | 333,34 / 333,33 / 333,33 em 15/01, 15/02, 15/03 | OK (2026-11-12) — 15/01, 15/02 e 15/03/2026 |
+   | CA-07.2 | Compra em 31/01 em 2 | 2ª parcela em 28/02 (29/02 em ano bissexto) | OK (2026-11-12) — 31/01/2026 → 28/02/2026 |
+   | CA-07.3 | Listar as parcelas | "k/N" e a descrição original | OK (2026-11-12) |
+   | CA-08.1 | Editar uma parcela | Só ela muda | OK (2026-11-12) |
+   | CA-08.2 | "Excluir parcelamento inteiro" | Todas somem, em todos os meses | OK (2026-11-12) — 2 parcelas removidas, em janeiro e fevereiro |
+   | CA-09.1 | Tela Recorrências | Estado e próximo mês de cada uma | OK (2026-11-12) — Ativa, próximo mês dezembro de 2026 |
+   | CA-09.2 | Editar o valor de uma recorrência | Lançamentos já gerados mantêm o valor antigo; o próximo usa o novo | OK (2026-11-12) — gerados seguem com R$ 80,00 e a recorrência mostra R$ 90,00; o uso do valor novo no mês seguinte fica pelos testes unitários de F-13 |
+   | CA-10.1 | Recorrência ativa com início 2 meses atrás; recarregar a página | Gerados os 3 meses | OK (2026-11-12) — os 3 meses foram gerados já ao salvar (F-13 Q5), antes da recarga |
+   | CA-10.2 | Recarregar de novo | Nenhuma duplicata | OK (2026-11-12) — recarga da página, nenhuma duplicata |
+   | CA-10.3 | Excluir um gerado e recarregar | Não reaparece | OK (2026-11-12) — outubro excluído não voltou após recarga |
+   | CA-10.4 | Ver o mês seguinte | Nada gerado no futuro | OK (2026-11-12) — dezembro vazio |
+   | CA-11.1 | Criar "alimentacao" (já existe "Alimentação") | Recusa com mensagem clara | OK (2026-11-12) — "Já existe uma categoria de gasto chamada…" |
+   | CA-11.2 | Renomear categoria com lançamentos antigos | Todos mostram o nome novo | OK (2026-11-12) |
+   | CA-11.3 | Excluir categoria em uso | Recusa e sugere desativar | OK (2026-11-12) — diálogo "Categoria em uso" oferece desativar |
+   | CA-11.4 | Desativar | Some dos formulários, continua na listagem e nos relatórios | OK (2026-11-12) — selo "Inativa" na página; fora do formulário; segue na listagem e no resumo |
+   | CA-12.1 | Somar à mão a aba do mês | Totais do resumo batem centavo a centavo | OK (2026-11-12) — 123,45 + 50,00 = 173,45; receitas 3.000,00; saldo 2.826,55 |
+   | CA-12.2 | Mês com gastos > receitas | Saldo negativo destacado | OK (2026-11-12) — saldo com classe `negativo` e cor própria |
+   | CA-13.1 | Gráficos do mês | Cores das categorias | OK (2026-11-12) — cores da rosca lidas do canvas = cores das 2 categorias |
+   | CA-13.2 | Mês sem gastos | Estado vazio, sem erro | OK (2026-11-12) — sem gráficos, estado vazio |
+   | CA-14.1 | Histórico padrão | 12 meses, inclusive os zerados | OK (2026-11-12) |
+   | CA-14.2 | Mudar o intervalo | Gráficos e totais atualizam | OK (2026-11-12) — setembro–novembro: 3 meses, total e média recalculados |
+   | CA-14.3 | Período exibido | Total gasto e média mensal | OK (2026-11-12) — R$ 855,12 e R$ 71,26 em 12 meses |
+   | CA-15.1 | Planilha de teste sem as abas do app → subir | Abas, cabeçalhos e categorias padrão criados | Não repetido na planilha real (Q7 revista) — OK pela suíte de integração na planilha de teste (2026-10-02, 9/9) |
+   | CA-15.2 | Subir de novo | Nada duplicado nem sobrescrito | Idem CA-15.1; na planilha real, duas subidas do backend não duplicaram nada (15 categorias) |
+   | CA-16.1 | Planilha não compartilhada (ID de outra planilha da mesma conta Google, sem compartilhar) | Banner pede para compartilhar com o e-mail da conta de serviço | **Pendente (usuário)** — exige uma planilha não compartilhada; coberto por teste automatizado (`test_health_sem_permissao_pede_compartilhar_como_editor__CA_16_1`) |
+   | CA-16.2 | Desligar a internet (ou o backend) → "Tentar novamente" depois de religar | Volta sem reiniciar o app | OK (2026-11-12) — backend parado e religado pelo `start.ps1`; "Tentar novamente" voltou sem recarregar a página |
+   | CA-16.3 | Editar à mão uma célula de valor para "abc" → "Recarregar dados" | Faixa "1 linha … ignorada"; corrigir → "Recarregar dados" → faixa some | **Pendente (usuário)** — exige editar a célula à mão; coberto pela integração (`test_linha_invalida_e_recarregar__RN_14`). "Recarregar dados" conferido: aviso "Dados recarregados da planilha." |
+   | RNF-01 | `scripts/start.ps1` numa janela nova | Sobe os dois, abre o navegador; nada fora da máquina | OK (2026-11-12) — `start.ps1` executado pelo Claude: subiu os dois e abriu o navegador; com o backend fechado, subiu só ele (borda 8) |
+   | RNF-03 | Todas as telas | pt-BR, `R$ 1.234,56`, `dd/mm/aaaa`, meses por extenso | OK (2026-11-12) |
+   | RNF-04 | Registrar, Resumo e Histórico com a planilha de teste | < 3 s (com 5.000 linhas, pelo `test_desempenho`) | OK (2026-11-12) — cache frio: resumo 0,9 s, histórico 0,7 s, listagem 0,6 s (planilha pequena; 5.000 linhas pelo `test_desempenho`) |
+   | RNF-05 | `git status` / DevTools → Rede | Nenhuma credencial versionada nem enviada ao navegador; backend só em 127.0.0.1 | OK (2026-11-12) — nenhuma credencial no histórico do git; a página só fala com `localhost:4200` |
+   | RNF-06 | Backend parado ao salvar nos 3 formulários | Dados preservados, nova tentativa possível | OK (2026-11-12) — lançamento, recorrência e categoria: diálogo aberto com os dados |
+   | RNF-07 | 5 telas e 4 diálogos em 360 px, claro e escuro, incluindo o botão "Recarregar dados" e a faixa de T-032 | Sem rolagem horizontal; textos quebram | OK parcial (2026-11-12) — 360 px sem rolagem horizontal nas 5 telas e nos diálogos de lançamento, categoria e recorrência, medido pelo DOM, tema escuro. Sem captura de tela (a janela do Chrome não aceitou redimensionar nem capturar); tema claro e diálogo de confirmação não conferidos — valem os de T-031 |
+   | CA-F02.13 | Seguir o README do zero com a planilha real | Passos suficientes, sem conhecimento prévio | **Pendente (usuário)** |
+   | CA-F15.5 | Clone novo (sem `.venv` e sem `node_modules`) + `.env` → `scripts\start.ps1` | Prepara o ambiente e sobe | **Pendente (usuário)** — clone novo |
 
 5. **Preparação e ordem de execução** (T-035):
    1. `SPREADSHEET_ID_TESTE` preenchido e `pytest -m integracao` verde antes do roteiro: prepara as abas da planilha de teste e já cobre CA-15.1/15.2, CA-F14.16, CA-F15.7 e CA-F15.9 contra o Google.
@@ -180,11 +181,11 @@ Todos em PowerShell (Windows, `02` §1), com caminhos relativos ao próprio scri
 
 **Herdados de `01` e de features anteriores**
 
-- [ ] **RNF-01** Dado o computador do usuário, quando ele roda `scripts/start.ps1`, então backend e frontend sobem localmente, sem login nem hospedagem externa.
+- [x] **RNF-01** Dado o computador do usuário, quando ele roda `scripts/start.ps1`, então backend e frontend sobem localmente, sem login nem hospedagem externa.
 - [x] **RNF-08** Dado `01` §4, então toda RN-xx é coberta por pelo menos um teste automatizado (matriz em §10). *(T-035: matriz em §10 + guarda `test_rastreabilidade.py` de T-034.)*
 - [ ] **Todos os CA de `01`** (CA-01.1 a CA-16.3, 44 itens) com "OK" no roteiro de §3.3.4.
-- [ ] **CA-15.1 / CA-15.2** com a suíte de integração passando na planilha de teste.
-- [ ] **CA-F14.16** (`test_desempenho`) passando na planilha de teste.
+- [x] **CA-15.1 / CA-15.2** com a suíte de integração passando na planilha de teste. *(T-035: 9 passed em 596 s, 2026-10-02.)*
+- [x] **CA-F14.16** (`test_desempenho`) passando na planilha de teste. *(T-035: mesma execução de 2026-10-02.)*
 - [ ] **CA-F02.13** Dado o README, quando o usuário o segue do zero com a planilha real, então o app sobe e conecta.
 
 **Refinados — scripts (T-033)**
@@ -198,9 +199,9 @@ Todos em PowerShell (Windows, `02` §1), com caminhos relativos ao próprio scri
 
 **Refinados — integração (T-034)**
 
-- [ ] **CA-F15.7** Dado `SPREADSHEET_ID_TESTE` (terminal ou `.env`, Q5), quando `pytest -m integracao` roda, então todos os cenários de §3.2.5 passam. *(T-034: suíte escrita e coletada (9 testes); leitura do `.env` coberta por `test_conftest_integracao.py`. **Execução pendente com o usuário** — `SPREADSHEET_ID_TESTE` vazio; o usuário escolheu concluir sem rodar.)*
+- [x] **CA-F15.7** Dado `SPREADSHEET_ID_TESTE` (terminal ou `.env`, Q5), quando `pytest -m integracao` roda, então todos os cenários de §3.2.5 passam. *(T-034: suíte escrita e coletada (9 testes); leitura do `.env` coberta por `test_conftest_integracao.py`. Executada em T-035, 2026-10-02: 9 passed.)*
 - [x] **CA-F15.8** Dado `SPREADSHEET_ID_TESTE` igual ao `SPREADSHEET_ID`, então a suíte falha no início sem escrever nada (Q5). *(T-034: unitário + `pytest -m integracao` com os dois IDs iguais no ambiente — parou com a mensagem e código 4, sem abrir planilha.)*
-- [ ] **CA-F15.9** Dado o fim da suíte, com sucesso ou falha, então nenhuma linha marcada `teste-integracao-…` resta nas abas da planilha de teste. *(T-034: lógica da varredura testada na planilha falsa; conferência real junto com CA-F15.7.)*
+- [x] **CA-F15.9** Dado o fim da suíte, com sucesso ou falha, então nenhuma linha marcada `teste-integracao-…` resta nas abas da planilha de teste. *(T-034: lógica da varredura testada na planilha falsa; conferência real em 2026-10-02: 0 linhas `teste-…` restantes.)*
 - [x] **CA-F15.10** Dado `pytest` sem `-m integracao`, então nenhum teste de integração roda e a rede não é tocada (`02` §8, sem regressão).
 
 **Refinados — roteiro, README e rastreabilidade (T-035)**
@@ -325,6 +326,7 @@ Ordem: T-033 e T-034 em qualquer ordem (as duas dependem só de T-032); T-035 de
 | O cenário de parcelamento também cobre CA-08.1 (editar uma parcela não mexe nas outras) (T-034). | Custa uma chamada a mais e fecha o REQ-08 contra o Google. | Não |
 | Suíte concluída sem execução real (T-034). | Escolha do usuário: `SPREADSHEET_ID_TESTE` vazio; CA-F15.7, CA-F15.9, CA-15.1/15.2 e CA-F14.16 seguem pendentes com ele (`pytest -m integracao`). | Não |
 | Espera de 61 s entre os testes de integração (§3.2.7) (T-035, aprovado). | A cota de leituras por minuto do Google estourava com a suíte inteira; esperar a janela zerar é mais simples e previsível que mexer no retry do app. | Não |
+| Roteiro E2E executado na **planilha real**, não na de teste (T-035, revisão de Q7 em 2026-11-12). | Escolha do usuário na execução: o `.env` já aponta para ela e ele preferiu não trocar o ID. Dados marcados "E2E" e apagados no fim; CA-15.1/15.2 ficam pela suíte de integração. | Não |
 | Contadores de descrição/observação começam do valor do controle (T-035, Q8). | Defeito achado no roteiro: na edição mostravam "0/100"; correção pequena dentro do especificado, com teste. | Não |
 
 **Matriz RN → teste (RNF-08)** — gerada em T-035 a partir dos nomes dos testes; a guarda `tests/unit/test_rastreabilidade.py` falha se alguma RN ficar sem teste. "Arquivos" conta os arquivos de teste que citam a RN (nome ou docstring); a coluna do meio lista exemplos com o ID no nome.
@@ -348,7 +350,7 @@ Ordem: T-033 e T-034 em qualquer ordem (as duas dependem só de T-032); T-035 de
 | RN-15 | Categorias padrão | `unit/test_bootstrap.py::test_semeia_as_quinze_categorias_padrao__RN_15`, `unit/test_bootstrap.py::test_resemeia_se_categorias_esvaziada__RN_15` | 7 |
 | RN-16 | Somas em centavos exatos | `unit/test_dinheiro.py::test_soma_em_decimal_sem_erro_de_ponto_flutuante__RN_16`, `unit/test_resumo_service.py::test_somas_exatas_em_centavos__RN_16` | 6 |
 
-*(O resultado do roteiro entra aqui quando ele for executado.)*
+**Resultado do roteiro E2E (2026-11-12, planilha real, Chrome conduzido pelo Claude):** dos 52 itens, **45 OK**, **1 OK parcial** (RNF-07: medido pelo DOM, sem captura de tela nem tema claro), **2 não repetidos** na planilha real e cobertos pela integração (CA-15.1 e CA-15.2, este conferido em parte) e **4 pendentes com o usuário** (CA-16.1, CA-16.3, CA-F02.13, CA-F15.5). Nenhum defeito encontrado. As gravações foram conferidas pela API (com o cache recarregado), não olhando as abas; a conferência visual da planilha fica com o usuário. Os dados "E2E" foram apagados; restou na aba `Recorrencias` a linha "E2E assinatura" (`ENCERRADA`), porque não existe exclusão de recorrência — pode ser apagada à mão. Os 2 lançamentos de setembro de 2026 que já estavam na planilha não foram tocados.
 
 ---
 
@@ -381,4 +383,6 @@ Ordem: T-033 e T-034 em qualquer ordem (as duas dependem só de T-032); T-035 de
 | 2026-10-02 | T-034 concluída: CA-F15.8, .10 e .13 verificados; CA-F15.7 e .9 com suíte escrita e execução pendente com o usuário. Cenário de bootstrap renomeado para `test_bootstrap_e2e.py`. Cinco decisões em §10. `02` → 1.14. |
 | 2026-10-02 | T-035 (parcial): README final (CA-F15.12), matriz RN → teste em §10 (RNF-08), preparação e ordem do roteiro em §3.3.5 e item CA-F15.5 no roteiro. Execução do roteiro bloqueada: planilha de teste e Chrome ausentes. |
 | 2026-10-02 | T-035 (aprovado pelo usuário): §3.2.7 — espera de 61 s entre os testes de integração por causa da cota do Google; defeito dos contadores do diálogo de edição ("0/100" com texto preenchido) corrigido por Q8, com teste. |
+| 2026-11-12 | T-035 retomada (Chrome disponível). **Q7 revista pelo usuário:** roteiro na planilha real, dados "E2E" apagados no fim; CA-15.1/15.2 pela suíte de integração (§3.3.1, §10). |
+| 2026-11-12 | T-035: roteiro executado (§3.3.4 e resumo em §10) — 45 OK, 1 parcial, 2 pela integração, 4 pendentes com o usuário; critérios de §4 da integração marcados conforme a execução de 2026-10-02. |
 | 2026-11-12 | **Revisão (F-16, aprovada pelo usuário):** o guarda de §3.5 (`test_rastreabilidade.py`) passa a ignorar RN marcadas *(planejada — F-xx)* em `01` §4 (novo teste `test_rn_planejada_fica_de_fora__RNF_08`); RN-17..RN-24 (F-16) entram marcadas até T-038. O roteiro desta feature continua cobrindo REQ-01..REQ-16; REQ-17..REQ-20 e os CA acrescentados em `01` 1.4 ficam no roteiro de F-16 §8.3. |
