@@ -1,25 +1,56 @@
 # Credenciais e configuracao local (RNF-05)
 credentials.json
-backend/.env
+credentials*.json
+*service-account*.json
+client_secret*.json
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Variaveis de ambiente (so o .env.example e versionado)
 .env
+.env.*
+!.env.example
+backend/.env
 
 # Python
 .venv/
+venv/
 __pycache__/
 *.py[cod]
 .pytest_cache/
 .ruff_cache/
+.mypy_cache/
+.coverage
+.coverage.*
+htmlcov/
+*.egg-info/
 
 # Node / Angular
 node_modules/
 dist/
 .angular/
+coverage/
+npm-debug.log*
 
 # Ferramentas locais
 .claude/settings.local.json
+.claude/worktrees/
+
+# Logs, temporarios e dados exportados (podem conter dados financeiros)
+*.log
+*.tmp
+*.bak
+*.xlsx
+*.xls
+*.ods
+*.csv
 
 # IDEs e SO
 .idea/
+*.iml
 .vscode/
 Thumbs.db
 desktop.ini
+.DS_Store
