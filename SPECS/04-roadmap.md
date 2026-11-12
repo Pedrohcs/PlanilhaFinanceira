@@ -3,8 +3,8 @@
 | Campo | Valor |
 |---|---|
 | Documento | `SPECS/04-roadmap.md` |
-| Versão | 1.0 |
-| Atualizado em | 2026-09-29 |
+| Versão | 1.1 |
+| Atualizado em | 2026-11-12 |
 | Status | Aprovado para início |
 | Responde | **Em que ordem** construir: marcos, features, dependências e tarefas |
 | Depende de | `01-requisitos.md`, `03-arquitetura.md` |
@@ -23,6 +23,7 @@
 | **M2** | Visão financeira | F-09, F-10, F-11 | Resumo, gráficos do mês e histórico. |
 | **M3** | Automação | F-12, F-13 | Compras parceladas e recorrências automáticas. |
 | **M4** | Acabamento | F-14, F-15 | App robusto, scripts de execução e verificação ponta a ponta. |
+| **M5** | Integração com o cartão (Meu Pluggy) | F-16 | Gastos dos cartões de crédito importados do Meu Pluggy, conciliados com o que já foi lançado, mantidos em dia e acompanhados numa página de cartões. |
 
 ---
 
@@ -57,6 +58,9 @@ flowchart LR
         F14["F-14<br/>Polimento e resiliência"]
         F15["F-15<br/>Entrega local e E2E"]
     end
+    subgraph M5["M5 · Integração com o cartão"]
+        F16["F-16<br/>Importação do cartão<br/>(Meu Pluggy)"]
+    end
 
     F01 --> F02 --> F03
     F01 --> F04
@@ -76,6 +80,8 @@ flowchart LR
     F12 --> F14
     F13 --> F14
     F14 --> F15
+    F14 --> F16
+    F15 -. "só T-042 (README)" .-> F16
 
     classDef critico stroke:#d32f2f,stroke-width:3px;
     class F01,F02,F03,F05,F06,F07,F08,F12,F14,F15 critico;
@@ -83,6 +89,7 @@ flowchart LR
 
 - **Caminho crítico** (borda vermelha): F-01 → F-02 → F-03 → F-05 → F-06 → F-07 → F-08 → F-12 → F-14 → F-15.
 - **Paralelizável:** após F-06, três trilhas independentes: (F-07 → F-08 → F-12), (F-09 → F-10 / F-11) e (F-13). F-04 pode andar junto com F-03.
+- **M5:** F-16 depende de F-14 (todas as telas e a resiliência prontas). Só a última tarefa (T-042, README e roteiro E2E) espera F-15 (T-035), porque edita o `README.md` final; as demais podem começar antes de F-15 terminar. Dentro de F-16, T-036 e T-037 são independentes; T-040 e T-041 também.
 
 ---
 
@@ -195,6 +202,13 @@ Formato de cada feature: objetivo · requisitos cobertos · dependências · cri
 - **Concluída quando:** `scripts/start.ps1` sobe backend e frontend; testes de integração passam na planilha de teste; roteiro E2E executado com todos os itens OK; `README.md` final.
 - **Tarefas:** T-033, T-034, T-035.
 
+### F-16 — Importação do cartão de crédito (Meu Pluggy)
+- **Objetivo:** trazer sozinhos os gastos dos cartões de crédito (Itaú, Nubank) do Meu Pluggy para a planilha, sem duplicar o que já foi lançado à mão, por recorrência ou por parcelamento.
+- **Cobre:** REQ-17, REQ-18, REQ-19, REQ-20; CA-03.4/03.5, CA-08.3, CA-11.5; RN-03 (P-02), RN-08, RN-15, RN-17..RN-24; RNF-01, RNF-02, RNF-05, RNF-09.
+- **Depende de:** F-14 (T-042 também de F-15/T-035).
+- **Concluída quando:** com a integração configurada, abrir o app e "Buscar do cartão" importam, conciliam, atualizam e removem conforme RN-17..RN-24 (testes com `PluggyFalso`); planilha v1 migra para v2 sem perder nada; sem configuração o app funciona como antes; teste de contrato contra o item Sandbox passa; roteiro E2E da F-16 executado com o item real.
+- **Tarefas:** T-036, T-037, T-038, T-039, T-040, T-041, T-042.
+
 ---
 
 ## 4. Matriz de rastreabilidade
@@ -203,20 +217,24 @@ Formato de cada feature: objetivo · requisitos cobertos · dependências · cri
 |---|---|---|
 | REQ-01 Registrar gasto | F-06 (F-04: botão global) | T-015, T-016 (T-010) |
 | REQ-02 Registrar receita | F-06 | T-015, T-016 |
-| REQ-03 Listar lançamentos | F-07 | T-017, T-018 |
+| REQ-03 Listar lançamentos | F-07 (F-16: CA-03.4/03.5) | T-017, T-018 (T-039, T-041) |
 | REQ-04 Navegar entre meses | F-07 (F-04: seletor) | T-018 (T-011) |
 | REQ-05 Editar lançamento | F-08 | T-019, T-020 |
 | REQ-06 Excluir lançamento | F-08 | T-019, T-020 |
 | REQ-07 Registrar parcelada | F-12 | T-026, T-027 |
-| REQ-08 Manter parcelamento | F-12 | T-026, T-027 |
+| REQ-08 Manter parcelamento | F-12 (F-16: CA-08.3) | T-026, T-027 (T-036, T-041) |
 | REQ-09 Gerenciar recorrências | F-13 | T-028, T-030 |
 | REQ-10 Geração automática | F-13 | T-029, T-030 |
-| REQ-11 Gerenciar categorias | F-05 | T-013, T-014 |
+| REQ-11 Gerenciar categorias | F-05 (F-16: CA-11.5) | T-013, T-014 (T-036, T-041) |
 | REQ-12 Resumo do mês | F-09 | T-021, T-022 |
 | REQ-13 Gráficos do mês | F-10 | T-023 |
 | REQ-14 Visão histórica | F-11 | T-024, T-025 |
-| REQ-15 Preparação da planilha | F-03 | T-008 |
+| REQ-15 Preparação da planilha | F-03 (F-16: migração para a versão 2) | T-008 (T-036) |
 | REQ-16 Feedback de erros | F-02, F-04, F-14 | T-004, T-005, T-012, T-031, T-032 |
+| REQ-17 Importar gastos do cartão | F-16 | T-037, T-038, T-039, T-040, T-042 |
+| REQ-18 Conciliar com lançamentos registrados | F-16 | T-038, T-039, T-041 |
+| REQ-19 Manter importados em dia | F-16 | T-038, T-039 |
+| REQ-20 Acompanhar cartões conectados | F-16 | T-037, T-039, T-040 |
 
 Verificação: todo `REQ-xx` de `01-requisitos.md` aparece nesta tabela. Ao criar um requisito novo, acrescente-o aqui junto com a feature/tarefas que o cobrem.
 
@@ -224,8 +242,8 @@ Verificação: todo `REQ-xx` de `01-requisitos.md` aparece nesta tabela. Ao cria
 
 ## 5. Como evoluir o roadmap
 
-- **Nova feature:** próximo ID livre (`F-16`, ...), acrescentar no §3, no grafo (§2), na matriz (§4) e as tarefas em `05-acompanhamento.md`.
-- **Nova tarefa:** próximo ID livre (`T-036`, ...), mesmo que pertença a uma feature antiga. **IDs nunca são reaproveitados nem renumerados.**
+- **Nova feature:** próximo ID livre (`F-17`, ...), acrescentar no §3, no grafo (§2), na matriz (§4) e as tarefas em `05-acompanhamento.md`.
+- **Nova tarefa:** próximo ID livre (`T-043`, ...), mesmo que pertença a uma feature antiga. **IDs nunca são reaproveitados nem renumerados.**
 - **Tarefa grande demais:** se uma tarefa não cabe em uma sessão do Claude Code (≈ um PR pequeno, até ~400 linhas alteradas), divida-a em novas tarefas e marque a original como `Concluída` com a nota "dividida em T-xxx, T-yyy" — ou mantenha-a como agrupadora.
 - Alterações de escopo passam por `/mudanca-de-requisito`.
 
@@ -236,3 +254,4 @@ Verificação: todo `REQ-xx` de `01-requisitos.md` aparece nesta tabela. Ao cria
 | Data | Versão | Alteração |
 |---|---|---|
 | 2026-09-29 | 1.0 | Versão inicial: 5 marcos, 15 features, 35 tarefas. |
+| 2026-11-12 | 1.1 | Integração com o Meu Pluggy (`/mudanca-de-requisito`): marco **M5**, feature **F-16** (T-036 a T-042), grafo, matriz (REQ-17 a REQ-20 e acréscimos em REQ-03/08/11/15), próximos IDs livres. |

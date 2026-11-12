@@ -16,12 +16,36 @@ TESTES = [
 ]
 
 
+MARCA_PLANEJADA = "(planejada"
+"""RN marcada *(planejada — F-xx)* em `01` §4 ainda não tem implementação e fica de fora (F-16)."""
+
+
+def regras_na_secao(secao: str) -> list[str]:
+    """Números das RN da tabela, sem as marcadas como planejadas."""
+    regras = []
+    for linha in secao.splitlines():
+        achado = re.match(r"^\|\s*\*\*RN-(\d{2})\*\*", linha)
+        if achado and MARCA_PLANEJADA not in linha:
+            regras.append(achado.group(1))
+    return regras
+
+
 def regras_de_negocio() -> list[str]:
     texto = REQUISITOS.read_text(encoding="utf-8")
     secao = texto[
         texto.index("## 4. Regras de negócio") : texto.index("## 5. Requisitos não funcionais")
     ]
-    return re.findall(r"^\|\s*\*\*RN-(\d{2})\*\*", secao, flags=re.MULTILINE)
+    return regras_na_secao(secao)
+
+
+def test_rn_planejada_fica_de_fora__RNF_08() -> None:
+    # Números fora de uso de propósito: o texto deste teste também é lido pelo guarda.
+    secao = (
+        "| **RN-97** | Regra pronta. |\n"
+        "| **RN-98** | Regra futura. *(planejada — F-99)* |\n"
+        "| **RN-99** | Outra pronta. |\n"
+    )
+    assert regras_na_secao(secao) == ["97", "99"]
 
 
 def test_toda_rn_tem_teste__RNF_08() -> None:

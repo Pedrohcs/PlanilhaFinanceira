@@ -3,7 +3,7 @@
 | Campo | Valor |
 |---|---|
 | Documento | `SPECS/05-acompanhamento.md` |
-| Atualizado em | 2026-10-02 |
+| Atualizado em | 2026-11-12 |
 | Responde | **Onde estamos:** status de cada tarefa e feature |
 | Depende de | `04-roadmap.md` (plano) |
 
@@ -26,10 +26,13 @@
 | M1 · Registro e consulta | F-05..F-08 | 8 | 0 | 0 | 8 | 100% |
 | M2 · Visão financeira | F-09..F-11 | 5 | 0 | 0 | 5 | 100% |
 | M3 · Automação | F-12..F-13 | 5 | 0 | 0 | 5 | 100% |
-| M4 · Acabamento | F-14..F-15 | 5 | 1 | 0 | 4 | 80% |
-| **Total** | **15** | **35** | **1** | **0** | **34** | **97%** |
+| M4 · Acabamento | F-14..F-15 | 5 | 0 | 1 | 4 | 80% |
+| M5 · Integração com o cartão | F-16 | 7 | 7 | 0 | 0 | 0% |
+| **Total** | **16** | **42** | **7** | **1** | **34** | **81%** |
 
 **M0 a M3 concluídos (F-01 a F-13); F-14 concluída; F-15 iniciada (T-033 e T-034 concluídas).** Caminho crítico em F-15. Desbloqueada: **T-035** (DOC, última tarefa) — próximo passo: `/implementar-tarefa T-035`. Pendentes com o usuário, sem bloquear: seguir o README com a planilha real (CA-F02.13); rodar `pytest -m integracao` (CA-15.1/15.2, CA-F14.16 e, desde T-034, a suíte completa — CA-F15.7/15.9; `SPREADSHEET_ID_TESTE` no `backend/.env` ou no terminal, hoje vazio; **a suíte apaga e recria as abas do app na planilha de teste**). Conferência visual: feita em T-031 com backend em memória (F-14 §10); o botão "Recarregar dados" e a faixa de linhas ignoradas de T-032 não foram vistos no navegador (extensão do Chrome desconectada) — entram no roteiro E2E de F-15 junto com a repetição na planilha real.
+
+**M5 (2026-11-12):** integração com o Meu Pluggy especificada e aprovada — [`F-16`](features/F-16-importacao-cartao-pluggy.md), tarefas T-036 a T-042 `Não iniciada`. Já desbloqueadas: **T-036** (schema v2 e domínio) e **T-037** (cliente da Pluggy). Pré-requisito do usuário antes de T-037: preparação de `02` §11.2 (Meu Pluggy, Dashboard, `PLUGGY_*` no `backend/.env`). T-035 segue `Iniciada`; pela regra 4, conclua-a (ou autorize trabalhar em paralelo) antes de iniciar uma tarefa de M5.
 
 ---
 
@@ -52,6 +55,7 @@
 | F-13 | Recorrências | M3 | Concluída | [`F-13-recorrencias.md`](features/F-13-recorrencias.md) (Concluída) |
 | F-14 | Polimento e resiliência | M4 | Concluída | [`F-14-polimento-e-resiliencia.md`](features/F-14-polimento-e-resiliencia.md) (Concluída) |
 | F-15 | Entrega local e verificação E2E | M4 | Iniciada | [`F-15-entrega-local-e-e2e.md`](features/F-15-entrega-local-e-e2e.md) (Aprovada) |
+| F-16 | Importação do cartão de crédito (Meu Pluggy) | M5 | Não iniciada | [`F-16-importacao-cartao-pluggy.md`](features/F-16-importacao-cartao-pluggy.md) (Aprovada) |
 
 Status da feature: `Não iniciada` (nenhuma tarefa iniciada) · `Iniciada` (alguma tarefa iniciada ou concluída) · `Concluída` (todas concluídas). Na coluna *Spec da feature*, coloque o link do arquivo em `SPECS/features/` quando ele for criado.
 
@@ -77,10 +81,12 @@ flowchart LR
     F06 --> F13[F-13 Recorrências]
     F08 & F10 & F11 & F12 & F13 --> F14[F-14 Polimento]
     F14 --> F15[F-15 Entrega/E2E]
+    F14 --> F16[F-16 Cartão/Pluggy]
 
     classDef naoIniciada fill:#eeeeee,stroke:#9e9e9e,color:#424242;
     classDef iniciada fill:#fff3cd,stroke:#f0ad4e,color:#5c4400;
     classDef concluida fill:#d4edda,stroke:#28a745,color:#155724;
+    class F16 naoIniciada;
     class F15 iniciada;
     class F01,F02,F03,F04,F05,F06,F07,F08,F09,F10,F11,F12,F13,F14 concluida;
 ```
@@ -149,7 +155,19 @@ Camadas: **BE** = backend · **FE** = frontend · **DOC** = documentação/infra
 | T-032 | `POST /api/sistema/recarregar` + botão "Recarregar dados"; aviso de `linhas_ignoradas` na interface; teste de desempenho com 5.000 linhas (RNF-04) usando repositório em memória e planilha de teste. | F-14 | BE+FE | T-031 | Concluída | 2026-10-02 | 2026-10-02 | `POST /api/sistema/recarregar` (router `sistema`, `CacheDep`, `app.state.cache`; 204 sem chamar o Google, também com a planilha fora); mensagens do Pydantic em pt-BR por tipo em `api/erros.py` (tabela de F-14 §3.5 completada com os tipos reais — aprovado); botão ↻ "Recarregar dados da planilha" na barra (desabilitado durante o pedido, `versao++`, aviso; backend fora → banner, sem aviso); `SistemaApi`; faixa `aviso-linhas-ignoradas` (`role="status"`, singular/plural, some com 0) em lançamentos, resumo e histórico; teste de registro com 5.000 linhas (planilha falsa) e `tests/integracao/test_desempenho.py` (`@integracao`, cache frio via recarregar, limpeza no `finally` — **não executado**: `SPREADSHEET_ID_TESTE` vazio). Backend 899 testes (19 novos), `ruff` limpo; frontend 266 testes (7 novos), build 479,13 kB inicial (+0,82 kB). CA-16.2, CA-16.3, CA-F14.10..15 (CA-F14.16 pendente com o usuário). |
 | T-033 | `scripts/start-backend.ps1`, `scripts/start-frontend.ps1`, `scripts/start.ps1` (sobe ambos e abre o navegador). | F-15 | DOC | T-032 | Concluída | 2026-10-02 | 2026-10-02 | `scripts/start-backend.ps1` (Python ≥ 3.12, `.venv` + `requirements.txt` na 1ª vez ou se o import falhar, só a existência do `.env`, `uvicorn` em 127.0.0.1:8000 sem `--reload`), `start-frontend.ps1` (Node 24 ou 22.22.3+, `npm install` se faltar o `ng.cmd`, `npm start`), ambos com `-SoPreparar`; `start.ps1` (parte por parte: reconhece o app pelo health e pelo título, recusa porta de outro programa, prepara antes de contar 60/180 s, duas janelas com título, abre o navegador). UTF-8 com BOM (PowerShell 5.1). README §3 (comando único + manual) e §6. Guarda `tests/unit/test_scripts.py` (BOM, sintaxe pelo parser do PowerShell, sem leitura de arquivo, 127.0.0.1, sem `--reload`): 10 testes, 909 no total; `ruff` limpo. Cenários executados pelo usuário: nada rodando, já rodando, só o backend fechado, porta 4200 ocupada, sem `.env` — todos OK. CA-F15.1..4, .6 (CA-F15.5 no roteiro de T-035). |
 | T-034 | Suíte `tests/integracao/` completa contra `SPREADSHEET_ID_TESTE` (bootstrap, CRUD, parcelamento, sincronização). | F-15 | BE | T-032 | Concluída | 2026-10-02 | 2026-10-02 | `tests/integracao/ambiente.py` (planilha de teste do terminal ou do `.env` — Q5, trava contra a planilha do app, varredura das linhas `teste-integracao-`/`teste-desempenho-` numa escrita, credencial); `integracao/conftest.py` (fixtures de sessão, trava com `pytest.exit` antes de abrir a planilha, varredura no início e no fim, `cliente_teste` com o app real, categorias ativas); 6 cenários: `test_bootstrap_e2e.py` (apaga e recria as abas — Q6), `test_lancamentos_e2e.py`, `test_categorias_e2e.py`, `test_parcelamento_e2e.py`, `test_recorrencias_e2e.py`, `test_edicao_manual_e2e.py`; `test_planilha_real`/`test_desempenho`/`test_marcador` nas fixtures novas; unitários `test_conftest_integracao.py` (3) e `test_rastreabilidade.py` (RNF-08, Q10); `.env.example` e README §4. 913 testes (4 novos no `pytest` comum), `ruff` limpo; integração: 9 coletados, pulados sem a variável; trava provada com IDs iguais (código 4, sem rede). CA-F15.8, .10, .13. **Pendente com o usuário:** `pytest -m integracao` (CA-F15.7, .9, CA-15.1/15.2, CA-F14.16) — concluída sem execução por escolha dele. |
-| T-035 | Roteiro E2E manual cobrindo todos os CA-xx (em `SPECS/features/F-15-*.md`), execução e registro do resultado; `README.md` final. | F-15 | DOC | T-033, T-034 | Não iniciada | | | |
+| T-035 | Roteiro E2E manual cobrindo todos os CA-xx (em `SPECS/features/F-15-*.md`), execução e registro do resultado; `README.md` final. | F-15 | DOC | T-033, T-034 | Iniciada | 2026-10-02 | | Feito: README final (seção "Uso" em §3, solução de problemas), matriz RN → teste em F-15 §10, preparação e ordem do roteiro (§3.3.5). `pytest -m integracao` verde na planilha de teste (9/9, ~10 min) e nenhuma linha marcada restante (CA-15.1/15.2, CA-F14.16, CA-F15.7, CA-F15.9). BLOQUEIO: roteiro E2E (Q7) precisa da extensão do Chrome conectada — ainda desconectada em 2026-10-02. |
+
+### M5 · Integração com o cartão
+
+| ID | Tarefa (escopo) | Feature | Camada | Depende de | Status | Início | Conclusão | Notas |
+|---|---|---|---|---|---|---|---|---|
+| T-036 | Schema v2 e domínio da importação (F-16 §9): abas `Cartoes` e `Importacoes` em `schema_planilha.py` (`VERSAO_SCHEMA = 2`); migração 1 → 2 e seed com as categorias reservadas no `bootstrap`; modelos `Cartao`/`Importacao` e enums `SituacaoImportacao`/`SituacaoConexao`; parcela importada no `Lancamento` (k/N sem `parcelamento_id`); `atualizar_varios` no `Repositorio[T]` (planilha em uma `batch_update` + memória); 2 repositórios novos; `categoria_service` com RN-24 (409 `CATEGORIA_RESERVADA`) e `reservada` no JSON; `datas.data_em_brasilia`, `textos.normalizar_descricao`; suíte de integração ajustada para 6 abas. | F-16 | BE | T-034 | Não iniciada | | | |
+| T-037 | Cliente da Pluggy (`02` §11): `PLUGGY_*` no `Settings` (ligada/desligada/incompleta) e no `.env.example`; `httpx` em `requirements.txt` (ADR-16); `infra/pluggy_client.py` (auth com `apiKey` em memória, tentativas, paginação, mapeamento de erros, `FontePluggy`); testes com `httpx.MockTransport`; marcador `pluggy` + `test_pluggy_contrato.py` (Sandbox); **verificação contra o item real**: `GET /v2/transactions` × plano B, registrada no Log. | F-16 | BE | T-034 | Não iniciada | | | |
+| T-038 | `importacao_service` (`03` §4.4): mapeamento RN-17/RN-18, categoria RN-19, conciliação RN-20, atualização/remoção RN-21, excluídos RN-22, janela RN-23, proteções RN-24, re-chave de cartão, recuperação de falha parcial, trava, até 7 escritas; `tests/pluggy_falso.py`; testes unitários de cada RN; **remove a marca *(planejada — F-16)* de RN-17..RN-24 em `01` §4** (o guarda do RNF-08 passa a cobrá-las). | F-16 | BE | T-036, T-037 | Não iniciada | | | |
+| T-039 | API (`03` §6): `GET /api/cartoes`, `GET /api/cartoes/conexoes`, `POST /api/importacoes/pluggy`; composição do `PluggyClient` em `deps.py`/lifespan; erros 409/502 no envelope; `vinculo` e filtro `cartao` em `GET /api/lancamentos`. Testes de API. | F-16 | BE | T-038 | Não iniciada | | | |
+| T-040 | Frontend da importação: `cartoes.api`, `importacoes.api`, `CartoesStore`, `ImportacaoCartoes`; botão "Buscar do cartão" e link "Cartões" no shell; importação encadeada na abertura e no "Tentar novamente" com aviso consolidado; `Avisos` com ação; interceptor sem aviso/banner para `PLUGGY_*`; página `/cartoes`. | F-16 | FE | T-039 | Não iniciada | | | |
+| T-041 | Frontend nas telas existentes: ícone de vínculo com dica e filtro "Cartão" (na URL) na listagem; parcela importada sem "Excluir parcelamento inteiro"; categoria reservada sem Excluir/Desativar na página de categorias; modelos TS com `vinculo` e `reservada`. | F-16 | FE | T-039 | Não iniciada | | | |
+| T-042 | `README.md`: preparação do Meu Pluggy (`02` §11.2), variáveis `PLUGGY_*`, solução de problemas (credenciais, item não encontrado, autorização vencida); roteiro E2E de F-16 §8.3 executado com o item real e registrado; matriz RN-17..RN-24 → teste em F-16. | F-16 | DOC | T-040, T-041, T-035 | Não iniciada | | | |
 
 ---
 
@@ -157,6 +175,11 @@ Camadas: **BE** = backend · **FE** = frontend · **DOC** = documentação/infra
 
 | Data | Tarefa/Feature | Mudança | Observação |
 |---|---|---|---|
+| 2026-11-12 | F-16 | Especificada (`Aprovada`) — `/mudanca-de-requisito` | Integração com o Meu Pluggy: `01` → 1.4 (REQ-17..20, RN-17..24, P-02 confirmada), `02` → 1.15 (§11, ADR-16..19), `03` → 1.36, `04` → 1.1 (M5, F-16), spec nova `features/F-16-importacao-cartao-pluggy.md`, revisões em F-03, F-04, F-05, F-07, F-12, F-13; tarefas T-036 a T-042 criadas `Não iniciada`. Nenhuma tarefa concluída reaberta; T-035 segue `Iniciada`. RN-17..RN-24 entram marcadas *(planejada — F-16)*; o guarda `test_rastreabilidade.py` passou a ignorar RN planejadas (+ teste `test_rn_planejada_fica_de_fora__RNF_08`), aprovado pelo usuário, para o `pytest` seguir verde até T-038. |
+| 2026-10-02 | T-035 | Andamento (segue `Iniciada`) | `pytest -m integracao` na planilha de teste: 9 passed em 596 s; conferência somente leitura depois — 0 linhas `teste-…` nas abas (só as 15 categorias padrão). App subido contra a planilha de teste (health: "TESTE - Planilha Financeira"). Roteiro parado: extensão do Chrome desconectada. |
+| 2026-10-02 | T-035 | Andamento (segue `Iniciada`) | Retomada: `SPREADSHEET_ID_TESTE` preenchido no `backend/.env`. Registrado o que estava sem log (aprovado pelo usuário): F-15 §3.2.7 — espera de 61 s entre testes de integração por causa da cota de leituras do Google (`segundos_de_espera` + fixture `respeitar_cota_do_google`, teste `test_espera_a_janela_de_cota__CA_F15_7`); defeito do roteiro corrigido por Q8 — contadores do diálogo de edição abriam em "0/100" (`initialValue` do `toSignal`, teste `contadores_contam_o_texto_carregado_na_edicao__RN_06`). Backend 914, frontend 267, `ruff` limpo, build ok. |
+| 2026-10-02 | T-035 | Andamento (segue `Iniciada`) | README final, matriz RN → teste e preparação do roteiro prontos. Execução do roteiro aguardando o usuário preencher `SPREADSHEET_ID_TESTE` e conectar a extensão do Chrome (BLOQUEIO). |
+| 2026-10-02 | T-035 | `Não iniciada` → `Iniciada` | Dependências T-033 e T-034 `Concluída`. **BLOQUEIO** para a parte do roteiro: `SPREADSHEET_ID_TESTE` vazio e extensão do Chrome desconectada (Q7). |
 | 2026-10-02 | T-034 | `Iniciada` → `Concluída` | Suíte de integração completa. F-15 ajustada antes do código (aprovado: datas fixas em 2096–2098, reativação sem avançar o relógio, testes da trava em `tests/unit`, README §4 em T-034); depois, `test_bootstrap.py` → `test_bootstrap_e2e.py` (conflito de nome com o unitário). `02` → 1.14 (§8). Nenhuma dependência nova. Suíte **não executada** contra o Google: `SPREADSHEET_ID_TESTE` vazio e o usuário escolheu concluir sem rodar. |
 | 2026-10-02 | T-034 | `Não iniciada` → `Iniciada` | Dependência T-032 `Concluída`; spec F-15 `Aprovada`. `SPREADSHEET_ID_TESTE` ainda vazio (no `.env` e no terminal). |
 | 2026-10-02 | T-033 | `Iniciada` → `Concluída` | Scripts de execução. F-15 §3.1 ajustada antes do código (aprovado pelo usuário): `-SoPreparar`, decisão parte por parte, reinstalação após preparação interrompida, README §6 em T-033. Execução real feita pelo usuário (o comando do Claude para rodar os cenários num clone foi negado; decisão do usuário). Nenhuma dependência nova; `02` e `03` sem mudança (`scripts/` já previsto em `03` §3). |
@@ -166,7 +189,7 @@ Camadas: **BE** = backend · **FE** = frontend · **DOC** = documentação/infra
 | 2026-10-02 | F-14 | `Iniciada` → `Concluída` | Última tarefa (T-032) concluída; §2 e mapa (§3) atualizados. Caminho crítico segue em F-15 (sem spec). |
 | 2026-10-02 | T-032 | `Iniciada` → `Concluída` | Recarregar dados, linhas ignoradas, mensagens pt-BR e desempenho. `02` → 1.13 (§8), `03` → 1.35 (§3, §4.5, §6.2, §8.2); F-14 §3.5 completada (aprovado pelo usuário) e status `Concluída`. Guarda de rotas com `POST /api/sistema/recarregar`. Nenhuma dependência nova. Conferência visual não feita (extensão do Chrome desconectada); o backend em memória com 3 linhas ignoradas foi preparado no scratchpad, fora do repositório. |
 | 2026-10-02 | T-032 | Sugestão anotada | `npx prettier --check src` acusa 18 arquivos: 17 só por fim de linha CRLF (o `autocrlf` do git converte no checkout; o `.prettierrc` espera LF) e `src/main.ts` por formatação. Avaliar um `.gitattributes` com `eol=lf` para o frontend ou `endOfLine: auto` no `.prettierrc`. |
-| 2026-10-02 | T-032 | `Não iniciada` → `Iniciada` | Dependência T-031 `Concluída` (commit `22c45dd`); spec F-14 `Aprovada`. |
+| 2026-10-02 | T-032 | `Não iniciada` → `Iniciada` | Dependência T-031 `Concluída` (commit `2ff3b72`); spec F-14 `Aprovada`. |
 | 2026-10-01 | T-031 | `Iniciada` → `Concluída` | Revisão das telas. `02` → 1.12 (ADR-15, fontes locais), `03` → 1.34 (§3). Dependências novas: `@fontsource/roboto` e `material-symbols` (ADR-15). Conferência visual com backend em memória (script temporário fora do repositório), porque `SPREADSHEET_ID_TESTE` estava vazio — decidido com o usuário. A suíte completa do frontend (259) passou durante a tarefa; nas rodadas finais, 4–6 testes que abrem rota sob demanda esgotaram o tempo de 5 s com a CPU da máquina em 92% (outros programas), e passam isolados (`app.spec`, `mes-selecionado.store.spec`, `lancamentos.page.spec`). |
 | 2026-10-01 | T-031 | Sugestão anotada | Se a suíte continuar lenta em máquina carregada, avaliar aumentar o tempo-limite dos testes que abrem rotas lazy (hoje o padrão de 5 s do Vitest). |
 | 2026-10-01 | T-031 | `Não iniciada` → `Iniciada` | Dependências T-020, T-023, T-025, T-027 e T-030 `Concluída`; spec F-14 `Aprovada`. F-14 passa a `Iniciada` (§2) e o mapa (§3) foi atualizado. |

@@ -3,10 +3,10 @@
 | Campo | Valor |
 |---|---|
 | Documento | `SPECS/02-definicoes-tecnicas.md` |
-| Versão | 1.14 |
-| Atualizado em | 2026-10-02 |
+| Versão | 1.15 |
+| Atualizado em | 2026-11-12 |
 | Status | Aprovado para início |
-| Responde | **Com o quê** o sistema é construído: linguagens, bibliotecas, versões, integração com Google, convenções |
+| Responde | **Com o quê** o sistema é construído: linguagens, bibliotecas, versões, integração com Google e com o Meu Pluggy, convenções |
 | Depende de | `01-requisitos.md` (RNF-xx) |
 | Alimenta | `03-arquitetura.md`, todas as tarefas de implementação |
 
@@ -24,6 +24,7 @@
 | Backend – validação/modelos | Pydantic v2 + pydantic-settings | `>=2.7,<3` / `>=2.3,<3` | |
 | Google Sheets | gspread | `>=6.1,<7` | Wrapper da Sheets API v4 |
 | Autenticação Google | google-auth | `>=2.30,<3` | Service account |
+| Cliente HTTP (Pluggy) | httpx | `>=0.27,<1` | Chamadas à API da Pluggy (§11, ADR-16); também usado pelo `TestClient` |
 | Testes backend | pytest, httpx | `pytest>=8` | `httpx` para `TestClient` |
 | Qualidade backend | ruff | `>=0.6` | lint + format |
 | Frontend – framework | Angular | `^22.2` | **fixo na major 22** (ADR-10). Suporte ativo até 2027-06, LTS até 2028-06 |
@@ -46,15 +47,17 @@ pydantic>=2.7,<3
 pydantic-settings>=2.3,<3
 gspread>=6.1,<7
 google-auth>=2.30,<3
+httpx>=0.27,<1
 ```
 
 `backend/requirements-dev.txt`
 ```text
 -r requirements.txt
 pytest>=8
-httpx>=0.27
 ruff>=0.6
 ```
+
+(`httpx` saiu de `requirements-dev.txt` porque passou a ser dependência de produção — ADR-16; os testes continuam usando-o pelo `-r`.)
 
 ---
 
@@ -65,7 +68,7 @@ ruff>=0.6
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install -r requirements-dev.txt
-copy .env.example .env          # preencher SPREADSHEET_ID
+copy .env.example .env          # preencher SPREADSHEET_ID (e, para importar os cartões, as PLUGGY_* — §11.2)
 uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 pytest                          # testes (integração com planilha real fica desligada por padrão)
 ruff check . ; ruff format .
@@ -94,7 +97,7 @@ npm run build                   # ng build
 - **Datas:** `datetime.date` no domínio; ISO 8601 (`YYYY-MM-DD`) no JSON e na planilha. Mês de referência como string `YYYY-MM`.
 - **IDs:** `uuid4().hex` para lançamentos, parcelamentos e recorrências; *slug* imutável para categorias (ex.: `alimentacao`), ver `03-arquitetura.md` §5.
 - **Servidor** escuta apenas em `127.0.0.1` (RNF-05). CORS liberado somente para `http://localhost:4200`.
-- **Logs:** módulo `logging` padrão, nível `INFO`; nunca logar conteúdo de credenciais.
+- **Logs:** módulo `logging` padrão, nível `INFO`; nunca logar conteúdo de credenciais — nem `PLUGGY_CLIENT_SECRET`, nem a `apiKey` da Pluggy, nem cabeçalhos `X-API-KEY`.
 
 ---
 
@@ -214,6 +217,13 @@ Limites da Sheets API: **60 requisições de leitura e 60 de escrita por minuto 
 | `CACHE_TTL_SEGUNDOS` | não | `30` | TTL do cache de abas |
 | `CORS_ORIGINS` | não | `http://localhost:4200` | Origens permitidas |
 | `SPREADSHEET_ID_TESTE` | não | — | Planilha separada para testes de integração |
+| `PLUGGY_CLIENT_ID` | não¹ | — | Client ID da aplicação no Dashboard da Pluggy (§11.2) |
+| `PLUGGY_CLIENT_SECRET` | não¹ | — | Client Secret da mesma aplicação. **Segredo**: nunca em log, teste, fixture ou frontend (RNF-05) |
+| `PLUGGY_ITEM_IDS` | não¹ | — | `itemId` das conexões MeuPluggy, separados por vírgula (ex.: Itaú e Nubank; até 5) |
+| `PLUGGY_DATA_INICIAL` | não | dia 1º do mês corrente | `AAAA-MM-DD`: desde quando buscar na primeira importação de um cartão (RN-23) |
+| `PLUGGY_ITEM_ID_TESTE` | não | — | `itemId` de um item **Sandbox** para o teste de contrato `pytest -m pluggy` (§8) |
+
+¹ A integração fica **ligada** só com as três preenchidas. Nenhuma preenchida → desligada, sem aviso (CA-17.6). Preenchimento parcial ou `PLUGGY_DATA_INICIAL` inválida → desligada e `GET /api/cartoes` informa o que falta (`03` §6.3); o backend **não** deixa de subir por isso.
 
 **Arquivos que nunca podem ser versionados:** `credentials.json`, `backend/.env`, `.venv/`, `node_modules/`, `dist/`, `__pycache__/`, `.pytest_cache/`, `.angular/`.
 
@@ -238,15 +248,16 @@ Limites da Sheets API: **60 requisições de leitura e 60 de escrita por minuto 
 
 | Nível | Onde | O que cobre | Execução |
 |---|---|---|---|
-| Unitário backend | `backend/tests/unit/` | Serviços e regras (RN-xx) usando **repositórios em memória** | `pytest` (sempre) |
+| Unitário backend | `backend/tests/unit/` | Serviços e regras (RN-xx) usando **repositórios em memória**; a importação usa um `PluggyFalso` (mesma interface do cliente de §11) e o `pluggy_client` é testado com `httpx.MockTransport` — **nenhum teste padrão acessa a Pluggy** | `pytest` (sempre) |
 | API backend | `backend/tests/api/` | Endpoints com `TestClient` + `dependency_overrides` para repositórios em memória; formato de erro | `pytest` (sempre) |
+| Contrato Pluggy | `backend/tests/integracao/test_pluggy_contrato.py` | Só leitura contra o item Sandbox (`PLUGGY_ITEM_ID_TESTE`): autenticação, `GET /items/{id}`, cartões e transações paginadas, e o mapeamento de §11.4 sem erro | `pytest -m pluggy` (manual; pulado sem `PLUGGY_ITEM_ID_TESTE` ou sem as credenciais) |
 | Integração | `backend/tests/integracao/` | App real (`criar_app` + `TestClient`) contra `SPREADSHEET_ID_TESTE`: bootstrap de planilha vazia (apaga e recria as abas do app **só na planilha de teste**), lançamentos, categorias, parcelamento, recorrências, edição manual e desempenho com 5.000 lançamentos (F-15, T-032/T-034); linhas marcadas `teste-integracao-`/`teste-desempenho-` apagadas no início e no fim | `pytest -m integracao` (manual; pulado sem a variável) |
 | Unitário frontend | `*.spec.ts` (Vitest) | Services (com `HttpTestingController`), formulários, pipes/utilitários, `GraficoDirective` | `npm test` (`ng test`, execução única com `--watch=false`) |
 | Ponta a ponta | roteiro manual em `SPECS/features/F-15-*.md` | Fluxos principais com a planilha real de teste | manual |
 
 Definição de pronto de qualquer tarefa: testes do nível correspondente passando + `ruff check` limpo (backend) + `ng build` sem erros (frontend).
 
-Padrões da suíte do backend (`backend/pyproject.toml`, definidos em T-002): `addopts = "-m 'not integracao'"` — um `pytest` simples **nunca** toca a planilha real, mesmo com `SPREADSHEET_ID_TESTE` definida (para rodar, `pytest -m integracao`, que sobrescreve o padrão); além disso o `conftest` **pula** os testes `integracao` quando a variável não existe — ela é lida do terminal ou, sem ele, do `backend/.env` (T-034) —, uma trava encerra a suíte antes de abrir a planilha se `SPREADSHEET_ID_TESTE` for igual ao `SPREADSHEET_ID` do app, e `filterwarnings` transforma marcador não declarado em falha.
+Padrões da suíte do backend (`backend/pyproject.toml`, definidos em T-002; marcador `pluggy` acrescentado em T-037): `addopts = "-m 'not integracao and not pluggy'"` — um `pytest` simples **nunca** toca a planilha real, mesmo com `SPREADSHEET_ID_TESTE` definida (para rodar, `pytest -m integracao`, que sobrescreve o padrão); além disso o `conftest` **pula** os testes `integracao` quando a variável não existe — ela é lida do terminal ou, sem ele, do `backend/.env` (T-034) —, uma trava encerra a suíte antes de abrir a planilha se `SPREADSHEET_ID_TESTE` for igual ao `SPREADSHEET_ID` do app, e `filterwarnings` transforma marcador não declarado em falha. O guarda do RNF-08 (`tests/unit/test_rastreabilidade.py`) ignora as RN marcadas *(planejada — F-xx)* em `01` §4 (F-16).
 
 Padrões da suíte do frontend (T-011/T-014): specs que abrem diálogo, menu ou datepicker do Material usam `provideMaterialParaTestes()` (`frontend/src/testing/material.ts`) — o jsdom não dispara fim de animação CSS e dá tamanho zero a todo elemento. Dados de exemplo compartilhados ficam em `frontend/src/testing/` (ex.: `umaCategoria`).
 
@@ -270,8 +281,11 @@ Padrões da suíte do frontend (T-011/T-014): specs que abrem diálogo, menu ou 
 | ADR-12 | Aplicação criada por fábrica (`criar_app()`) e `Settings` obtido preguiçosamente por `obter_settings()` com `lru_cache`; `app = criar_app()` no fim de `main.py` para o uvicorn | Instanciar `Settings` no import do módulo; ler `.env` direto em cada módulo | Importar `app.main` deixa de exigir um `.env` preenchido, então `pytest` roda em qualquer cópia do repo; a fábrica permite criar a aplicação com configuração de teste, o que T-005 (lifespan) e os testes de API reaproveitam | 2026-09-29 |
 | ADR-13 | Nomes de arquivo do frontend no style guide **2025** (`app.ts`, classe `App`) | Style guide 2016 (`app.component.ts`), que era o que `03` §3 descrevia | É o padrão do CLI 22 e o que `ng generate` usará daqui para frente; manter o estilo antigo exigiria um flag em toda geração e divergiria da documentação do Angular | 2026-09-29 |
 | ADR-14 | Manter o **prettier** que o `ng new` da v22 instala como formatador do frontend (com o `.prettierrc` gerado) | Remover a dependência e não formatar; adotar outro formatador | É o padrão do CLI 22 e `02` §4 manda seguir os padrões do CLI; remover exigiria editar o projeto gerado a cada atualização. **Não** entra na Definição de Pronto: o portão do frontend continua sendo `npm test` + `npm run build` | 2026-09-29 |
-
 | ADR-15 | Servir as fontes **pelo próprio app**: pacotes npm `@fontsource/roboto` (arquivos `latin-300/400/500.css`) e `material-symbols` (`outlined.css`), na lista `styles` do `angular.json`; nada de `fonts.googleapis.com` no `index.html` | Manter o Google Fonts do `ng add`; copiar os arquivos de fonte para `src/` à mão | App 100% local (RNF-01): sem internet, os ícones apareciam como texto ("more_vert"), justamente no caso "sem internet" de REQ-16. Pacotes mantidos pelo npm em vez de binários copiados. Custo: +1,2 kB no CSS inicial (só o subconjunto latino do Roboto; todos os subconjuntos davam +15 kB) e ~3,9 MB da fonte de ícones, carregada do disco local e fora do pacote JS (F-14 Q5, T-031) | 2026-10-01 |
+| ADR-16 | **httpx** (cliente síncrono) como dependência de produção para a API da Pluggy, encapsulado em `infra/pluggy_client.py` | SDK oficial da Pluggy (a página de SDKs de servidor lista Node, .NET e Java; seria mais uma dependência e mais uma camada para dublar); `requests` (hoje só transitivo do gspread) | Já estava no projeto (testes), tem timeout e `MockTransport` para testes sem rede; a API usada são 4 chamadas REST simples | 2026-11-12 |
+| ADR-17 | Integração pelo caminho **Meu Pluggy** (gratuito, uso pessoal): sem widget Pluggy Connect, sem criar/atualizar itens, sem webhooks; `itemId` em `PLUGGY_ITEM_IDS`; leitura sob demanda (abertura e botão); transações por `GET /v2/transactions` (cursor), com plano B documentado em §11.3 | Trial da aplicação com conectores diretos (expira); widget no frontend (exporia token ao navegador e exige fluxo de consentimento); webhooks (app local não tem URL pública) | Plano gratuito escolhido pelo usuário; o Meu Pluggy já mantém a conexão e atualiza a cada 24 h; o app só lê | 2026-11-12 |
+| ADR-18 | **Livro-razão** de importações em aba própria (`Importacoes`) e catálogo de cartões (`Cartoes`); `Lancamentos` sem colunas novas. Id do lançamento importado **determinístico**: `uuid5(NAMESPACE_PLUGGY, "pluggy:<cartao_id>:<transacao_id>").hex` | Colunas `pluggy_*` em `Lancamentos`; id aleatório | O livro-razão guarda o que a importação precisa (vínculo, valores lidos para RN-21, excluídos de RN-22) sem poluir a aba que o usuário edita; o id determinístico permite recuperar uma falha entre a escrita dos lançamentos e a do livro-razão sem duplicar (`03` §4.4) | 2026-11-12 |
+| ADR-19 | Data da transação convertida com **fuso fixo UTC−3** (`datetime.timezone(timedelta(hours=-3))`) | `zoneinfo("America/Sao_Paulo")` | O Brasil não tem horário de verão desde 2019; no Windows o `zoneinfo` exige o pacote `tzdata` (base IANA ausente), uma dependência a mais sem ganho | 2026-11-12 |
 
 Novas decisões: acrescente uma linha com o próximo ID. Decisões substituídas não são apagadas — marque "Substituída por ADR-xx".
 
@@ -286,6 +300,101 @@ Novas decisões: acrescente uma linha com o próximo ID. Decisões substituídas
 | Vazamento da chave `credentials.json` (ex.: commit acidental). | Alto | `.gitignore` é a 1ª tarefa (T-001); `.claude/settings.json` nega `Read`/`Edit`/`Write` sobre o arquivo e também os leitores de terminal mais comuns (`cat`, `head`, `tail`, `less`, `more`, `strings`, comandos PowerShell que o citem) — defesa em profundidade, não hermética, pois qualquer interpretador leria o arquivo por outro caminho; a garantia real é o `.gitignore` + regra 1 do `CLAUDE.md`. Se vazar, revogar a chave no Google Cloud e gerar outra. |
 | Edição manual na planilha quebra formato. | Médio | Linhas inválidas ignoradas e contadas (CA-16.3); localizar linha sempre por `id`, nunca por posição guardada. |
 | Cota da API (429). | Baixo | Cache + lote + backoff (§5.5). |
+| `GET /v2/transactions` não atender itens Meu Pluggy (a página do Meu Pluggy cita o `GET /transactions` antigo). | Médio | T-037 verifica contra o item real antes do resto; plano B de §11.3 já especificado. |
+| Autorização anual do Meu Pluggy vence; leituras voltam **vazias** com o item ainda `UPDATED`. | Alto (removeria importados) | Conexão vencida é pulada; cartão sem nenhuma transação na janela não remove nada (RN-24); aviso 30 dias antes (CA-20.1). |
+| Banco reapresenta transações com **id novo** (delete + create na Pluggy). | Médio | Reconhecimento por `providerId` e pela chave de §11.4 antes de tratar como nova (`03` §4.4); importado não editado é atualizado, não duplicado. |
+| Renovar a autorização pode trocar o `itemId` (e o id das contas). | Médio | Usuário atualiza `PLUGGY_ITEM_IDS`; cartão reconhecido por banco + 4 últimos dígitos e re-chaveado no livro-razão (`03` §4.4). |
+| Muitas escritas na planilha numa importação grande (cota de 60 escritas/min). | Baixo | Escritas em lote (`atualizar_varios`), no máximo 7 chamadas por execução (§11.5). |
+| Vazamento do `PLUGGY_CLIENT_SECRET`. | Alto | Só no `backend/.env` (ignorado pelo git); nunca em log/teste/frontend; se vazar, gerar outro no Dashboard da Pluggy. |
+
+---
+
+## 11. Integração com o Meu Pluggy (API da Pluggy)
+
+Documentação de referência: <https://docs.pluggy.ai/pt/docs/overview>. Decisões: ADR-16 a ADR-19. Toda chamada à Pluggy fica em `backend/app/infra/pluggy_client.py`; nenhum outro módulo importa `httpx` para isso (`03` §4.2).
+
+### 11.1 Caminho gratuito: Meu Pluggy + conector MeuPluggy
+
+Plano gratuito de **uso pessoal** (sem prazo, até 5 conexões, sem uso comercial). Consequências para o desenho:
+
+- Os bancos (Itaú, Nubank) são autorizados pelo usuário no **meu.pluggy.ai**, via Open Finance. O app **não** usa o widget Pluggy Connect, **não** cria nem apaga itens e **não** usa webhooks.
+- Cada banco autorizado vira um **item** na aplicação do Dashboard. A Pluggy atualiza esses itens **a cada 24 h**; atualização manual não existe (`PATCH /items` não é usado). "Buscar do cartão" lê o que a Pluggy já tem.
+- `GET /v2/items` não existe para contas Meu Pluggy → os `itemId` ficam em `PLUGGY_ITEM_IDS`.
+- A autorização da aplicação vale **1 ano** (`consentExpiresAt` em `GET /items/{id}`). Vencida, as leituras **voltam vazias** e o item pode continuar `UPDATED` até a próxima atualização falhar com `USER_AUTHORIZATION_EXPIRED`. Renovar = repetir o passo 3 de §11.2; o `itemId` pode mudar.
+- Dados de Open Finance: compras aparecem quase diariamente; a fatura aberta pode só vir quando fecha (depende do banco); **cada parcela é uma transação**, normalmente uma por mês; não há total da compra nem agrupador de parcelas; `providerId` (id do banco) é o identificador estável.
+- `category` e `merchant` da Pluggy exigem plano Pro → **não usados** (categoria pelo RN-19).
+
+### 11.2 Preparação única (feita pelo usuário)
+
+1. Criar conta no **meu.pluggy.ai** e autorizar cada banco (CPF + aprovação no app do banco).
+2. Entrar no **Dashboard da Pluggy** com a **mesma** conta; em *Applications*, criar uma aplicação e gerar **Client ID** e **Client Secret** (o secret só aparece uma vez — se perder, gere outro).
+3. Na aplicação → *Demo* → *Connect Account* → escolher o conector **MeuPluggy** (não o do banco nem o Sandbox) e entrar com a conta do Meu Pluggy. Cada banco vira um item em *Connected Items*; copiar o `id` de cada um. (Se pedir CPF e aprovação do banco de novo, foi escolhido o conector do banco, não o MeuPluggy.)
+4. Preencher `PLUGGY_CLIENT_ID`, `PLUGGY_CLIENT_SECRET`, `PLUGGY_ITEM_IDS` e, se quiser, `PLUGGY_DATA_INICIAL` no `backend/.env` e reiniciar o backend.
+5. Só para o teste de contrato: em *Demo*, conectar também o conector **Sandbox** (usuário `user-ok`, senha `password-ok`) e guardar o id em `PLUGGY_ITEM_ID_TESTE`. A Pluggy apaga itens Sandbox sem atualização há 30 dias — refaça o passo quando isso acontecer.
+
+### 11.3 Chamadas usadas
+
+Base `https://api.pluggy.ai`, JSON, timeout de 30 s, cabeçalho `X-API-KEY` em toda chamada depois da autenticação. Chamadas sempre com **parâmetros nomeados** no código do cliente.
+
+| Chamada | Uso | Observação |
+|---|---|---|
+| `POST /auth` `{clientId, clientSecret}` → `{apiKey}` | Autenticar | `apiKey` vale 2 h: guardada **só em memória** e renovada com 1 h 50 min de idade ou após um `401` (uma vez por chamada). |
+| `GET /items/{id}` | Situação da conexão | Usa `status`, `executionStatus`, `lastUpdatedAt`, `consentExpiresAt`, `connector.name`. |
+| `GET /accounts?itemId=<id>&type=CREDIT` | Cartões da conexão | Mantém só `subtype = CREDIT_CARD`; usa `id`, `name`, `number` (4 últimos dígitos). |
+| `GET /v2/transactions?accountId=<id>&dateFrom=<AAAA-MM-DD>` | Transações do cartão | Paginação por cursor: repetir com `next` até vir `null` (até 500 por página). **Sem `dateTo`** (parcelas futuras entram — RN-23). |
+
+**Plano B (ADR-17):** se a verificação de T-037 contra o item real mostrar que `GET /v2/transactions` não atende itens Meu Pluggy, usar `GET /transactions?accountId=<id>&from=<AAAA-MM-DD>&pageSize=500&page=<n>` iterando `page` de 1 a `totalPages`. O cliente expõe a mesma função (`listar_transacoes(conta_id, desde)`) nos dois casos; a escolha fica registrada no Log de `05` e em §10.
+
+### 11.4 Mapeamento (RN-17, RN-18)
+
+**Transação → lançamento**
+
+| Campo Pluggy | Uso no app |
+|---|---|
+| `id` | Chave no livro-razão (`Importacoes.transacao_id`). **Pode mudar** quando o banco reapresenta a transação. |
+| `providerId` | Chave estável (Open Finance) para reconhecer reapresentação; pode vir `null`. |
+| `amountInAccountCurrency` (se houver), senão `amount` | Valor. `> 0` = débito no cartão; `< 0` = crédito. Guardado em módulo, `Decimal` com 2 casas (`ROUND_HALF_UP`). Zero → ignorada. |
+| `currencyCode` | Sem `amountInAccountCurrency` e diferente de `BRL` → ignorada (contada em `ignoradas`). |
+| `operationType` | Só para crédito: `ESTORNO` ou `CASHBACK` → `RECEITA`; qualquer outro valor ou `null` → ignorada (RN-17). |
+| `date` (ISO, UTC) | Convertida para UTC−3 fixo (ADR-19) e reduzida à data: `2026-11-12T01:30:00Z` → `2026-11-11`. |
+| `description` | `descricao` (RN-18): espaços colapsados, `strip`, corte em 100; vazia → "Compra no cartão". |
+| `status` (`PENDING`/`POSTED`) | Guardado no livro-razão; os dois são importados. |
+| `creditCardMetadata.installmentNumber` / `totalInstallments` | `parcela_numero`/`parcela_total` quando `2 ≤ N ≤ 48` e `1 ≤ k ≤ N`; fora disso, sem parcela. |
+
+**Chave de reconhecimento** (usada quando `id` e `providerId` não batem): `(cartao_id, data, tipo, valor, descrição normalizada de RN-19)`.
+
+**Conta → cartão:** `id` → `Cartoes.id`; `name` → `nome`; `number` → `final` (4 últimos dígitos); `connector.name` do item → `banco`. Rótulo exibido: `"<banco> •<final>"` (ex.: "Nubank •1234"); sem `final`, só `"<banco> · <nome>"`.
+
+**Item → situação da conexão**
+
+| Condição (avaliada nesta ordem) | `situacao` | Rótulo | Importa? |
+|---|---|---|---|
+| `GET /items/{id}` → 404 | `NAO_ENCONTRADA` | "Conexão não encontrada. Confira PLUGGY_ITEM_IDS." | não |
+| `consentExpiresAt` ≤ agora | `AUTORIZACAO_VENCIDA` | "Autorização vencida. Renove no Dashboard da Pluggy." | não |
+| `status = LOGIN_ERROR` | `ERRO_LOGIN` | "O banco recusou o acesso. Renove a autorização no Meu Pluggy." | não |
+| `status = OUTDATED` | `DESATUALIZADA` | "A última atualização falhou; usando os dados anteriores." | sim |
+| `status = UPDATING` ou `WAITING_USER_INPUT` | `ATUALIZANDO` | "Atualização em andamento na Pluggy." | sim |
+| `status = UPDATED` | `OK` (ou `PARCIAL` se `executionStatus = PARTIAL_SUCCESS`) | "Atualizada" / "Atualizada parcialmente" | sim |
+
+`aviso_validade = true` quando `consentExpiresAt` está a 30 dias ou menos (CA-20.1).
+
+### 11.5 Cotas e tentativas
+
+- Pluggy: 360 req/min por IP em `/auth`, `/accounts` e `/transactions`. Uma importação faz `1 + 2 × conexões + páginas` chamadas — muito abaixo.
+- Tentativas: `429`, `5xx`, timeout e erro de rede → até **4** tentativas, espera `min(RateLimit-Reset (se vier), 2^n + aleatório(0–1 s), 16 s)`. `401` em chamada de dados → renova a `apiKey` uma vez e repete. Demais `4xx` → erro imediato.
+- Planilha: a importação inteira faz **no máximo 7 chamadas de escrita** (`03` §4.4), usando `atualizar_varios` (atualização em lote, uma chamada).
+
+### 11.6 Erros
+
+| Situação | Exceção de domínio | HTTP | `codigo` | Mensagem ao usuário |
+|---|---|---|---|---|
+| Integração desligada (§6, nota ¹) | `PluggyNaoConfigurada` | 409 | `PLUGGY_NAO_CONFIGURADA` | "Integração com o Meu Pluggy não configurada. Preencha PLUGGY_CLIENT_ID, PLUGGY_CLIENT_SECRET e PLUGGY_ITEM_IDS no backend/.env." |
+| `POST /auth` → 401/403 | `PluggyCredenciaisInvalidas` | 502 | `PLUGGY_CREDENCIAIS_INVALIDAS` | "Client ID ou Client Secret da Pluggy inválidos. Confira o backend/.env." |
+| Rede, timeout, `429`/`5xx` após as tentativas, resposta fora do formato esperado | `PluggyIndisponivel` | 502 | `PLUGGY_INDISPONIVEL` | "Meu Pluggy indisponível no momento. Tente novamente mais tarde." |
+| Outra importação em andamento | `ImportacaoEmAndamento` | 409 | `IMPORTACAO_EM_ANDAMENTO` | "Já existe uma busca nos cartões em andamento." |
+| Item 404, vencido, erro de login | — (não é erro HTTP) | 200 | — | Vai por conexão no resultado (`03` §6.3), as demais seguem (RN-24). |
+
+**502**, e não 503: no frontend o 503 é "planilha indisponível" e aciona o banner (`03` §8.4); um problema na Pluggy não pode parecer queda da planilha (RNF-09). Os detalhes técnicos (status HTTP, corpo da resposta sem credenciais) vão só para o log.
 
 ---
 
@@ -308,3 +417,4 @@ Novas decisões: acrescente uma linha com o próximo ID. Decisões substituídas
 | 2026-10-01 | 1.12 | §1 e §9: fontes servidas pelo próprio app — `@fontsource/roboto` e `material-symbols` (ADR-15; F-14 Q5, T-031). |
 | 2026-10-02 | 1.13 | §8: a suíte de integração também mede desempenho com 5.000 lançamentos (`test_desempenho.py`, T-032). Nenhuma dependência nova. |
 | 2026-10-02 | 1.14 | §8: suíte de integração completa pelo app real, `SPREADSHEET_ID_TESTE` também do `backend/.env`, trava contra a planilha do app e limpeza das linhas marcadas (T-034; F-15 Q5, Q6). Nenhuma dependência nova (`pydantic-settings` já usado). |
+| 2026-11-12 | 1.15 | Integração com o Meu Pluggy (`/mudanca-de-requisito`, F-16): §1 e §1.1 — `httpx` vira dependência de produção (ADR-16); §2, §3 (logs), §6 (variáveis `PLUGGY_*`), §8 (marcador `pluggy`, `PluggyFalso`, `MockTransport`); ADR-16 a ADR-19; riscos; **§11** nova (caminho Meu Pluggy, preparação, chamadas, mapeamento, cotas, erros); §8: guarda do RNF-08 ignora RN *(planejada)*. §9: linhas em branco que partiam a tabela de ADRs removidas. |

@@ -4,7 +4,7 @@ Controle financeiro pessoal que roda **no seu computador** e guarda tudo **na su
 
 Backend em Python/FastAPI, frontend em Angular 22. O acesso à planilha usa uma **conta de serviço** do Google — um "usuário robô" com e-mail próprio, que só vê as planilhas que você compartilhar com ele.
 
-> **Estado atual:** em construção (marco M0). Hoje funcionam a conexão com a planilha e `GET /api/health`; a interface ainda mostra a página padrão do Angular. O progresso tarefa por tarefa está em [`SPECS/05-acompanhamento.md`](SPECS/05-acompanhamento.md).
+> **Versão 1.** Todas as funções descritas em [`SPECS/01-requisitos.md`](SPECS/01-requisitos.md) estão implementadas; o que foi verificado, e como, está em [`SPECS/05-acompanhamento.md`](SPECS/05-acompanhamento.md).
 
 ---
 
@@ -145,6 +145,25 @@ npm start
 
 Abre em <http://localhost:4200>. As chamadas a `/api` são encaminhadas ao backend pelo proxy, então o backend precisa estar rodando.
 
+### Usando o aplicativo
+
+A barra superior está em todas as telas:
+
+- **Registrar gasto** / **Registrar receita** abrem o formulário com a data de hoje. Num gasto novo, marque **Compra parcelada** e informe o valor total e o número de parcelas (2 a 48): o app cria uma parcela por mês.
+- **↻ Recarregar dados** relê a planilha na hora — use depois de editá-la à mão (sem ele, a mudança aparece em até 30 s).
+
+As telas, no menu lateral:
+
+| Tela | Para quê |
+|---|---|
+| **Resumo** | Totais de gastos, receitas e saldo do mês, gastos por categoria e por forma de pagamento, com gráficos e o gasto acumulado dia a dia. |
+| **Lançamentos** | Todos os lançamentos do mês, com filtros por tipo, categoria e forma de pagamento e os totais do que está filtrado. No menu ⋮ de cada um: editar, excluir e, numa parcela, excluir o parcelamento inteiro. |
+| **Histórico** | Mês a mês, num intervalo (padrão: últimos 12 meses): gastos, receitas, saldo, gastos por categoria, total do período e média mensal. |
+| **Categorias** | Criar, renomear, trocar a cor, desativar e excluir (só sem lançamentos nem recorrências; senão, desative). |
+| **Recorrências** | Contas e receitas fixas (aluguel, salário, assinaturas): criar, editar, pausar, reativar e encerrar. Ao abrir o app, os lançamentos dos meses que faltam são gerados sozinhos, até o mês corrente. |
+
+Resumo e Lançamentos mostram o mês escolhido no seletor do topo da tela, e o mesmo mês vale para as duas. Se a planilha ficar inacessível, um aviso no topo explica a causa e oferece **Tentar novamente**.
+
 ---
 
 ## 4. Testes e verificações
@@ -167,13 +186,15 @@ O que a suíte faz na planilha de teste:
 - **apaga e recria as abas do app** (`Lancamentos`, `Categorias`, `Recorrencias`, `Config`), para provar a preparação de uma planilha vazia — o que houver nelas se perde;
 - grava lançamentos, categorias e recorrências marcados com `teste-integracao-` (e 5.000 linhas `teste-desempenho-` no teste de desempenho) e apaga todos no fim, mesmo se um teste falhar; o que sobrar de uma execução interrompida é apagado na seguinte.
 
+A suíte leva **cerca de 12 minutos**: entre um teste e outro ela espera 61 s, para não estourar o limite de leituras por minuto do Google (o erro seria `429 Quota exceeded`).
+
 Por segurança, se `SPREADSHEET_ID_TESTE` for igual ao `SPREADSHEET_ID` do app, a suíte para antes de abrir a planilha: "SPREADSHEET_ID_TESTE aponta para a mesma planilha do app. Use uma planilha separada."
 
 ---
 
 ## 5. Se algo der errado
 
-Toda falha de acesso à planilha aparece com um código e uma mensagem — no `GET /api/health` e, mais tarde, no banner da interface.
+Toda falha de acesso à planilha aparece com um código e uma mensagem — no aviso do topo da interface e no `GET /api/health`.
 
 | Código | Mensagem | O que fazer |
 |---|---|---|
@@ -188,8 +209,12 @@ Outras situações:
 
 - **O servidor sobe, mas a planilha está inacessível.** É proposital: o backend não morre por causa disso. Corrija a causa e chame `/api/health` de novo.
 - **`Configuração inválida do backend: verifique SPREADSHEET_ID`** ao subir o uvicorn: falta o `backend/.env` ou a variável está vazia (passo 2.5).
-- **Porta 8000 ou 4200 ocupada:** troque com `--port` no uvicorn (e ajuste `frontend/proxy.conf.json`) ou `npm start -- --port 4300`.
-- **Erro de ativação da `.venv` no PowerShell:** rode `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass` na mesma janela.
+- **"A execução de scripts foi desabilitada neste sistema"** ao rodar um `.ps1`: use o comando com `-ExecutionPolicy Bypass` da seção 3 (vale só para ele). Na ativação manual da `.venv`, rode antes `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass` na mesma janela.
+- **"A porta 8000 (ou 4200) está em uso por outro programa"** no `start.ps1`: outro programa ocupa a porta — feche-o. Se for uma cópia antiga do próprio app que travou, feche as janelas dele. Para subir manualmente em outra porta: `--port` no uvicorn (e ajuste `frontend/proxy.conf.json`) ou `npm start -- --port 4300`.
+- **"O backend (ou frontend) não respondeu em N s"** no `start.ps1`: a janela daquela parte mostra o erro; ela fica aberta para você ler.
+- **Faixa "N linhas da planilha foram ignoradas por estarem inválidas"**: alguém editou a planilha à mão e deixou uma linha fora do formato — `id` vazio, data que não é `AAAA-MM-DD`, valor que não é número maior que zero, tipo ou forma de pagamento desconhecidos. A linha fica fora dos totais até ser corrigida. A janela do backend (log `WARNING`) diz a aba e o número da linha; corrija na planilha e clique em **↻ Recarregar dados**.
+- **Mudei a planilha à mão e o app não mostra:** clique em **↻ Recarregar dados** (o app guarda a leitura por até 30 s para poupar a cota do Google).
+- **Testes de integração "pulados"** (`SPREADSHEET_ID_TESTE não definida`): preencha a variável no `backend/.env` ou no terminal (seção 4).
 
 ---
 

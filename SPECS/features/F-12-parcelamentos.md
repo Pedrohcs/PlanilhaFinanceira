@@ -263,3 +263,4 @@ Ordem: T-026 → T-027 (T-027 também depende de T-020, concluída).
 | 2026-09-30 | Q1–Q3 respondidas (todas na opção recomendada) → status **Aprovada**. Três decisões em §10. |
 | 2026-09-30 | T-026 concluída: CA-07.1, CA-07.2, CA-07.3, CA-08.1 e CA-F12.1 a .9 verificados por teste (inclui planilha reordenada e linha apagada à mão com cache "quente"); CA-08.2 com a parte da API. Duas decisões em §10. |
 | 2026-09-30 | T-027 concluída → feature **Concluída**. CA-08.2 e CA-F12.10 a .15 verificados por teste; plano de testes com os nomes finais. Duas decisões em §10. |
+| 2026-11-12 | **Revisão (F-16, RN-08, CA-08.3):** parcelas **importadas** do cartão têm "k/N" sem `parcelamento_id`; nelas o menu não oferece "Excluir parcelamento inteiro". Parcelas deste parcelamento no crédito podem ser **vinculadas** a parcelas importadas (RN-20: mesmo k/N, ±R$ 0,05, ±40 dias) e, vinculadas, não são alteradas pela importação. Trabalho em **T-038** e **T-041**. |
