@@ -39,6 +39,17 @@ def nova_marca() -> str:
     return f"{MARCA}{uuid4().hex[:12]}"
 
 
+# Intervalo entre testes: a janela de cota de leituras do Google é de 1 minuto (F-15 §3.2.7).
+INTERVALO_DE_COTA_S = 61.0
+
+
+def segundos_de_espera(fim_do_anterior: float | None, agora: float) -> float:
+    """Quanto esperar antes do próximo teste para a janela de cota estar zerada."""
+    if fim_do_anterior is None:
+        return 0.0
+    return max(0.0, INTERVALO_DE_COTA_S - (agora - fim_do_anterior))
+
+
 MENSAGEM_MESMA_PLANILHA = (
     "SPREADSHEET_ID_TESTE aponta para a mesma planilha do app. Use uma planilha separada."
 )

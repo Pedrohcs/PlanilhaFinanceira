@@ -7,6 +7,7 @@ testes (inclusive de uma execução interrompida) são apagadas.
 """
 
 import os
+import time
 from collections.abc import Iterator
 from pathlib import Path
 
@@ -25,6 +26,7 @@ from tests.integracao.ambiente import (
     ler_planilha_teste,
     mesma_planilha_do_app,
     planilhas_do_app,
+    segundos_de_espera,
 )
 
 
@@ -59,6 +61,26 @@ def planilha_separada_e_limpa(planilha_teste_id: str) -> Iterator[None]:
     apagar_linhas_marcadas(documento)
     yield
     apagar_linhas_marcadas(documento)
+
+
+_fim_do_teste_anterior: list[float] = []
+
+
+@pytest.fixture(autouse=True)
+def respeitar_cota_do_google(planilha_separada_e_limpa: None) -> Iterator[None]:
+    """Cada teste começa com a janela de cota de leituras zerada (F-15 §3.2.7).
+
+    Depende da fixture de sessão para a trava e a varredura virem antes da espera.
+    """
+    espera = segundos_de_espera(
+        _fim_do_teste_anterior[-1] if _fim_do_teste_anterior else None, time.monotonic()
+    )
+    if espera:
+        time.sleep(espera)
+    try:
+        yield
+    finally:
+        _fim_do_teste_anterior.append(time.monotonic())
 
 
 @pytest.fixture

@@ -13,6 +13,7 @@ from tests.integracao.ambiente import (
     mesma_planilha_do_app,
     nova_marca,
     planilhas_do_app,
+    segundos_de_espera,
 )
 from tests.planilha_falsa import PlanilhaFalsa
 
@@ -47,6 +48,14 @@ def test_trava_mesma_planilha__CA_F15_8(tmp_path: Path) -> None:
     assert mesma_planilha_do_app("planilha-real", planilhas_do_app(None, env))
     assert mesma_planilha_do_app(" outra-do-terminal ", planilhas_do_app("outra-do-terminal", env))
     assert not mesma_planilha_do_app("planilha-de-teste", planilhas_do_app(None, env))
+
+
+def test_espera_a_janela_de_cota__CA_F15_7() -> None:
+    """§3.2.7: o 1º teste não espera; os seguintes completam 61 s desde o fim do anterior."""
+    assert segundos_de_espera(None, 100.0) == 0.0
+    assert segundos_de_espera(100.0, 100.0) == 61.0
+    assert segundos_de_espera(100.0, 140.0) == 21.0
+    assert segundos_de_espera(100.0, 200.0) == 0.0
 
 
 def test_apaga_so_linhas_marcadas__CA_F15_9() -> None:

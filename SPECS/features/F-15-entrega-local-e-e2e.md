@@ -89,6 +89,7 @@ Todos em PowerShell (Windows, `02` §1), com caminhos relativos ao próprio scri
    | `test_desempenho.py` (existe) | 5.000 lançamentos, cada chamada < 3 s com o cache frio | CA-F14.16, RNF-04 |
 
 6. **Execução:** `pytest -m integracao` (manual, `02` §8). Um `pytest` simples continua sem tocar a rede.
+7. **Cota do Google (T-035):** a Sheets API limita as leituras por minuto por usuário (~60), e a suíte inteira passa disso. Antes de cada teste que fala com o Google, uma fixture automática espera até **61 s depois do fim do teste anterior**, para cada um começar com a janela de cota zerada. A suíte leva cerca de 12 minutos. O retry do app (`02` §5.5) não muda.
 
 ### 3.3 Roteiro E2E (T-035)
 
@@ -150,6 +151,14 @@ Todos em PowerShell (Windows, `02` §1), com caminhos relativos ao próprio scri
    | RNF-06 | Backend parado ao salvar nos 3 formulários | Dados preservados, nova tentativa possível | |
    | RNF-07 | 5 telas e 4 diálogos em 360 px, claro e escuro, incluindo o botão "Recarregar dados" e a faixa de T-032 | Sem rolagem horizontal; textos quebram | |
    | CA-F02.13 | Seguir o README do zero com a planilha real | Passos suficientes, sem conhecimento prévio | |
+   | CA-F15.5 | Clone novo (sem `.venv` e sem `node_modules`) + `.env` → `scripts\start.ps1` | Prepara o ambiente e sobe | |
+
+5. **Preparação e ordem de execução** (T-035):
+   1. `SPREADSHEET_ID_TESTE` preenchido e `pytest -m integracao` verde antes do roteiro: prepara as abas da planilha de teste e já cobre CA-15.1/15.2, CA-F14.16, CA-F15.7 e CA-F15.9 contra o Google.
+   2. App apontando para a planilha de teste: fechar qualquer cópia do app no ar e, numa janela do PowerShell, `$env:SPREADSHEET_ID = "<id da planilha de teste>"` e então `scripts\start.ps1` — as janelas abertas herdam a variável, que vale mais que o `.env`. Conferir no título da planilha (banner/health) que é a de teste.
+   3. Ordem, para cada item aproveitar o estado do anterior: CA-15.x (abas na planilha) → CA-04 → CA-01/02 → CA-03 → CA-05/06 → CA-07/08 → CA-11 → CA-12/13 (mês corrente) → CA-14 → CA-09/10 (recorrência e recarga da página) → CA-16.3 (célula editada à mão) → RNF-03/04/06/07 → CA-16.1/16.2 (por último, porque derrubam a conexão) → RNF-01 e CA-F15.5 (clone novo) → CA-F02.13 (planilha real, com o usuário) → RNF-05.
+   4. Dados: mês corrente e os dois anteriores para resumo, histórico e recorrência; parcelamento com data no mês corrente; descrições começando por "E2E" para achar e apagar no fim.
+   5. Fim: apagar na planilha de teste as linhas "E2E" (ou rodar `pytest -m integracao` de novo, que limpa só as marcadas `teste-…`), voltar `SPREADSHEET_ID` ao normal fechando a janela do PowerShell.
 
 ### 3.4 README final (T-035)
 
@@ -172,7 +181,7 @@ Todos em PowerShell (Windows, `02` §1), com caminhos relativos ao próprio scri
 **Herdados de `01` e de features anteriores**
 
 - [ ] **RNF-01** Dado o computador do usuário, quando ele roda `scripts/start.ps1`, então backend e frontend sobem localmente, sem login nem hospedagem externa.
-- [ ] **RNF-08** Dado `01` §4, então toda RN-xx é coberta por pelo menos um teste automatizado (matriz em §10).
+- [x] **RNF-08** Dado `01` §4, então toda RN-xx é coberta por pelo menos um teste automatizado (matriz em §10). *(T-035: matriz em §10 + guarda `test_rastreabilidade.py` de T-034.)*
 - [ ] **Todos os CA de `01`** (CA-01.1 a CA-16.3, 44 itens) com "OK" no roteiro de §3.3.4.
 - [ ] **CA-15.1 / CA-15.2** com a suíte de integração passando na planilha de teste.
 - [ ] **CA-F14.16** (`test_desempenho`) passando na planilha de teste.
@@ -197,7 +206,7 @@ Todos em PowerShell (Windows, `02` §1), com caminhos relativos ao próprio scri
 **Refinados — roteiro, README e rastreabilidade (T-035)**
 
 - [ ] **CA-F15.11** Dado o roteiro de §3.3.4, então cada item tem resultado e data registrados, e o resumo está em §10.
-- [ ] **CA-F15.12** Dado o README final, então ele cobre os scripts, os comandos manuais, os testes (inclusive integração) e os problemas de §3.4.3, e `test_readme.py` continua passando.
+- [x] **CA-F15.12** Dado o README final, então ele cobre os scripts, os comandos manuais, os testes (inclusive integração) e os problemas de §3.4.3, e `test_readme.py` continua passando. *(T-035: "Uso" entrou como subseção de §3 — os scripts citam as seções 1, 2.5, 3 e 5 pelo número; estado "em construção" e "mais tarde, no banner" atualizados.)*
 - [x] **CA-F15.13** (Q10) Dado uma RN em `01` §4 sem nenhum teste que a cite, então `test_rastreabilidade.py` falha nomeando a RN.
 
 ---
@@ -315,8 +324,31 @@ Ordem: T-033 e T-034 em qualquer ordem (as duas dependem só de T-032); T-035 de
 | Cenário de bootstrap em `test_bootstrap_e2e.py` (não `test_bootstrap.py`) (T-034). | Já existe `tests/unit/test_bootstrap.py`; sem `__init__.py`, o pytest não aceita dois módulos com o mesmo nome. Mesmo sufixo dos outros cenários. | Não |
 | O cenário de parcelamento também cobre CA-08.1 (editar uma parcela não mexe nas outras) (T-034). | Custa uma chamada a mais e fecha o REQ-08 contra o Google. | Não |
 | Suíte concluída sem execução real (T-034). | Escolha do usuário: `SPREADSHEET_ID_TESTE` vazio; CA-F15.7, CA-F15.9, CA-15.1/15.2 e CA-F14.16 seguem pendentes com ele (`pytest -m integracao`). | Não |
+| Espera de 61 s entre os testes de integração (§3.2.7) (T-035, aprovado). | A cota de leituras por minuto do Google estourava com a suíte inteira; esperar a janela zerar é mais simples e previsível que mexer no retry do app. | Não |
+| Contadores de descrição/observação começam do valor do controle (T-035, Q8). | Defeito achado no roteiro: na edição mostravam "0/100"; correção pequena dentro do especificado, com teste. | Não |
 
-*(O resultado do roteiro e a matriz RN → teste entram aqui em T-035.)*
+**Matriz RN → teste (RNF-08)** — gerada em T-035 a partir dos nomes dos testes; a guarda `tests/unit/test_rastreabilidade.py` falha se alguma RN ficar sem teste. "Arquivos" conta os arquivos de teste que citam a RN (nome ou docstring); a coluna do meio lista exemplos com o ID no nome.
+
+| RN | Regra | Testes (exemplos) | Arquivos |
+|---|---|---|---|
+| RN-01 | Valor positivo, até 2 casas | `api/test_lancamentos.py::test_valor_invalido_422__RN_01`, `unit/test_dinheiro.py::test_dinheiro_recusa_zero_negativo_e_mais_de_2_casas__RN_01` | 2 |
+| RN-02 | Data obrigatória, passada/futura aceita | `api/test_lancamentos.py::test_data_ausente_422__RN_02`, `unit/test_lancamento_service.py::test_datas_passadas_e_futuras__RN_02` | 2 |
+| RN-03 | Mês de referência = mês da data | `unit/test_datas.py::test_mes_de_e_mes_de_referencia__RN_03`, `unit/test_lancamento_service.py::test_listar_filtra_pelo_mes__RN_03` | 4 |
+| RN-04 | Categoria ativa e do mesmo tipo | `api/test_lancamentos.py::test_409_de_categoria__RN_04`, `unit/test_lancamento_service.py::test_categoria_inativa_ou_de_outro_tipo__RN_04` | 5 |
+| RN-05 | Forma obrigatória em gasto, opcional em receita | `unit/test_modelos.py::test_gasto_exige_forma_de_pagamento__RN_05`, `fe:lancamento-form.dialog.spec.ts › volta_para_gasto_exige_forma__RN_05` | 9 |
+| RN-06 | Descrição 1–100, observação até 500 | `api/test_lancamentos.py::test_descricao_observacao_e_enums_422__RN_06`, `unit/test_modelos.py::test_lancamento_aceita_limites_de_texto__RN_06` | 2 |
+| RN-07 | Parcelamento 2–48, centavos na 1ª, último dia do mês | `unit/test_dinheiro.py::test_parcelas_centavos_na_primeira__RN_07`, `integracao/test_parcelamento_e2e.py::test_parcelas_e_exclusao__RN_07`, `fe:parcelas.spec.ts › previa__RN_07` | 7 |
+| RN-08 | Parcelas independentes; vínculo só para k/N e exclusão total | `unit/test_lancamento_service.py::test_excluir_parcela_so_ela__RN_08`, `unit/test_modelos.py::test_parcela_completa_e_valida__RN_08` | 5 |
+| RN-09 | Recorrência: valor fixo, dia 1–31, um por mês, nada futuro | `unit/test_sincronizacao.py::test_dia_31__RN_09`, `unit/test_datas.py::test_ajustar_dia_em_fim_de_mes_e_ano_bissexto__RN_09` | 6 |
+| RN-10 | Marca d'água; excluído não volta | `unit/test_sincronizacao.py::test_excluido_nao_volta__CA_10_3__RN_10`, `integracao/test_recorrencias_e2e.py::test_sincronizacao__RN_10` | 3 |
+| RN-11 | Pausar/encerrar param; reativar sem retroativos | `unit/test_recorrencia_service.py::test_reativar_sem_retroativos__RN_11`, `unit/test_sincronizacao.py::test_pausada_e_encerrada_nao_geram__RN_11` | 4 |
+| RN-12 | Nome único por tipo (sem caixa/acento); excluir só sem uso | `unit/test_categoria_service.py::test_nome_duplicado_ignora_caixa_e_acento__RN_12`, `integracao/test_categorias_e2e.py::test_ciclo_de_categoria__RN_12` | 2 |
+| RN-13 | Saldo = receitas − gastos | `unit/test_lancamento_service.py::test_totais_exatos__RN_13_RN_16`, `unit/test_dinheiro.py::test_montante_aceita_zero_e_negativo__RN_13` | 4 |
+| RN-14 | Planilha é a fonte da verdade; linhas inválidas ignoradas e contadas | `integracao/test_edicao_manual_e2e.py::test_linha_invalida_e_recarregar__RN_14`, `unit/test_repositorio_planilha.py::test_normaliza_espacos__RN_14`, `fe:sistema.api.spec.ts › recarregar__RN_14` | 6 |
+| RN-15 | Categorias padrão | `unit/test_bootstrap.py::test_semeia_as_quinze_categorias_padrao__RN_15`, `unit/test_bootstrap.py::test_resemeia_se_categorias_esvaziada__RN_15` | 7 |
+| RN-16 | Somas em centavos exatos | `unit/test_dinheiro.py::test_soma_em_decimal_sem_erro_de_ponto_flutuante__RN_16`, `unit/test_resumo_service.py::test_somas_exatas_em_centavos__RN_16` | 6 |
+
+*(O resultado do roteiro entra aqui quando ele for executado.)*
 
 ---
 
@@ -347,3 +379,6 @@ Ordem: T-033 e T-034 em qualquer ordem (as duas dependem só de T-032); T-035 de
 | 2026-10-02 | T-033 concluída: CA-F15.1 a .4 e .6 verificados (5 cenários executados pelo usuário + `test_scripts.py`); CA-F15.5 implementado, execução num clone novo no roteiro de T-035. Cinco decisões em §10. |
 | 2026-10-02 | T-034 (aprovado pelo usuário): datas fixas em 2096–2098 (bordas 11 e 13); reativação conferida sem avançar o relógio (o período pausado fica nos unitários de F-13); testes da trava e da varredura em `tests/unit/test_conftest_integracao.py`; `ambiente.py` e README §4 em T-034. |
 | 2026-10-02 | T-034 concluída: CA-F15.8, .10 e .13 verificados; CA-F15.7 e .9 com suíte escrita e execução pendente com o usuário. Cenário de bootstrap renomeado para `test_bootstrap_e2e.py`. Cinco decisões em §10. `02` → 1.14. |
+| 2026-10-02 | T-035 (parcial): README final (CA-F15.12), matriz RN → teste em §10 (RNF-08), preparação e ordem do roteiro em §3.3.5 e item CA-F15.5 no roteiro. Execução do roteiro bloqueada: planilha de teste e Chrome ausentes. |
+| 2026-10-02 | T-035 (aprovado pelo usuário): §3.2.7 — espera de 61 s entre os testes de integração por causa da cota do Google; defeito dos contadores do diálogo de edição ("0/100" com texto preenchido) corrigido por Q8, com teste. |
+| 2026-11-12 | **Revisão (F-16, aprovada pelo usuário):** o guarda de §3.5 (`test_rastreabilidade.py`) passa a ignorar RN marcadas *(planejada — F-xx)* em `01` §4 (novo teste `test_rn_planejada_fica_de_fora__RNF_08`); RN-17..RN-24 (F-16) entram marcadas até T-038. O roteiro desta feature continua cobrindo REQ-01..REQ-16; REQ-17..REQ-20 e os CA acrescentados em `01` 1.4 ficam no roteiro de F-16 §8.3. |

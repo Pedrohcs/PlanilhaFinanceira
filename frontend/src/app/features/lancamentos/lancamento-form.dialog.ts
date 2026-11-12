@@ -360,11 +360,12 @@ export class LancamentoFormDialog {
   );
   protected readonly formas = this.formasStore.formas;
 
+  // Começam do valor do controle: na edição ele já vem preenchido.
   private readonly descricao = toSignal(this.formulario.controls.descricao.valueChanges, {
-    initialValue: '',
+    initialValue: this.formulario.controls.descricao.value,
   });
   private readonly observacao = toSignal(this.formulario.controls.observacao.valueChanges, {
-    initialValue: '',
+    initialValue: this.formulario.controls.observacao.value,
   });
   protected readonly tamanhoDescricao = computed(() => this.descricao().trim().length);
   protected readonly tamanhoObservacao = computed(() => this.observacao().trim().length);

@@ -437,6 +437,17 @@ describe('LancamentoFormDialog', () => {
     expect(container().querySelector('.vinculo')?.textContent?.trim()).toBe('Parcela 3/10');
   });
 
+  it('contadores_contam_o_texto_carregado_na_edicao__RN_06', async () => {
+    // Roteiro E2E de F-15 (T-035): abria com "0/100" com a descrição preenchida.
+    await abrirEdicao();
+
+    const contadores = Array.from(container().querySelectorAll('mat-hint')).map((dica) =>
+      dica.textContent?.trim(),
+    );
+    expect(contadores).toContain('9/100'); // "Geladeira"
+    expect(contadores).toContain('14/500'); // "loja do centro"
+  });
+
   it('registro_nao_mostra_tipo_nem_vinculo', async () => {
     await abrir('GASTO');
 
