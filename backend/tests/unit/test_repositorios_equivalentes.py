@@ -2,7 +2,7 @@
 
 Os testes de serviço de M1 usam o repositório em memória (`SPECS/02` §8): se
 os dois divergissem, a suíte ficaria verde e o app quebraria. O mesmo roteiro
-roda nos dois, para as três entidades, e os resultados são comparados.
+roda nos dois, para as cinco entidades, e os resultados são comparados.
 """
 
 from collections.abc import Callable
@@ -13,19 +13,28 @@ from typing import Any
 import pytest
 from pydantic import BaseModel
 
-from app.domain.enums import FormaPagamento, StatusRecorrencia, TipoLancamento
+from app.domain.enums import (
+    FormaPagamento,
+    SituacaoImportacao,
+    StatusRecorrencia,
+    TipoLancamento,
+)
 from app.domain.erros import NaoEncontrado
-from app.domain.modelos import Categoria, Lancamento, Recorrencia
+from app.domain.modelos import Cartao, Categoria, Importacao, Lancamento, Recorrencia
 from app.infra.bootstrap import preparar_planilha
 from app.infra.cache import CacheAbas
 from app.repositories.base import Repositorio
 from app.repositories.memoria import (
+    CartaoRepositoryMemoria,
     CategoriaRepositoryMemoria,
+    ImportacaoRepositoryMemoria,
     LancamentoRepositoryMemoria,
     RecorrenciaRepositoryMemoria,
 )
 from app.repositories.planilha import (
+    CartaoRepositoryPlanilha,
     CategoriaRepositoryPlanilha,
+    ImportacaoRepositoryPlanilha,
     LancamentoRepositoryPlanilha,
     RecorrenciaRepositoryPlanilha,
 )
@@ -59,6 +68,22 @@ def fazer_recorrencia(id_: str, descricao: str) -> Recorrencia:
     )  # fmt: skip
 
 
+def fazer_cartao(id_: str, descricao: str) -> Cartao:
+    return Cartao(
+        id=id_, item_id="itm-9", banco="Nubank", nome=descricao, final="0123",
+        criado_em=CRIADO, atualizado_em=CRIADO,
+    )  # fmt: skip
+
+
+def fazer_importacao(id_: str, descricao: str) -> Importacao:
+    return Importacao(
+        id=id_, transacao_id=f"tx-{id_}", cartao_id="acc-123", lancamento_id=f"l-{id_}",
+        situacao=SituacaoImportacao.CONCILIADA, data=date(2026, 11, 11),
+        tipo=TipoLancamento.RECEITA, valor=Decimal("59.90"), descricao=descricao,
+        status_pluggy="PENDING", criado_em=CRIADO, atualizado_em=CRIADO,
+    )  # fmt: skip
+
+
 Fabrica = Callable[[str, str], BaseModel]
 
 ENTIDADES: list[tuple[str, Fabrica, type, type]] = [
@@ -70,6 +95,8 @@ ENTIDADES: list[tuple[str, Fabrica, type, type]] = [
         RecorrenciaRepositoryPlanilha,
         RecorrenciaRepositoryMemoria,
     ),
+    ("Cartoes", fazer_cartao, CartaoRepositoryPlanilha, CartaoRepositoryMemoria),
+    ("Importacoes", fazer_importacao, ImportacaoRepositoryPlanilha, ImportacaoRepositoryMemoria),
 ]
 
 
@@ -98,6 +125,12 @@ def roteiro(repositorio: Repositorio[Any], fazer: Fabrica) -> list[Any]:
     registrar(lambda: repositorio.obter("nao-existe"))
     registrar(lambda: repositorio.atualizar(fazer("b", "Segundo alterado")))
     registrar(lambda: repositorio.atualizar(fazer("nao-existe", "x")))
+    registrar(estado)
+    # `atualizar_varios` (F-16): tudo ou nada, e lista vazia não faz nada.
+    registrar(lambda: repositorio.atualizar_varios([fazer("c", "C em lote"), fazer("a", "A")]))
+    registrar(estado)
+    registrar(lambda: repositorio.atualizar_varios([fazer("a", "x"), fazer("nao-existe", "y")]))
+    registrar(lambda: repositorio.atualizar_varios([]))
     registrar(estado)
     registrar(lambda: repositorio.remover(["a", "nao-existe"]))
     registrar(estado)

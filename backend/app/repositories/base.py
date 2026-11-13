@@ -7,7 +7,14 @@ Filtros por mês, tipo etc. são feitos no serviço sobre `listar()`.
 
 from typing import Protocol
 
-from app.domain.modelos import Categoria, Lancamento, ListagemComAvisos, Recorrencia
+from app.domain.modelos import (
+    Cartao,
+    Categoria,
+    Importacao,
+    Lancamento,
+    ListagemComAvisos,
+    Recorrencia,
+)
 
 
 class Repositorio[T](Protocol):
@@ -27,6 +34,13 @@ class Repositorio[T](Protocol):
         """Substitui o item de mesmo `id`; levanta `NaoEncontrado` se não existir."""
         ...
 
+    def atualizar_varios(self, itens: list[T]) -> None:
+        """Substitui todos os itens numa única escrita, ou nenhum (F-16).
+
+        Levanta `NaoEncontrado` se faltar algum `id`; lista vazia não escreve.
+        """
+        ...
+
     def remover(self, ids: list[str]) -> None:
         """Remove todos os `ids` ou nenhum: levanta `NaoEncontrado` se faltar algum."""
         ...
@@ -39,3 +53,9 @@ class CategoriaRepository(Repositorio[Categoria], Protocol): ...
 
 
 class RecorrenciaRepository(Repositorio[Recorrencia], Protocol): ...
+
+
+class CartaoRepository(Repositorio[Cartao], Protocol): ...
+
+
+class ImportacaoRepository(Repositorio[Importacao], Protocol): ...

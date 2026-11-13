@@ -80,7 +80,7 @@ class CategoriaAtualizacao(BaseModel):
 
 
 class CategoriaSaida(BaseModel):
-    """Categoria na resposta (`SPECS/03` §6.3), com `em_uso` calculado."""
+    """Categoria na resposta (`SPECS/03` §6.3), com `em_uso` e `reservada` calculados."""
 
     id: str
     nome: str
@@ -89,10 +89,11 @@ class CategoriaSaida(BaseModel):
     ativa: bool
     criado_em: datetime
     em_uso: bool
+    reservada: bool
 
     @classmethod
     def de(cls, item: CategoriaComUso) -> "CategoriaSaida":
-        return cls(**item.categoria.model_dump(), em_uso=item.em_uso)
+        return cls(**item.categoria.model_dump(), em_uso=item.em_uso, reservada=item.reservada)
 
 
 # Lançamentos e formas de pagamento (F-06) --------------------------------------

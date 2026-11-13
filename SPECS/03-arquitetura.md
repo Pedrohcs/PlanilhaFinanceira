@@ -3,8 +3,8 @@
 | Campo | Valor |
 |---|---|
 | Documento | `SPECS/03-arquitetura.md` |
-| Versão | 1.36 |
-| Atualizado em | 2026-11-12 |
+| Versão | 1.37 |
+| Atualizado em | 2026-11-13 |
 | Status | Aprovado para início |
 | Responde | **Como** o sistema se organiza: componentes, pastas, camadas, modelo de dados na planilha, contrato da API e fluxos |
 | Depende de | `01-requisitos.md`, `02-definicoes-tecnicas.md` |
@@ -293,7 +293,7 @@ escritas, NESTA ORDEM, cada uma só se houver o que gravar (no máximo 7 chamada
 1. Carregar `Settings`; validar existência do arquivo de credenciais.
 2. Criar **uma** `CacheAbas(CACHE_TTL_SEGUNDOS)` e **uma** instância de cada repositório de planilha para o processo inteiro (`app.state.cache` e `app.state.repositorios`; os routers os recebem por `api/deps.py` — o cache só o `POST /api/sistema/recarregar` —, e os testes de API trocam os repositórios pelos de memória).
 3. Conectar e abrir a planilha por ID. Falha **não derruba** o servidor: o erro é guardado e `GET /api/health` o reporta (REQ-16); demais endpoints respondem 503.
-4. `bootstrap`: para cada aba do schema, criar se não existir e escrever cabeçalho; se existir, validar cabeçalho (colunas faltando no fim são acrescentadas; colunas extras depois da última do schema são ignoradas; divergência de nome ou ordem → `SchemaPlanilhaInvalido`, sem alterar nada). Aba `Categorias` vazia → seed RN-15. **Migração 1 → 2** (§5.4) quando `versao_schema` = 1. Idempotente (CA-15.2).
+4. `bootstrap`: para cada aba do schema, criar se não existir e escrever cabeçalho; se existir, validar cabeçalho (colunas faltando no fim são acrescentadas; colunas extras depois da última do schema são ignoradas; divergência de nome ou ordem → `SchemaPlanilhaInvalido`, sem alterar nada). Aba `Categorias` vazia → seed RN-15. **Migração 1 → 2** (§5.4) quando `versao_schema` = 1 ou quando há dados e a chave não existe. Id de categoria reservada com o tipo errado → `SchemaPlanilhaInvalido`, sem alterar nada (§5.2). Idempotente (CA-15.2).
 5. Configuração da Pluggy lida do `Settings` (`02` §6): ligada, desligada ou incompleta. Nenhuma chamada à Pluggy acontece no lifespan; um `PluggyClient` único (com a `apiKey` em memória) é criado só se ligada e guardado em `app.state.pluggy`.
 
 O `bootstrap` roda **toda vez que uma conexão é estabelecida** — no passo 3 ou, se ele falhou, na nova tentativa feita pelo `GET /api/health` — e a conexão só conta como estabelecida se o `bootstrap` também passar. Assim, um app aberto sem internet prepara as abas quando a conexão volta, e uma estrutura corrigida à mão é revalidada no "Tentar novamente", sem reiniciar.
@@ -338,6 +338,8 @@ Parcela (I, J, K): `parcela_numero` e `parcela_total` vão juntos; `parcelamento
 
 **Categorias reservadas (RN-15, RN-24):** `a-classificar` ("A classificar", `GASTO`) e `a-classificar-receita` ("A classificar", `RECEITA`), cor `#90A4AE`, ativas. Os ids são fixos (não seguem o gerador de slug). Podem ser renomeadas e mudar de cor; não podem ser excluídas nem desativadas. A importação as procura **pelo id**.
 
+Uma categoria que já exista com um id reservado **é** a reservada, como estiver (ex.: "A classificar" de gasto criada pelo app na versão 1, cujo slug é `a-classificar`). Se ela for do **outro tipo** (`a-classificar` de receita, ou `a-classificar-receita` de gasto), o `bootstrap` para com `SCHEMA_PLANILHA_INVALIDO` — "Categorias, a categoria '<id>' é reservada à importação dos cartões e deveria ter o tipo '<tipo>', mas está '<tipo atual>'" — e não escreve nada: a importação lançaria gastos numa categoria de receita. A conferência roda em toda preparação, nas duas versões (T-036).
+
 ### 5.3 Aba `Recorrencias`
 
 | Col | Campo | Tipo | Observação |
@@ -368,7 +370,9 @@ Parcela (I, J, K): `parcela_numero` e `parcela_total` vão juntos; `parcelamento
 | Versão | Mudança | Migração (no `bootstrap`, idempotente) |
 |---|---|---|
 | 1 | Schema inicial (F-03). | — |
-| 2 | Abas `Cartoes` e `Importacoes`; categorias reservadas (F-16). | Cria as duas abas com cabeçalho (como qualquer aba ausente). Para cada reservada cujo **id** não existe em `Categorias`, acrescenta a linha; se o nome "A classificar" já for usado por **outra** categoria do mesmo tipo (RN-12), a reservada entra como "A classificar (importados)". Grava `versao_schema = 2`. Planilha nova já nasce na versão 2, com as reservadas no seed. |
+| 2 | Abas `Cartoes` e `Importacoes`; categorias reservadas (F-16). | Cria as duas abas com cabeçalho (como qualquer aba ausente). Para cada reservada cujo **id** não existe em `Categorias`, acrescenta a linha; se o nome "A classificar" já for usado por **outra** categoria do mesmo tipo (RN-12), a reservada entra como "A classificar (importados)". Grava `versao_schema = 2` **por último** (atualizando a célula da linha existente): se uma escrita falhar no meio, a execução seguinte refaz só o que faltou. Planilha nova já nasce na versão 2, com as reservadas no seed. |
+
+Planilha com dados e **sem** a linha `versao_schema` é tratada como versão 1: recebe as reservadas que faltarem e a linha `versao_schema = 2`. Numa planilha **já na versão 2**, a migração não roda: uma reservada apagada à mão não é recriada pelo `bootstrap` (só volta com o seed, se a aba `Categorias` for esvaziada).
 
 ### 5.5 Enums
 
@@ -738,4 +742,5 @@ Quando o **backend não responde** (status 0, ou 502/504 sem o envelope de §6.2
 | 2026-10-01 | 1.34 | §3: `datepicker-intl.ts` e `erro-do-servidor.ts` em `core/utils` (T-031). |
 | 2026-10-02 | 1.35 | `POST /api/sistema/recarregar` implementado (§6.1 sem mudança de contrato). §3: router `sistema`, cache em `deps.py`, mensagens pt-BR em `erros.py`, `sistema.api` e `aviso-linhas-ignoradas`; §4.5: `app.state.cache`; §6.2: `detalhes[].mensagem` do Pydantic em pt-BR; §8.2: "Recarregar dados" incrementa `versao` (T-032). |
 | 2026-11-12 | 1.36 | Integração com o Meu Pluggy (`/mudanca-de-requisito`, F-16): §1 (diagrama e princípios); §3 (pastas novas no backend e no frontend); §4.2 (`httpx` só em `infra`; Protocol `FontePluggy`); §4.3 (`atualizar_varios` e 2 repositórios novos); §4.4 (`importacao_service`, algoritmo, categorias reservadas, `vinculo` e filtro na listagem); §4.5 (migração e Pluggy no lifespan); §5 (parcela importada, reservadas, versão 2 e migração, abas `Cartoes` e `Importacoes`, enums); §6.1–6.3 (3 endpoints, filtro `cartao`, códigos 409/502, esquemas); §7.2–7.3 (abertura e busca); §8.1–8.4 (rota `/cartoes`, botão, stores, erros `PLUGGY_*`). |
+| 2026-11-13 | 1.37 | T-036 (F-16), sem mudança de contrato: schema versão 2 implementado. §4.5 e §5.4: `versao_schema` gravada por último na migração; planilha com dados e sem a chave conta como versão 1; na versão 2 a reservada apagada à mão não é recriada. §5.2: id reservado com o tipo errado → `SCHEMA_PLANILHA_INVALIDO`. |
 | 2026-09-29 | 1.1 | Frontend em Angular 22 (zoneless); pasta `shared/grafico/` com diretiva Chart.js própria (§3, §8.2.1). |

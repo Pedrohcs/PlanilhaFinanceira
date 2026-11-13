@@ -9,7 +9,7 @@
 | Regras | RN-01, RN-03 (P-02 confirmada em 2026-11-12), RN-04, RN-06, RN-08, RN-12, RN-14, RN-15, RN-17 a RN-24; RNF-01, RNF-02, RNF-05, RNF-08, RNF-09 |
 | Depende de | F-14 (**Concluída**); T-042 também de F-15 (T-035, **Iniciada**) |
 | Tarefas | T-036, T-037, T-038, T-039, T-040, T-041, T-042 |
-| Atualizado em | 2026-11-12 |
+| Atualizado em | 2026-11-13 |
 
 > **IDs de critério:** herdados de `01` mantêm o ID original (**CA-17.1** …). Os refinados usam **`CA-F16.y`**.
 >
@@ -156,11 +156,11 @@ Campos do lançamento novo: `id` determinístico (ADR-18); `data` = `date` em UT
 
 - [ ] **CA-F16.1** Dado as três variáveis `PLUGGY_*` obrigatórias vazias, quando o backend sobe, então `GET /api/cartoes` → `configurada: false`, `erro_configuracao: null`, e `POST /api/importacoes/pluggy` → 409 `PLUGGY_NAO_CONFIGURADA`.
 - [ ] **CA-F16.2** Dado só `PLUGGY_CLIENT_ID` preenchida, então `configurada: false` e `erro_configuracao` = "Falta PLUGGY_CLIENT_SECRET no backend/.env."; com `PLUGGY_DATA_INICIAL=12/11/2026`, "PLUGGY_DATA_INICIAL deve estar no formato AAAA-MM-DD.".
-- [ ] **CA-F16.3** Dado uma planilha na versão 1 com dados, quando o backend sobe, então surgem as abas `Cartoes` e `Importacoes` com cabeçalho, as duas "A classificar" em `Categorias`, `versao_schema = 2`, e nenhuma outra linha muda; subir de novo não muda nada.
-- [ ] **CA-F16.4** Dado uma categoria de gasto do usuário chamada "A classificar" na versão 1, quando migra, então a reservada de gasto entra como "A classificar (importados)" com id `a-classificar`.
-- [ ] **CA-F16.5** Dado uma planilha vazia, quando prepara, então já nasce na versão 2 com 17 categorias (RN-15).
-- [ ] **CA-F16.6** Dado `atualizar_varios` com 30 itens, então há **uma** chamada de escrita ao Google; com um `id` inexistente, `NaoEncontrado` e nada gravado.
-- [ ] **CA-F16.7** Dado `DELETE`/`PUT ativa:false` numa reservada, então 409 `CATEGORIA_RESERVADA`; `PUT` mudando nome e cor → 200.
+- [x] **CA-F16.3** Dado uma planilha na versão 1 com dados, quando o backend sobe, então surgem as abas `Cartoes` e `Importacoes` com cabeçalho, as duas "A classificar" em `Categorias`, `versao_schema = 2`, e nenhuma outra linha muda; subir de novo não muda nada.
+- [x] **CA-F16.4** Dado uma categoria de gasto do usuário chamada "A classificar" na versão 1, quando migra, então a reservada de gasto entra como "A classificar (importados)" com id `a-classificar`.
+- [x] **CA-F16.5** Dado uma planilha vazia, quando prepara, então já nasce na versão 2 com 17 categorias (RN-15).
+- [x] **CA-F16.6** Dado `atualizar_varios` com 30 itens, então há **uma** chamada de escrita ao Google; com um `id` inexistente, `NaoEncontrado` e nada gravado.
+- [x] **CA-F16.7** Dado `DELETE`/`PUT ativa:false` numa reservada, então 409 `CATEGORIA_RESERVADA`; `PUT` mudando nome e cor → 200.
 
 **Refinados — cliente da Pluggy (T-037)**
 
@@ -367,6 +367,9 @@ Esquemas completos em `03` §6.3.
 | Abertura: recorrências → importação → um aviso | A importação vincula o que a recorrência gerou; um aviso não apaga o outro | Não (`03` §7.2) |
 | Dica no diálogo de edição de um importado | Avisa que editar data/valor/descrição/tipo congela (Q11) | Não |
 | Segunda importação simultânea recebe 409 em vez de esperar | Chamada lenta (rede); evita fila de requisições | Não |
+| Id reservado ocupado por categoria do **outro tipo** → `SCHEMA_PLANILHA_INVALIDO`, sem escrever nada; do mesmo tipo, a categoria existente vira a reservada como está (T-036) | A importação lançaria gastos em categoria de receita; corrigir exige mexer numa linha do usuário | Não (`03` §5.2) |
+| `versao_schema = 2` é a última escrita da migração; dados sem a chave contam como versão 1; na versão 2 a reservada apagada à mão não é recriada (T-036) | Migração retomável sem duplicar; a spec só previa a migração a partir da versão 1 | Não (`03` §5.4) |
+| `status_pluggy` como `Literal["PENDING", "POSTED"]` no modelo, sem enum próprio (T-036) | `03` §5.5 não lista enum para ele | Não |
 | RN-17..24 entram em `01` marcadas *(planejada — F-16)*; o guarda do RNF-08 ignora RN planejadas até T-038 | Sem isso o `pytest` ficaria vermelho até T-038, inclusive para fechar T-035 (aprovado pelo usuário) | Não (`02` §8) |
 
 ---
@@ -403,4 +406,5 @@ Nenhuma. Decisões do usuário em 2026-11-12:
 
 | Data | Alteração |
 |---|---|
+| 2026-11-13 | **T-036 concluída:** CA-F16.3 a CA-F16.7 atendidos (backend); CA-08.3 e CA-11.5 com a parte do modelo e da API prontas (a tela é da T-041). Três decisões registradas em §10 e em `03` 1.37 (id reservado com o tipo errado; versão gravada por último e planilha sem a chave; `status_pluggy`). Os repositórios de `Cartoes` e `Importacoes` existem, mas ainda não entram em `Repositorios` (`api/deps.py`): a composição é da T-039. |
 | 2026-11-12 | Criação via `/mudanca-de-requisito` (integração Meu Pluggy). Q1–Q19 respondidas e análise de impacto aprovada → status **Aprovada**. `01` → 1.4, `02` → 1.15, `03` → 1.36, `04` → 1.1. |

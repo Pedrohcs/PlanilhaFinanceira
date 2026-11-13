@@ -6,15 +6,15 @@ As funções puras cuidam do nome, da unicidade, do slug e da ordem; o
 """
 
 import re
-import unicodedata
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 from datetime import datetime
 
 from app.domain.datas import agora
 from app.domain.enums import TipoLancamento
-from app.domain.erros import CategoriaDuplicada, CategoriaEmUso, NaoEncontrado
-from app.domain.modelos import Categoria
+from app.domain.erros import CategoriaDuplicada, CategoriaEmUso, CategoriaReservada, NaoEncontrado
+from app.domain.modelos import TIPO_DA_CATEGORIA_RESERVADA, Categoria
+from app.domain.textos import chave_sem_acento_e_caixa, colapsar_espacos, sem_acento
 from app.repositories.base import (
     CategoriaRepository,
     LancamentoRepository,
@@ -23,7 +23,6 @@ from app.repositories.base import (
 
 BASE_SLUG_PADRAO = "categoria"
 _FORA_DO_SLUG = re.compile(r"[^a-z0-9]+")
-_ESPACOS = re.compile(r"\s+")
 _ORDEM_DO_TIPO = {TipoLancamento.GASTO: 0, TipoLancamento.RECEITA: 1}
 
 
@@ -34,28 +33,33 @@ class CategoriaComUso:
     categoria: Categoria
     em_uso: bool
 
+    @property
+    def reservada(self) -> bool:
+        """É uma das "A classificar", usadas pela importação dos cartões (RN-24)."""
+        return e_reservada(self.categoria.id)
+
 
 # Regras puras -------------------------------------------------------------------
 
 
 def normalizar_nome(nome: str) -> str:
     """Pontas aparadas e espaços repetidos reduzidos a um (F-05 Q1)."""
-    return _ESPACOS.sub(" ", nome).strip()
+    return colapsar_espacos(nome)
 
 
-def _sem_acento(texto: str) -> str:
-    decomposto = unicodedata.normalize("NFKD", texto)
-    return "".join(caractere for caractere in decomposto if not unicodedata.combining(caractere))
+def e_reservada(id: str) -> bool:
+    """Reservada é pelo **id**: renomeada, continua reservada (RN-24)."""
+    return id in TIPO_DA_CATEGORIA_RESERVADA
 
 
 def chave_do_nome(nome: str) -> str:
     """Chave de unicidade: sem acento e sem diferenciar maiúsculas (RN-12)."""
-    return _sem_acento(normalizar_nome(nome)).casefold()
+    return chave_sem_acento_e_caixa(nome)
 
 
 def gerar_slug(nome: str) -> str:
     """`Contas da Casa (fixas)` → `contas-da-casa-fixas`; nada aproveitável → `categoria`."""
-    slug = _FORA_DO_SLUG.sub("-", _sem_acento(nome).lower()).strip("-")
+    slug = _FORA_DO_SLUG.sub("-", sem_acento(nome).lower()).strip("-")
     return slug or BASE_SLUG_PADRAO
 
 
@@ -127,6 +131,8 @@ class CategoriaService:
         nome = normalizar_nome(nome)
         existentes = self._categorias.listar().itens
         atual = _encontrar(id, existentes)
+        if e_reservada(id) and not ativa:
+            raise CategoriaReservada.ao_desativar(atual.nome)
         self._exigir_nome_livre(nome, atual.tipo, existentes, ignorar_id=id)
         # `model_validate`, não `model_copy`: a cópia do Pydantic não valida (nota de T-007).
         atualizada = Categoria.model_validate(
@@ -137,6 +143,8 @@ class CategoriaService:
 
     def excluir(self, id: str) -> None:
         categoria = _encontrar(id, self._categorias.listar().itens)
+        if e_reservada(id):
+            raise CategoriaReservada.ao_excluir(categoria.nome)
         if id in self._ids_em_uso():
             raise CategoriaEmUso.para(categoria.nome)
         self._categorias.remover([id])

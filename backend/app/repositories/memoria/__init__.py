@@ -8,7 +8,14 @@ edição manual.
 from pydantic import BaseModel
 
 from app.domain.erros import NaoEncontrado
-from app.domain.modelos import Categoria, Lancamento, ListagemComAvisos, Recorrencia
+from app.domain.modelos import (
+    Cartao,
+    Categoria,
+    Importacao,
+    Lancamento,
+    ListagemComAvisos,
+    Recorrencia,
+)
 
 
 class RepositorioMemoria[T: BaseModel]:
@@ -26,6 +33,11 @@ class RepositorioMemoria[T: BaseModel]:
 
     def atualizar(self, item: T) -> None:
         self._itens[self._posicao(_id_de(item))] = item
+
+    def atualizar_varios(self, itens: list[T]) -> None:
+        posicoes = [self._posicao(_id_de(item)) for item in itens]  # tudo ou nada
+        for posicao, item in zip(posicoes, itens, strict=True):
+            self._itens[posicao] = item
 
     def remover(self, ids: list[str]) -> None:
         posicoes = {self._posicao(id) for id in ids}  # tudo ou nada
@@ -45,6 +57,12 @@ class CategoriaRepositoryMemoria(RepositorioMemoria[Categoria]): ...
 
 
 class RecorrenciaRepositoryMemoria(RepositorioMemoria[Recorrencia]): ...
+
+
+class CartaoRepositoryMemoria(RepositorioMemoria[Cartao]): ...
+
+
+class ImportacaoRepositoryMemoria(RepositorioMemoria[Importacao]): ...
 
 
 def _id_de(item: BaseModel) -> str:

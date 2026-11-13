@@ -82,5 +82,12 @@ def test_lifespan_prepara_planilha_nova__CA_15_1(monkeypatch: pytest.MonkeyPatch
         saude = cliente.get("/api/health").json()
 
     assert saude["status"] == "ok"
-    assert documento.nomes_das_abas() == ["Lancamentos", "Categorias", "Recorrencias", "Config"]
-    assert len(documento.linhas("Categorias")) == 1 + 15
+    assert documento.nomes_das_abas() == [
+        "Lancamentos",
+        "Categorias",
+        "Recorrencias",
+        "Config",
+        "Cartoes",
+        "Importacoes",
+    ]
+    assert len(documento.linhas("Categorias")) == 1 + 17

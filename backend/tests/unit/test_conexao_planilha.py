@@ -103,7 +103,7 @@ def test_schema_invalido_fica_guardado_e_nova_tentativa_prepara_de_novo(
     assert planilha is not None
     assert conexao.erro is None
     assert abertura.chamadas == 2
-    assert len(documento.linhas("Categorias")) == 1 + 15
+    assert len(documento.linhas("Categorias")) == 1 + 17
 
 
 def test_falha_de_rede_no_preparo_nao_conecta(

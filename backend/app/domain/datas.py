@@ -6,10 +6,13 @@ recorrência caem no último dia do mês quando o dia pedido não existe.
 
 import calendar
 import re
-from datetime import date, datetime
+from datetime import date, datetime, timedelta, timezone
 
 MES_PADRAO = r"^\d{4}-(0[1-9]|1[0-2])$"
 _MES = re.compile(MES_PADRAO)
+
+# ADR-19: fuso fixo, sem `zoneinfo` (o Brasil não tem horário de verão desde 2019).
+FUSO_DE_BRASILIA = timezone(timedelta(hours=-3))
 
 
 def ajustar_dia(ano: int, mes: int, dia: int) -> date:
@@ -82,6 +85,16 @@ def meses_entre(inicio: str, fim: str) -> list[str]:
 def mes_corrente(hoje: date | None = None) -> str:
     """Mês de referência de hoje (ou da data informada, para testes)."""
     return mes_de(hoje or date.today())
+
+
+def data_em_brasilia(instante: datetime) -> date:
+    """Dia, em UTC−3, de um instante com fuso (RN-18): `2026-11-12T01:30Z` → 11/11.
+
+    Instante sem fuso é recusado: adivinhar o fuso mudaria o dia da compra.
+    """
+    if instante.tzinfo is None:
+        raise ValueError("instante sem fuso: informe o fuso (a Pluggy envia UTC)")
+    return instante.astimezone(FUSO_DE_BRASILIA).date()
 
 
 def agora() -> datetime:

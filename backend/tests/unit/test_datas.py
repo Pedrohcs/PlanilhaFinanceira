@@ -1,6 +1,6 @@
 """Aritmética de datas e meses (RN-03, RN-07, RN-09; F-03 §3.2)."""
 
-from datetime import date, datetime
+from datetime import date, datetime, timedelta, timezone
 
 import pytest
 
@@ -9,6 +9,7 @@ from app.domain.datas import (
     ajustar_dia,
     ano_e_mes,
     data_da_parcela,
+    data_em_brasilia,
     dias_no_mes,
     mes_anterior,
     mes_corrente,
@@ -144,3 +145,30 @@ def test_agora_sem_microssegundos_e_sem_fuso() -> None:
 )
 def test_dias_no_mes(mes: str, dias: int) -> None:
     assert dias_no_mes(mes) == dias
+
+
+@pytest.mark.parametrize(
+    ("instante", "esperada"),
+    [
+        ("2026-11-12T01:30:00.000Z", date(2026, 11, 11)),  # 22:30 de 11/11 em Brasília
+        ("2026-11-12T02:59:59Z", date(2026, 11, 11)),
+        ("2026-11-12T03:00:00Z", date(2026, 11, 12)),
+        ("2026-11-12T15:00:00Z", date(2026, 11, 12)),
+        ("2027-01-01T00:10:00Z", date(2026, 12, 31)),  # vira o ano
+        ("2026-11-11T23:30:00-03:00", date(2026, 11, 11)),  # já em UTC−3
+    ],
+)
+def test_data_em_brasilia__RN_18(instante: str, esperada: date) -> None:
+    """CA-F16.13, borda 1 (ADR-19): o dia é o de Brasília (UTC−3 fixo), não o de UTC."""
+    assert data_em_brasilia(datetime.fromisoformat(instante)) == esperada
+
+
+def test_data_em_brasilia_aceita_qualquer_fuso__RN_18() -> None:
+    toquio = timezone(timedelta(hours=9))
+
+    assert data_em_brasilia(datetime(2026, 11, 12, 10, 0, tzinfo=toquio)) == date(2026, 11, 11)
+
+
+def test_data_em_brasilia_recusa_instante_sem_fuso__RN_18() -> None:
+    with pytest.raises(ValueError, match="sem fuso"):
+        data_em_brasilia(datetime(2026, 11, 12, 1, 30))

@@ -9,15 +9,29 @@ serviços.
 
 import re
 from datetime import date, datetime
-from typing import Annotated, Any, Self
+from typing import Annotated, Any, Literal, Self
 
 from pydantic import AfterValidator, BaseModel, BeforeValidator, ConfigDict, Field, model_validator
 
 from app.domain.datas import MES_PADRAO
 from app.domain.dinheiro import PARCELAS_MAX, PARCELAS_MIN, Dinheiro
-from app.domain.enums import FormaPagamento, StatusRecorrencia, TipoLancamento
+from app.domain.enums import (
+    FormaPagamento,
+    SituacaoImportacao,
+    StatusRecorrencia,
+    TipoLancamento,
+)
 
 _DATA_ISO = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+
+# Categorias reservadas da importação dos cartões (RN-15, RN-24; `03` §5.2): ids
+# fixos, procurados pelo id — o usuário pode renomeá-las.
+ID_A_CLASSIFICAR = "a-classificar"
+ID_A_CLASSIFICAR_RECEITA = "a-classificar-receita"
+TIPO_DA_CATEGORIA_RESERVADA = {
+    ID_A_CLASSIFICAR: TipoLancamento.GASTO,
+    ID_A_CLASSIFICAR_RECEITA: TipoLancamento.RECEITA,
+}
 
 
 def _data_iso(valor: Any) -> Any:
@@ -84,13 +98,11 @@ class Lancamento(_ModeloDominio):
     @model_validator(mode="after")
     def _validar_campos_relacionados(self) -> Self:
         _exigir_forma_se_gasto(self.tipo, self.forma_pagamento)
-        parcela = (self.parcelamento_id, self.parcela_numero, self.parcela_total)
-        preenchidos = sum(campo is not None for campo in parcela)
-        if preenchidos not in (0, len(parcela)):
-            raise ValueError(
-                "parcelamento_id, parcela_numero e parcela_total vão juntos: "
-                "todos preenchidos ou todos vazios"
-            )
+        # Número e total vão juntos; sem `parcelamento_id` é parcela importada (RN-08).
+        if (self.parcela_numero is None) != (self.parcela_total is None):
+            raise ValueError("parcela_numero e parcela_total vão juntos")
+        if self.parcelamento_id is not None and self.parcela_numero is None:
+            raise ValueError("parcelamento_id exige parcela_numero e parcela_total")
         if self.parcela_numero is not None and self.parcela_total is not None:
             if not PARCELAS_MIN <= self.parcela_total <= PARCELAS_MAX:
                 raise ValueError(f"parcela_total deve estar entre {PARCELAS_MIN} e {PARCELAS_MAX}")
@@ -131,6 +143,41 @@ class Recorrencia(_ModeloDominio):
     def _validar_campos_relacionados(self) -> Self:
         _exigir_forma_se_gasto(self.tipo, self.forma_pagamento)
         return self
+
+
+class Cartao(_ModeloDominio):
+    """Linha da aba `Cartoes` (`03` §5.7): cartão de crédito conhecido pela importação."""
+
+    id: Id
+    item_id: Id
+    banco: Annotated[str, Field(min_length=1)]
+    nome: Annotated[str, Field(min_length=1)]
+    final: Annotated[str, Field(min_length=1)] | None = None
+    ultima_importacao: DataHora | None = None
+    criado_em: DataHora
+    atualizado_em: DataHora
+
+
+class Importacao(_ModeloDominio):
+    """Linha do livro-razão `Importacoes` (`03` §5.8, ADR-18).
+
+    `data`, `tipo`, `valor` e `descricao` são os últimos valores lidos do banco
+    e gravados pela importação — a base de "editado" (RN-21).
+    """
+
+    id: Id
+    transacao_id: Id
+    provider_id: Id | None = None
+    cartao_id: Id
+    lancamento_id: Id
+    situacao: SituacaoImportacao
+    data: Data
+    tipo: TipoLancamento
+    valor: Dinheiro
+    descricao: Descricao
+    status_pluggy: Literal["PENDING", "POSTED"]
+    criado_em: DataHora
+    atualizado_em: DataHora
 
 
 class ListagemComAvisos[T](BaseModel):

@@ -279,6 +279,65 @@ def test_atualizar_inexistente_levanta_nao_encontrado__CA_F03_21() -> None:
     assert planilha.escritas == []
 
 
+def test_atualizar_varios_uma_chamada__CA_F16_6() -> None:
+    """30 itens, planilha reordenada à mão: uma única escrita, cada linha localizada pelo `id`."""
+    ids = [f"l{numero:02d}" for numero in range(40)]
+    repositorio, planilha = repositorio_com(*(linha(id_) for id_ in ids))
+    repositorio.listar()  # cache com a ordem antiga
+    aba = planilha.worksheet("Lancamentos")
+    aba.valores[1:] = reversed(aba.valores[1:])
+    alterados = ids[5:35]
+    leituras = planilha.leituras["Lancamentos"]
+
+    repositorio.atualizar_varios(
+        [lancamento(id_, descricao=f"Alterado {id_}", valor=Decimal("99.90")) for id_ in alterados]
+    )
+
+    assert [escrita[:2] for escrita in planilha.escritas] == [
+        ("batch_update_valores", "Lancamentos")
+    ]
+    assert len(planilha.escritas[0][2]) == 30
+    assert planilha.leituras["Lancamentos"] == leituras + 1  # uma leitura para localizar
+    depois = {item.id: item for item in repositorio.listar().itens}  # cache invalidado
+    assert [item_id for item_id in depois] == list(reversed(ids))  # ninguém mudou de linha
+    for id_ in ids:
+        esperada = f"Alterado {id_}" if id_ in alterados else f"Compra {id_}"
+        assert depois[id_].descricao == esperada
+
+
+def test_atualizar_varios_com_id_inexistente_nao_grava_nada__CA_F16_6() -> None:
+    """Tudo ou nada: `NaoEncontrado` antes de qualquer escrita."""
+    repositorio, planilha = repositorio_com(linha("a"), linha("b"))
+
+    with pytest.raises(NaoEncontrado, match="nao-existe"):
+        repositorio.atualizar_varios(
+            [lancamento("a", descricao="Alterado"), lancamento("nao-existe")]
+        )
+
+    assert planilha.escritas == []
+    assert repositorio.obter("a").descricao == "Compra a"
+
+
+def test_atualizar_varios_vazio_nao_chama_o_google__CA_F16_6() -> None:
+    repositorio, planilha = repositorio_com(linha("a"))
+    fonte = repositorio._fonte
+
+    repositorio.atualizar_varios([])
+
+    assert fonte.execucoes == 0  # type: ignore[attr-defined]
+    assert planilha.escritas == []
+
+
+def test_atualizar_varios_preserva_colunas_extras_do_usuario__CA_F16_6() -> None:
+    planilha = PlanilhaFalsa({"Lancamentos": [[*CABECALHO, "notas"], [*linha("a"), "lembrar"]]})
+    repositorio = LancamentoRepositoryPlanilha(FonteFalsa(planilha), CacheAbas(30))
+
+    repositorio.atualizar_varios([lancamento("a", descricao="Alterado")])
+
+    assert planilha.worksheet("Lancamentos").valores[1][-1] == "lembrar"
+    assert planilha.escritas[0][2][0]["range"] == "A2:N2"
+
+
 def test_remove_varios_ids_sem_deslizar_indices__CA_F03_20() -> None:
     """Uma única chamada, de baixo para cima: somem exatamente os pedidos."""
     repositorio, planilha = repositorio_com(*(linha(letra) for letra in "abcdef"))

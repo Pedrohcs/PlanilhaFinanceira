@@ -64,6 +64,10 @@ class AbaFalsa:
 
     def update(self, *, values: list[list[Any]], range_name: str, value_input_option: str) -> None:
         _exigir(value_input_option, ESCRITA_RAW)
+        self._gravar(range_name, values)
+        self._planilha.registrar("update", self.title, range_name, values)
+
+    def _gravar(self, range_name: str, values: list[list[Any]]) -> None:
         linha_inicial, coluna_inicial = a1_to_rowcol(range_name.split(":")[0])
         for deslocamento, linha in enumerate(values):
             indice = linha_inicial - 1 + deslocamento
@@ -75,7 +79,13 @@ class AbaFalsa:
             atual = self.valores[indice]
             atual.extend([""] * (ultima_coluna - len(atual)))
             atual[coluna_inicial - 1 : ultima_coluna] = list(linha)
-        self._planilha.registrar("update", self.title, range_name, values)
+
+    def batch_update(self, *, data: list[dict[str, Any]], value_input_option: str) -> None:
+        """Vários intervalos numa **única** escrita (`values:batchUpdate`), F-16."""
+        _exigir(value_input_option, ESCRITA_RAW)
+        for intervalo in data:
+            self._gravar(intervalo["range"], intervalo["values"])
+        self._planilha.registrar("batch_update_valores", self.title, data)
 
     def append_rows(
         self, *, values: list[list[Any]], value_input_option: str, insert_data_option: str

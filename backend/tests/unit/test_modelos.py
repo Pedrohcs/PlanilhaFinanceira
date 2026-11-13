@@ -11,7 +11,14 @@ from pydantic import ValidationError
 from app.api.erros import status_de
 from app.domain.enums import FormaPagamento, StatusRecorrencia, TipoLancamento
 from app.domain.erros import ErroDominio, ErroValidacao, NaoEncontrado
-from app.domain.modelos import Categoria, Lancamento, ListagemComAvisos, Recorrencia
+from app.domain.modelos import (
+    Cartao,
+    Categoria,
+    Importacao,
+    Lancamento,
+    ListagemComAvisos,
+    Recorrencia,
+)
 
 
 def dados_lancamento(**alteracoes: Any) -> dict[str, Any]:
@@ -160,8 +167,11 @@ def test_parcela_completa_e_valida__RN_08() -> None:
     [
         {"parcelamento_id": "a71b"},
         {"parcelamento_id": "a71b", "parcela_numero": 1},
-        {"parcela_numero": 1, "parcela_total": 3},
+        {"parcela_numero": 1},
+        {"parcela_total": 3},
         {"parcelamento_id": "a71b", "parcela_numero": 0, "parcela_total": 3},
+        {"parcela_numero": 4, "parcela_total": 3},
+        {"parcela_numero": 1, "parcela_total": 49},
         {"parcelamento_id": "a71b", "parcela_numero": 4, "parcela_total": 3},
         {"parcelamento_id": "a71b", "parcela_numero": 1, "parcela_total": 1},
         {"parcelamento_id": "a71b", "parcela_numero": 1, "parcela_total": 49},
@@ -171,6 +181,14 @@ def test_parcela_completa_e_valida__RN_08() -> None:
 def test_parcela_incompleta_ou_fora_da_faixa_e_invalida__RN_07(parcela: dict[str, Any]) -> None:
     with pytest.raises(ValidationError):
         Lancamento.model_validate(dados_lancamento(**parcela))
+
+
+def test_parcela_importada_sem_parcelamento__RN_08() -> None:
+    """CA-08.3: "k/N" sem `parcelamento_id` — o banco não diz quais parcelas são da mesma compra."""
+    parcela = Lancamento.model_validate(dados_lancamento(parcela_numero=3, parcela_total=10))
+
+    assert parcela.parcelamento_id is None
+    assert (parcela.parcela_numero, parcela.parcela_total) == (3, 10)
 
 
 def test_modelo_e_imutavel_e_recusa_campo_extra() -> None:
@@ -263,3 +281,87 @@ def test_novos_erros_mapeiam_para_404_e_422(
     assert erro.codigo == codigo
     assert status_de(erro.codigo) == http
     assert erro().mensagem
+
+
+# Cartões e livro-razão das importações (F-16; `03` §5.7, §5.8) -------------------
+
+
+def dados_cartao(**alteracoes: Any) -> dict[str, Any]:
+    dados: dict[str, Any] = {
+        "id": "acc-123",
+        "item_id": "itm-9",
+        "banco": "Nubank",
+        "nome": "Ultravioleta",
+        "final": "1234",
+        "ultima_importacao": "2026-11-12T08:01:00",
+        "criado_em": "2026-11-12T08:01:00",
+        "atualizado_em": "2026-11-12T08:01:00",
+    }
+    dados.update(alteracoes)
+    return dados
+
+
+def dados_importacao(**alteracoes: Any) -> dict[str, Any]:
+    dados: dict[str, Any] = {
+        "id": "7a1b",
+        "transacao_id": "tx-1",
+        "provider_id": "prov-1",
+        "cartao_id": "acc-123",
+        "lancamento_id": "9f1c2e",
+        "situacao": "IMPORTADA",
+        "data": "2026-11-11",
+        "tipo": "GASTO",
+        "valor": 59.9,
+        "descricao": "Uber Trip",
+        "status_pluggy": "POSTED",
+        "criado_em": "2026-11-12T08:01:00",
+        "atualizado_em": "2026-11-12T08:01:00",
+    }
+    dados.update(alteracoes)
+    return dados
+
+
+def test_cartao_valido_e_campos_opcionais() -> None:
+    cartao = Cartao.model_validate(dados_cartao())
+    novo = Cartao.model_validate(dados_cartao(final=None, ultima_importacao=None))
+
+    assert cartao.ultima_importacao == datetime(2026, 11, 12, 8, 1)
+    assert (novo.final, novo.ultima_importacao) == (None, None)  # ainda não importado (RN-23)
+
+
+@pytest.mark.parametrize("campo", ["id", "item_id", "banco", "nome"])
+def test_cartao_exige_identificacao(campo: str) -> None:
+    for vazio in ("", None):
+        with pytest.raises(ValidationError):
+            Cartao.model_validate(dados_cartao(**{campo: vazio}))
+
+
+def test_importacao_valida_guarda_tipos_de_dominio() -> None:
+    linha = Importacao.model_validate(dados_importacao(provider_id=None))
+
+    assert linha.situacao.value == "IMPORTADA"
+    assert linha.data == date(2026, 11, 11)
+    assert linha.valor == Decimal("59.90")
+    assert linha.provider_id is None
+    assert json.loads(linha.model_dump_json())["valor"] == 59.9
+
+
+@pytest.mark.parametrize(
+    "alteracao",
+    [
+        {"transacao_id": ""},
+        {"cartao_id": None},
+        {"lancamento_id": ""},
+        {"situacao": "PENDENTE"},
+        {"data": "11/11/2026"},
+        {"tipo": "DESPESA"},
+        {"valor": 0},
+        {"descricao": ""},
+        {"descricao": "x" * 101},
+        {"status_pluggy": "pending"},
+        {"status_pluggy": None},
+    ],
+)
+def test_importacao_invalida(alteracao: dict[str, Any]) -> None:
+    with pytest.raises(ValidationError):
+        Importacao.model_validate(dados_importacao(**alteracao))

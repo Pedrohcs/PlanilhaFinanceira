@@ -1,6 +1,8 @@
 """Preparação de uma planilha vazia pelo app real (CA-15.1, CA-15.2, RN-15; F-15 Q6).
 
-Apaga as 4 abas do app **na planilha de teste** — a trava do `conftest` impede
+Schema versão 2 (F-16, CA-F16.5): 6 abas, 17 categorias e `versao_schema = 2`.
+
+Apaga as 6 abas do app **na planilha de teste** — a trava do `conftest` impede
 que seja a planilha do usuário — e deixa o app recriá-las ao subir. O Google
 exige ao menos uma aba, então uma aba de apoio vazia é criada antes, se preciso,
 e removida no fim.
@@ -16,7 +18,13 @@ from gspread.utils import ValueRenderOption
 
 from app.config import Settings
 from app.infra.bootstrap import CATEGORIAS_PADRAO
-from app.infra.schema_planilha import ABA_CATEGORIAS, ABAS
+from app.infra.schema_planilha import (
+    ABA_CATEGORIAS,
+    ABA_CONFIG,
+    ABAS,
+    CHAVE_VERSAO_SCHEMA,
+    VERSAO_SCHEMA,
+)
 from app.main import criar_app
 
 PREFIXO_APOIO = "apoio-teste-integracao-"
@@ -41,7 +49,7 @@ def subir_app(settings: Settings) -> None:
 def test_planilha_vazia_preparada__CA_15_1(
     documento_teste: gspread.Spreadsheet, settings_teste: Settings
 ) -> None:
-    """Sem as abas do app, subir cria abas, cabeçalhos e as 15 categorias; de novo, nada muda."""
+    """Sem as abas do app, subir cria abas, cabeçalhos e as 17 categorias; de novo, nada muda."""
     nomes_do_app = {aba.nome for aba in ABAS}
     for sobra in documento_teste.worksheets():  # de uma execução interrompida
         if sobra.title.startswith(PREFIXO_APOIO) and len(documento_teste.worksheets()) > 1:
@@ -63,7 +71,9 @@ def test_planilha_vazia_preparada__CA_15_1(
         for aba in ABAS:
             assert preparada[aba.nome][0][: len(aba.colunas)] == list(aba.colunas)
         categorias = preparada[ABA_CATEGORIAS.nome]
-        assert len(categorias) == 1 + len(CATEGORIAS_PADRAO) == 16
+        assert len(categorias) == 1 + len(CATEGORIAS_PADRAO) == 18
+        assert [aba.nome for aba in ABAS][-2:] == ["Cartoes", "Importacoes"]  # CA-F16.5
+        assert preparada[ABA_CONFIG.nome][1:] == [[CHAVE_VERSAO_SCHEMA, VERSAO_SCHEMA]]
         coluna_nome = ABA_CATEGORIAS.colunas.index("nome")
         assert [linha[coluna_nome] for linha in categorias[1:]] == [
             nome for _id, nome, _tipo, _cor in CATEGORIAS_PADRAO

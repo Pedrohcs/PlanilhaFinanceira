@@ -5,6 +5,7 @@
 - **Escrita:** `RAW` + `INSERT_ROWS`, sempre em lote; invalida o cache da aba.
 - **Atualizar/remover:** relê a aba na hora e localiza a linha pelo `id` —
   nunca guarda número de linha, porque o usuário reordena a planilha à mão.
+  `atualizar_varios` grava todas as linhas numa única chamada (F-16).
 """
 
 import logging
@@ -24,7 +25,8 @@ from app.infra.schema_planilha import Aba
 # Número lido numa coluna monetária vem com erro binário do Sheets (RN-16).
 COLUNAS_MONETARIAS = frozenset({"valor"})
 # Texto digitado à mão que o Sheets guardou como número (ex.: descrição "2024").
-COLUNAS_TEXTO_LIVRE = frozenset({"descricao", "observacao", "nome"})
+# Vale também para o final do cartão ("1234") e o nome do banco (F-16).
+COLUNAS_TEXTO_LIVRE = frozenset({"descricao", "observacao", "nome", "banco", "final"})
 
 logger = logging.getLogger(__name__)
 
@@ -129,10 +131,30 @@ class RepositorioPlanilha[M: BaseModel]:
 
         def operacao(_documento: gspread.Spreadsheet, aba: gspread.Worksheet) -> None:
             numero = self._linhas_do_id(aba, [id_])[id_][0]
-            ultima_coluna = rowcol_to_a1(numero, len(self.aba.colunas))
             aba.update(
                 values=[linha],
-                range_name=f"A{numero}:{ultima_coluna}",
+                range_name=self._intervalo_da_linha(numero),
+                value_input_option=ValueInputOption.raw,
+            )
+
+        self._escrever(operacao)
+
+    def atualizar_varios(self, itens: list[M]) -> None:
+        """Uma leitura para localizar os `id`s e **uma** escrita com todas as linhas."""
+        if not itens:
+            return
+        linhas = {_id_de(item): self._para_linha(item) for item in itens}
+
+        def operacao(_documento: gspread.Spreadsheet, aba: gspread.Worksheet) -> None:
+            numeros = self._linhas_do_id(aba, list(linhas))
+            aba.batch_update(
+                data=[
+                    {
+                        "range": self._intervalo_da_linha(numeros[id_][0]),
+                        "values": [linha],
+                    }
+                    for id_, linha in linhas.items()
+                ],
                 value_input_option=ValueInputOption.raw,
             )
 
@@ -183,6 +205,10 @@ class RepositorioPlanilha[M: BaseModel]:
         if faltando:
             raise NaoEncontrado(f"Registro {', '.join(faltando)} não encontrado.")
         return encontrados
+
+    def _intervalo_da_linha(self, numero: int) -> str:
+        """`A7:N7`: só as colunas do schema — as extras do usuário ficam como estão."""
+        return f"A{numero}:{rowcol_to_a1(numero, len(self.aba.colunas))}"
 
     def _para_linha(self, item: M) -> list[Any]:
         """Modelo → células: datas e enums como texto, valor como número (`02` §5.4)."""

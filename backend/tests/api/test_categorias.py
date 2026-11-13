@@ -102,6 +102,7 @@ def test_formato_da_resposta__CA_F05_13(cliente_memoria: TestClient) -> None:
         "ativa": True,
         "criado_em": "2026-09-29T10:15:00",
         "em_uso": True,
+        "reservada": False,
     }
     assert [item["em_uso"] for item in corpo] == [True, False, False]
 
@@ -121,6 +122,7 @@ def test_criar_201_e_duplicada_409__CA_11_1(
         "ativa": True,
         "criado_em": None,
         "em_uso": False,
+        "reservada": False,
     }
 
     duplicada = cliente_memoria.post(
@@ -189,6 +191,44 @@ def test_excluir_204__CA_F05_7(cliente_memoria: TestClient) -> None:
     assert resposta.status_code == 204
     assert resposta.content == b""
     assert "velha" not in ids(cliente_memoria.get("/api/categorias?incluir_inativas=true"))
+
+
+def test_reservada_nao_exclui_nem_desativa__RN_24(
+    cliente_memoria: TestClient, repositorios: Repositorios
+) -> None:
+    """CA-11.5, CA-F16.7: 409 `CATEGORIA_RESERVADA`; renomear e trocar a cor continuam → 200."""
+    repositorios.categorias.inserir([categoria("a-classificar", "A classificar")])
+    corpo = {"nome": "A classificar", "cor": "#90A4AE", "ativa": True}
+
+    excluir = cliente_memoria.delete("/api/categorias/a-classificar")
+    desativar = cliente_memoria.put("/api/categorias/a-classificar", json=corpo | {"ativa": False})
+    renomear = cliente_memoria.put(
+        "/api/categorias/a-classificar", json=corpo | {"nome": "Revisar", "cor": "#123456"}
+    )
+
+    assert excluir.status_code == 409
+    assert excluir.json()["erro"] == {
+        "codigo": "CATEGORIA_RESERVADA",
+        "mensagem": (
+            'A categoria "A classificar" é usada pela importação dos cartões e não pode ser '
+            "excluída."
+        ),
+        "detalhes": [],
+    }
+    assert desativar.status_code == 409
+    assert desativar.json()["erro"]["codigo"] == "CATEGORIA_RESERVADA"
+    assert desativar.json()["erro"]["mensagem"].endswith("não pode ser desativada.")
+    assert renomear.status_code == 200
+    assert renomear.json() | {"criado_em": None, "em_uso": None} == {
+        "id": "a-classificar",
+        "nome": "Revisar",
+        "tipo": "GASTO",
+        "cor": "#123456",
+        "ativa": True,
+        "criado_em": None,
+        "em_uso": None,
+        "reservada": True,
+    }
 
 
 @pytest.mark.parametrize(
@@ -282,11 +322,15 @@ def test_ponta_a_ponta_com_repositorio_de_planilha(monkeypatch: pytest.MonkeyPat
         )
         excluida = cliente.delete("/api/categorias/pet")
 
-    assert len(listagem) == 15
+    assert len(listagem) == 17
     assert [item["nome"] for item in listagem[:3]] == [
+        "A classificar",
         "Alimentação",
         "Assinaturas",
-        "Contas da casa",
+    ]
+    assert [item["id"] for item in listagem if item["reservada"]] == [
+        "a-classificar",
+        "a-classificar-receita",
     ]
     assert all(item["em_uso"] is False for item in listagem)
     assert criada.status_code == 201

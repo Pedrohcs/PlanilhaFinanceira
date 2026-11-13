@@ -7,7 +7,7 @@ mudança de schema incrementa `VERSAO_SCHEMA` (`03` §5.4).
 
 from dataclasses import dataclass
 
-VERSAO_SCHEMA = 1
+VERSAO_SCHEMA = 2
 CHAVE_VERSAO_SCHEMA = "versao_schema"
 
 
@@ -63,4 +63,45 @@ ABA_RECORRENCIAS = Aba(
 
 ABA_CONFIG = Aba("Config", ("chave", "valor"))
 
-ABAS = (ABA_LANCAMENTOS, ABA_CATEGORIAS, ABA_RECORRENCIAS, ABA_CONFIG)
+# F-16 (versão 2): catálogo de cartões e livro-razão das importações (ADR-18).
+ABA_CARTOES = Aba(
+    "Cartoes",
+    (
+        "id",
+        "item_id",
+        "banco",
+        "nome",
+        "final",
+        "ultima_importacao",
+        "criado_em",
+        "atualizado_em",
+    ),
+)
+
+ABA_IMPORTACOES = Aba(
+    "Importacoes",
+    (
+        "id",
+        "transacao_id",
+        "provider_id",
+        "cartao_id",
+        "lancamento_id",
+        "situacao",
+        "data",
+        "tipo",
+        "valor",
+        "descricao",
+        "status_pluggy",
+        "criado_em",
+        "atualizado_em",
+    ),
+)
+
+ABAS = (
+    ABA_LANCAMENTOS,
+    ABA_CATEGORIAS,
+    ABA_RECORRENCIAS,
+    ABA_CONFIG,
+    ABA_CARTOES,
+    ABA_IMPORTACOES,
+)

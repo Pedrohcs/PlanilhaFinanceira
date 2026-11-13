@@ -118,6 +118,27 @@ class CategoriaEmUso(ErroDominio):
         )
 
 
+class CategoriaReservada(ErroDominio):
+    """A categoria "A classificar" é usada pela importação dos cartões (RN-24)."""
+
+    codigo = "CATEGORIA_RESERVADA"
+    mensagem = "A categoria é usada pela importação dos cartões."
+
+    @classmethod
+    def ao_excluir(cls, nome: str) -> "CategoriaReservada":
+        return cls._para(nome, "excluída")
+
+    @classmethod
+    def ao_desativar(cls, nome: str) -> "CategoriaReservada":
+        return cls._para(nome, "desativada")
+
+    @classmethod
+    def _para(cls, nome: str, acao: str) -> "CategoriaReservada":
+        return cls(
+            f'A categoria "{nome}" é usada pela importação dos cartões e não pode ser {acao}.'
+        )
+
+
 class CategoriaInativa(ErroDominio):
     """Categoria desativada não recebe lançamentos novos (RN-04)."""
 

@@ -6,7 +6,12 @@ from decimal import Decimal
 import pytest
 
 from app.domain.enums import FormaPagamento, StatusRecorrencia, TipoLancamento
-from app.domain.erros import CategoriaDuplicada, CategoriaEmUso, NaoEncontrado
+from app.domain.erros import (
+    CategoriaDuplicada,
+    CategoriaEmUso,
+    CategoriaReservada,
+    NaoEncontrado,
+)
 from app.domain.modelos import Categoria, Lancamento, Recorrencia
 from app.repositories.memoria import (
     CategoriaRepositoryMemoria,
@@ -276,6 +281,65 @@ def test_em_uso__CA_F05_21() -> None:
     cenario.lancamentos.remover(["l-a"])
     uso = {item.categoria.id: item.em_uso for item in cenario.servico.listar()}
     assert uso["a"] is False
+
+
+# Categorias reservadas (RN-24; F-16) ---------------------------------------------
+
+
+def reservadas() -> list[Categoria]:
+    return [
+        categoria("a-classificar", "A classificar"),
+        categoria("a-classificar-receita", "A classificar", RECEITA),
+        categoria("pet", "Pet"),
+    ]
+
+
+@pytest.mark.parametrize("id_", ["a-classificar", "a-classificar-receita"])
+def test_reservada_nao_exclui_nem_desativa__RN_24(id_: str) -> None:
+    """CA-11.5, CA-F16.7: sem lançamento nenhum, ainda assim não sai nem é desativada."""
+    cenario = Cenario(reservadas())
+
+    with pytest.raises(CategoriaReservada) as ao_excluir:
+        cenario.servico.excluir(id_)
+    with pytest.raises(CategoriaReservada) as ao_desativar:
+        cenario.servico.atualizar(id_, "A classificar", "#90A4AE", False)
+
+    assert ao_excluir.value.codigo == ao_desativar.value.codigo == "CATEGORIA_RESERVADA"
+    assert ao_excluir.value.mensagem == (
+        'A categoria "A classificar" é usada pela importação dos cartões e não pode ser excluída.'
+    )
+    assert ao_desativar.value.mensagem == (
+        'A categoria "A classificar" é usada pela importação dos cartões e não pode ser desativada.'
+    )
+    assert cenario.categorias.obter(id_).ativa is True
+
+
+def test_reservada_pode_ser_renomeada_e_mudar_de_cor__RN_24() -> None:
+    """CA-11.5, borda 29: renomeada, continua reservada (vale o id); a mensagem usa o nome atual."""
+    cenario = Cenario(reservadas())
+
+    atualizada = cenario.servico.atualizar("a-classificar", "Revisar", "#123abc", True)
+
+    assert (atualizada.categoria.nome, atualizada.categoria.cor) == ("Revisar", "#123ABC")
+    assert atualizada.reservada is True
+    with pytest.raises(CategoriaReservada, match='A categoria "Revisar" é usada'):
+        cenario.servico.excluir("a-classificar")
+
+
+def test_reservada_em_uso_responde_reservada_e_nao_em_uso__RN_24() -> None:
+    cenario = Cenario(reservadas(), lancamentos=[lancamento("a-classificar")])
+
+    with pytest.raises(CategoriaReservada):
+        cenario.servico.excluir("a-classificar")
+
+
+def test_listagem_marca_so_as_reservadas__RN_24() -> None:
+    cenario = Cenario(reservadas())
+
+    marcadas = {item.categoria.id: item.reservada for item in cenario.servico.listar()}
+
+    assert marcadas == {"a-classificar": True, "a-classificar-receita": True, "pet": False}
+    assert cenario.servico.criar("Mercado", GASTO, "#FF8A65").reservada is False
 
 
 # Ativar/desativar, listagem e ordem ----------------------------------------------

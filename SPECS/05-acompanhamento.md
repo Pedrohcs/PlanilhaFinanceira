@@ -3,7 +3,7 @@
 | Campo | Valor |
 |---|---|
 | Documento | `SPECS/05-acompanhamento.md` |
-| Atualizado em | 2026-11-12 |
+| Atualizado em | 2026-11-13 |
 | Responde | **Onde estamos:** status de cada tarefa e feature |
 | Depende de | `04-roadmap.md` (plano) |
 
@@ -27,12 +27,12 @@
 | M2 · Visão financeira | F-09..F-11 | 5 | 0 | 0 | 5 | 100% |
 | M3 · Automação | F-12..F-13 | 5 | 0 | 0 | 5 | 100% |
 | M4 · Acabamento | F-14..F-15 | 5 | 0 | 1 | 4 | 80% |
-| M5 · Integração com o cartão | F-16 | 7 | 7 | 0 | 0 | 0% |
-| **Total** | **16** | **42** | **7** | **1** | **34** | **81%** |
+| M5 · Integração com o cartão | F-16 | 7 | 6 | 0 | 1 | 14% |
+| **Total** | **16** | **42** | **6** | **1** | **35** | **83%** |
 
 **M0 a M3 concluídos (F-01 a F-13); F-14 concluída; F-15 iniciada (T-033 e T-034 concluídas; T-035 `Iniciada`).** Caminho crítico em F-15. T-035: README final, matriz RN → teste, `pytest -m integracao` verde na planilha de teste (2026-10-02, 9/9) e roteiro E2E executado em 2026-11-12 na planilha real — 45 OK, 1 parcial (RNF-07), 2 pela integração (CA-15.1/15.2). **Falta para concluir, com o usuário:** CA-16.1 (planilha não compartilhada), CA-16.3 (célula editada à mão), CA-F02.13 (README do zero) e CA-F15.5 (clone novo); e apagar à mão a linha "E2E assinatura" da aba `Recorrencias`.
 
-**M5 (2026-11-12):** integração com o Meu Pluggy especificada e aprovada — [`F-16`](features/F-16-importacao-cartao-pluggy.md), tarefas T-036 a T-042 `Não iniciada`. Já desbloqueadas: **T-036** (schema v2 e domínio) e **T-037** (cliente da Pluggy). Pré-requisito do usuário antes de T-037: preparação de `02` §11.2 (Meu Pluggy, Dashboard, `PLUGGY_*` no `backend/.env`). T-035 segue `Iniciada`; pela regra 4, conclua-a (ou autorize trabalhar em paralelo) antes de iniciar uma tarefa de M5.
+**M5 (2026-11-12):** integração com o Meu Pluggy especificada e aprovada — [`F-16`](features/F-16-importacao-cartao-pluggy.md), tarefas T-036 a T-042. **T-036 `Concluída` em 2026-11-13** (schema v2 e domínio da importação), feita em paralelo com a T-035 a pedido do usuário. Próxima desbloqueada: **T-037** (cliente da Pluggy) — pré-requisito do usuário: preparação de `02` §11.2 (Meu Pluggy, Dashboard, `PLUGGY_*` no `backend/.env`); T-038 espera a T-037. T-035 segue `Iniciada`. **Atenção:** a partir da T-036, subir o app migra a planilha para a versão 2 (abas `Cartoes` e `Importacoes`, as duas "A classificar", `versao_schema = 2`); uma cópia antiga do app deixa de abri-la.
 
 ---
 
@@ -55,7 +55,7 @@
 | F-13 | Recorrências | M3 | Concluída | [`F-13-recorrencias.md`](features/F-13-recorrencias.md) (Concluída) |
 | F-14 | Polimento e resiliência | M4 | Concluída | [`F-14-polimento-e-resiliencia.md`](features/F-14-polimento-e-resiliencia.md) (Concluída) |
 | F-15 | Entrega local e verificação E2E | M4 | Iniciada | [`F-15-entrega-local-e-e2e.md`](features/F-15-entrega-local-e-e2e.md) (Aprovada) |
-| F-16 | Importação do cartão de crédito (Meu Pluggy) | M5 | Não iniciada | [`F-16-importacao-cartao-pluggy.md`](features/F-16-importacao-cartao-pluggy.md) (Aprovada) |
+| F-16 | Importação do cartão de crédito (Meu Pluggy) | M5 | Iniciada | [`F-16-importacao-cartao-pluggy.md`](features/F-16-importacao-cartao-pluggy.md) (Aprovada) |
 
 Status da feature: `Não iniciada` (nenhuma tarefa iniciada) · `Iniciada` (alguma tarefa iniciada ou concluída) · `Concluída` (todas concluídas). Na coluna *Spec da feature*, coloque o link do arquivo em `SPECS/features/` quando ele for criado.
 
@@ -86,8 +86,7 @@ flowchart LR
     classDef naoIniciada fill:#eeeeee,stroke:#9e9e9e,color:#424242;
     classDef iniciada fill:#fff3cd,stroke:#f0ad4e,color:#5c4400;
     classDef concluida fill:#d4edda,stroke:#28a745,color:#155724;
-    class F16 naoIniciada;
-    class F15 iniciada;
+    class F15,F16 iniciada;
     class F01,F02,F03,F04,F05,F06,F07,F08,F09,F10,F11,F12,F13,F14 concluida;
 ```
 
@@ -161,7 +160,7 @@ Camadas: **BE** = backend · **FE** = frontend · **DOC** = documentação/infra
 
 | ID | Tarefa (escopo) | Feature | Camada | Depende de | Status | Início | Conclusão | Notas |
 |---|---|---|---|---|---|---|---|---|
-| T-036 | Schema v2 e domínio da importação (F-16 §9): abas `Cartoes` e `Importacoes` em `schema_planilha.py` (`VERSAO_SCHEMA = 2`); migração 1 → 2 e seed com as categorias reservadas no `bootstrap`; modelos `Cartao`/`Importacao` e enums `SituacaoImportacao`/`SituacaoConexao`; parcela importada no `Lancamento` (k/N sem `parcelamento_id`); `atualizar_varios` no `Repositorio[T]` (planilha em uma `batch_update` + memória); 2 repositórios novos; `categoria_service` com RN-24 (409 `CATEGORIA_RESERVADA`) e `reservada` no JSON; `datas.data_em_brasilia`, `textos.normalizar_descricao`; suíte de integração ajustada para 6 abas. | F-16 | BE | T-034 | Não iniciada | | | |
+| T-036 | Schema v2 e domínio da importação (F-16 §9): abas `Cartoes` e `Importacoes` em `schema_planilha.py` (`VERSAO_SCHEMA = 2`); migração 1 → 2 e seed com as categorias reservadas no `bootstrap`; modelos `Cartao`/`Importacao` e enums `SituacaoImportacao`/`SituacaoConexao`; parcela importada no `Lancamento` (k/N sem `parcelamento_id`); `atualizar_varios` no `Repositorio[T]` (planilha em uma `batch_update` + memória); 2 repositórios novos; `categoria_service` com RN-24 (409 `CATEGORIA_RESERVADA`) e `reservada` no JSON; `datas.data_em_brasilia`, `textos.normalizar_descricao`; suíte de integração ajustada para 6 abas. | F-16 | BE | T-034 | Concluída | 2026-11-13 | 2026-11-13 | `schema_planilha` na versão 2 (`Cartoes`, `Importacoes`); `bootstrap` com seed de 17 categorias e migração 1 → 2 (reservadas que faltam por id, nome "(importados)" se "A classificar" já é de outra, versão gravada por último; id reservado com o tipo errado → `SCHEMA_PLANILHA_INVALIDO`); `Cartao`, `Importacao`, `SituacaoImportacao`, `SituacaoConexao` (rótulo e "importa"); `Lancamento` aceita parcela sem `parcelamento_id`; `atualizar_varios` no `Repositorio[T]` (planilha: uma `batch_update` de valores; memória) e 2 repositórios novos (fora de `Repositorios`: composição na T-039); RN-24 no `categoria_service` (`CategoriaReservada` → 409) e `reservada` no JSON; `domain/textos.py` (`normalizar_descricao`, chave sem acento/caixa) e `datas.data_em_brasilia`. 989 testes (74 novos), `ruff` limpo; integração: `test_bootstrap_e2e` (6 abas, 17 categorias, versão 2) e `test_planilha_real` verdes na planilha de teste. CA-F16.3 a .7; parte BE de CA-08.3 e CA-11.5. |
 | T-037 | Cliente da Pluggy (`02` §11): `PLUGGY_*` no `Settings` (ligada/desligada/incompleta) e no `.env.example`; `httpx` em `requirements.txt` (ADR-16); `infra/pluggy_client.py` (auth com `apiKey` em memória, tentativas, paginação, mapeamento de erros, `FontePluggy`); testes com `httpx.MockTransport`; marcador `pluggy` + `test_pluggy_contrato.py` (Sandbox); **verificação contra o item real**: `GET /v2/transactions` × plano B, registrada no Log. | F-16 | BE | T-034 | Não iniciada | | | |
 | T-038 | `importacao_service` (`03` §4.4): mapeamento RN-17/RN-18, categoria RN-19, conciliação RN-20, atualização/remoção RN-21, excluídos RN-22, janela RN-23, proteções RN-24, re-chave de cartão, recuperação de falha parcial, trava, até 7 escritas; `tests/pluggy_falso.py`; testes unitários de cada RN; **remove a marca *(planejada — F-16)* de RN-17..RN-24 em `01` §4** (o guarda do RNF-08 passa a cobrá-las). | F-16 | BE | T-036, T-037 | Não iniciada | | | |
 | T-039 | API (`03` §6): `GET /api/cartoes`, `GET /api/cartoes/conexoes`, `POST /api/importacoes/pluggy`; composição do `PluggyClient` em `deps.py`/lifespan; erros 409/502 no envelope; `vinculo` e filtro `cartao` em `GET /api/lancamentos`. Testes de API. | F-16 | BE | T-038 | Não iniciada | | | |
@@ -175,6 +174,9 @@ Camadas: **BE** = backend · **FE** = frontend · **DOC** = documentação/infra
 
 | Data | Tarefa/Feature | Mudança | Observação |
 |---|---|---|---|
+| 2026-11-13 | T-036 | `Iniciada` → `Concluída` | Backend 989 testes (74 novos), `ruff check`/`format` limpos; `pytest -m integracao` só de `test_bootstrap_e2e` e `test_planilha_real`: 2 passed na planilha de teste (recriada na versão 2). Três pontos que a spec não decidia, aprovados pelo usuário no plano e registrados em `03` 1.37 e F-16 §10: id reservado com o tipo errado → erro de schema; dados sem `versao_schema` contam como versão 1; `status_pluggy` como `Literal`. Não exercitados contra o Google de verdade: a migração 1 → 2 de uma planilha com dados e o `atualizar_varios` (cobertos com a planilha falsa; assinaturas do gspread 6.2.1 conferidas). README: linha do erro de schema cita as 6 abas e os ids reservados. |
+| 2026-11-13 | T-036 | Sugestão anotada | Na versão 2, uma "A classificar" apagada à mão na planilha não é recriada pelo `bootstrap` (`03` §5.4). A T-038 precisa decidir o que a importação faz sem ela (recriar ou parar com mensagem). |
+| 2026-11-13 | T-036 | `Não iniciada` → `Iniciada` | Dependência T-034 `Concluída`; spec de F-16 `Aprovada`. Em paralelo com a T-035 (`Iniciada`, aguardando verificações do usuário), a pedido dele (regra 4). F-16 passa a `Iniciada`. |
 | 2026-11-12 | T-035 | Andamento (segue `Iniciada`) | Roteiro E2E executado pelo Claude no Chrome (F-15 §3.3.4, resumo em §10): 45 OK, 1 parcial, 2 pela integração, 4 pendentes com o usuário (BLOQUEIO). Gravações conferidas pela API; capturas de tela e redimensionamento da janela falharam, então os 360 px foram medidos pelo DOM num quadro de 360 px. Dados "E2E" apagados; sobrou a recorrência "E2E assinatura" encerrada (sem endpoint de exclusão). Correções de registro: §1 deste arquivo, F-15 §4 (critérios da integração de 2026-10-02) e status das specs de F-01/F-02 em §2. |
 | 2026-11-12 | T-035 | Sugestão anotada | Recorrência não tem exclusão (`03` §6.1): uma criada por engano fica para sempre na lista como encerrada. Avaliar um `DELETE /api/recorrencias/{id}` via `/mudanca-de-requisito`. |
 | 2026-11-12 | T-035 | Andamento (segue `Iniciada`) | Retomada: extensão do Chrome conectada (BLOQUEIO encerrado). App subido pelo Claude com `scripts\start.ps1` (RNF-01). **Q7 de F-15 revista pelo usuário:** roteiro na planilha real (health: "Planilha Financeira"), dados "E2E" apagados no fim. Repositório publicado em `github.com/Pedrohcs/PlanilhaFinanceira` (autor dos commits reescrito para o e-mail pessoal; hashes mudaram). |
