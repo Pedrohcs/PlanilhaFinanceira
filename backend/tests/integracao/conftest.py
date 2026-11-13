@@ -1,6 +1,8 @@
 """Fixtures da suíte de integração (`SPECS/features/F-15` §3.2).
 
-Só rodam com `pytest -m integracao` e a planilha de teste definida (terminal ou
+Só valem para os testes marcados `integracao` — o teste de contrato da Pluggy
+(`-m pluggy`), que mora na mesma pasta, não abre a planilha nem espera a cota.
+Rodam com `pytest -m integracao` e a planilha de teste definida (terminal ou
 `backend/.env`). Antes de qualquer escrita, a trava confere que a planilha de
 teste não é a do app; no início e no fim da sessão, as linhas marcadas por
 testes (inclusive de uma execução interrompida) são apagadas.
@@ -48,7 +50,7 @@ def documento_teste(planilha_teste_id: str, credencial_teste: Path) -> gspread.S
     return abrir_planilha(credencial_teste, planilha_teste_id).documento
 
 
-@pytest.fixture(scope="session", autouse=True)
+@pytest.fixture(scope="session")
 def planilha_separada_e_limpa(planilha_teste_id: str) -> Iterator[None]:
     """Trava (CA-F15.8) e varredura das linhas marcadas no início e no fim (CA-F15.9, borda 10).
 
@@ -67,11 +69,16 @@ _fim_do_teste_anterior: list[float] = []
 
 
 @pytest.fixture(autouse=True)
-def respeitar_cota_do_google(planilha_separada_e_limpa: None) -> Iterator[None]:
+def respeitar_cota_do_google(request: pytest.FixtureRequest) -> Iterator[None]:
     """Cada teste começa com a janela de cota de leituras zerada (F-15 §3.2.7).
 
-    Depende da fixture de sessão para a trava e a varredura virem antes da espera.
+    Pede a fixture de sessão antes, para a trava e a varredura virem antes da
+    espera — e só para teste `integracao`: o de contrato da Pluggy passa direto.
     """
+    if request.node.get_closest_marker("integracao") is None:
+        yield
+        return
+    request.getfixturevalue("planilha_separada_e_limpa")
     espera = segundos_de_espera(
         _fim_do_teste_anterior[-1] if _fim_do_teste_anterior else None, time.monotonic()
     )

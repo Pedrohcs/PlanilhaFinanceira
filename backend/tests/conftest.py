@@ -10,9 +10,11 @@ from fastapi.testclient import TestClient
 # Antes das trocas abaixo: o módulo guarda o `SPREADSHEET_ID` e a credencial do
 # terminal, para a trava e a credencial da integração (F-15 §3.2).
 from tests.integracao.ambiente import (
+    VARIAVEIS_PLUGGY,
     VARIAVEL_PLANILHA_TESTE,
     caminho_da_credencial,
     ler_planilha_teste,
+    ler_pluggy_de_contrato,
 )
 
 # A suíte não depende de um `backend/.env` real: basta existir um id qualquer.
@@ -30,18 +32,32 @@ os.environ.setdefault("SPREADSHEET_ID", "planilha-de-teste")
 # `google-auth`, como no app.
 os.environ.setdefault("GOOGLE_CREDENTIALS_PATH", "credencial-inexistente-de-teste.json")
 
+# Integração com a Pluggy **desligada** em toda a suíte, mesmo com as `PLUGGY_*`
+# preenchidas no `backend/.env` ou no terminal: variável vazia no ambiente vale
+# mais que o arquivo. Nenhum teste padrão acessa a Pluggy (`SPECS/02` §8) nem
+# carrega o segredo. Os valores do terminal ficam em `tests.integracao.ambiente`,
+# só para o teste de contrato (`pytest -m pluggy`).
+for _variavel in VARIAVEIS_PLUGGY:
+    os.environ[_variavel] = ""
+
 
 def pytest_collection_modifyitems(items: list[pytest.Item]) -> None:
-    """Pula os testes marcados como `integracao` quando falta a planilha de teste.
+    """Pula os testes `integracao` sem a planilha de teste e os `pluggy` sem o item Sandbox.
 
-    A planilha vem do terminal ou, sem ela, do `backend/.env` (F-15 Q5).
+    A planilha vem do terminal ou, sem ela, do `backend/.env` (F-15 Q5); as
+    credenciais e o item do teste de contrato, do mesmo jeito (`SPECS/02` §8).
     """
-    if ler_planilha_teste(os.environ):
-        return
-    motivo = pytest.mark.skip(reason=f"{VARIAVEL_PLANILHA_TESTE} não definida")
+    pulos: dict[str, pytest.MarkDecorator] = {}
+    if not ler_planilha_teste(os.environ):
+        pulos["integracao"] = pytest.mark.skip(reason=f"{VARIAVEL_PLANILHA_TESTE} não definida")
+    if ler_pluggy_de_contrato() is None:
+        pulos["pluggy"] = pytest.mark.skip(
+            reason="PLUGGY_CLIENT_ID, PLUGGY_CLIENT_SECRET ou PLUGGY_ITEM_ID_TESTE não definidas"
+        )
     for item in items:
-        if "integracao" in item.keywords:
-            item.add_marker(motivo)
+        for marcador, motivo in pulos.items():
+            if marcador in item.keywords:
+                item.add_marker(motivo)
 
 
 @pytest.fixture

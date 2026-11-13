@@ -3,8 +3,8 @@
 | Campo | Valor |
 |---|---|
 | Documento | `SPECS/02-definicoes-tecnicas.md` |
-| Versão | 1.15 |
-| Atualizado em | 2026-11-12 |
+| Versão | 1.16 |
+| Atualizado em | 2026-11-13 |
 | Status | Aprovado para início |
 | Responde | **Com o quê** o sistema é construído: linguagens, bibliotecas, versões, integração com Google e com o Meu Pluggy, convenções |
 | Depende de | `01-requisitos.md` (RNF-xx) |
@@ -283,7 +283,7 @@ Padrões da suíte do frontend (T-011/T-014): specs que abrem diálogo, menu ou 
 | ADR-14 | Manter o **prettier** que o `ng new` da v22 instala como formatador do frontend (com o `.prettierrc` gerado) | Remover a dependência e não formatar; adotar outro formatador | É o padrão do CLI 22 e `02` §4 manda seguir os padrões do CLI; remover exigiria editar o projeto gerado a cada atualização. **Não** entra na Definição de Pronto: o portão do frontend continua sendo `npm test` + `npm run build` | 2026-09-29 |
 | ADR-15 | Servir as fontes **pelo próprio app**: pacotes npm `@fontsource/roboto` (arquivos `latin-300/400/500.css`) e `material-symbols` (`outlined.css`), na lista `styles` do `angular.json`; nada de `fonts.googleapis.com` no `index.html` | Manter o Google Fonts do `ng add`; copiar os arquivos de fonte para `src/` à mão | App 100% local (RNF-01): sem internet, os ícones apareciam como texto ("more_vert"), justamente no caso "sem internet" de REQ-16. Pacotes mantidos pelo npm em vez de binários copiados. Custo: +1,2 kB no CSS inicial (só o subconjunto latino do Roboto; todos os subconjuntos davam +15 kB) e ~3,9 MB da fonte de ícones, carregada do disco local e fora do pacote JS (F-14 Q5, T-031) | 2026-10-01 |
 | ADR-16 | **httpx** (cliente síncrono) como dependência de produção para a API da Pluggy, encapsulado em `infra/pluggy_client.py` | SDK oficial da Pluggy (a página de SDKs de servidor lista Node, .NET e Java; seria mais uma dependência e mais uma camada para dublar); `requests` (hoje só transitivo do gspread) | Já estava no projeto (testes), tem timeout e `MockTransport` para testes sem rede; a API usada são 4 chamadas REST simples | 2026-11-12 |
-| ADR-17 | Integração pelo caminho **Meu Pluggy** (gratuito, uso pessoal): sem widget Pluggy Connect, sem criar/atualizar itens, sem webhooks; `itemId` em `PLUGGY_ITEM_IDS`; leitura sob demanda (abertura e botão); transações por `GET /v2/transactions` (cursor), com plano B documentado em §11.3 | Trial da aplicação com conectores diretos (expira); widget no frontend (exporia token ao navegador e exige fluxo de consentimento); webhooks (app local não tem URL pública) | Plano gratuito escolhido pelo usuário; o Meu Pluggy já mantém a conexão e atualiza a cada 24 h; o app só lê | 2026-11-12 |
+| ADR-17 | Integração pelo caminho **Meu Pluggy** (gratuito, uso pessoal): sem widget Pluggy Connect, sem criar/atualizar itens, sem webhooks; `itemId` em `PLUGGY_ITEM_IDS`; leitura sob demanda (abertura e botão); transações por `GET /v2/transactions` (cursor). **Sem plano B** (revisto em 2026-11-13, T-037): o `GET /transactions` antigo está descontinuado e sai do ar em 2026-12-31 (§11.3) | Trial da aplicação com conectores diretos (expira); widget no frontend (exporia token ao navegador e exige fluxo de consentimento); webhooks (app local não tem URL pública) | Plano gratuito escolhido pelo usuário; o Meu Pluggy já mantém a conexão e atualiza a cada 24 h; o app só lê | 2026-11-12 |
 | ADR-18 | **Livro-razão** de importações em aba própria (`Importacoes`) e catálogo de cartões (`Cartoes`); `Lancamentos` sem colunas novas. Id do lançamento importado **determinístico**: `uuid5(NAMESPACE_PLUGGY, "pluggy:<cartao_id>:<transacao_id>").hex` | Colunas `pluggy_*` em `Lancamentos`; id aleatório | O livro-razão guarda o que a importação precisa (vínculo, valores lidos para RN-21, excluídos de RN-22) sem poluir a aba que o usuário edita; o id determinístico permite recuperar uma falha entre a escrita dos lançamentos e a do livro-razão sem duplicar (`03` §4.4) | 2026-11-12 |
 | ADR-19 | Data da transação convertida com **fuso fixo UTC−3** (`datetime.timezone(timedelta(hours=-3))`) | `zoneinfo("America/Sao_Paulo")` | O Brasil não tem horário de verão desde 2019; no Windows o `zoneinfo` exige o pacote `tzdata` (base IANA ausente), uma dependência a mais sem ganho | 2026-11-12 |
 
@@ -300,7 +300,7 @@ Novas decisões: acrescente uma linha com o próximo ID. Decisões substituídas
 | Vazamento da chave `credentials.json` (ex.: commit acidental). | Alto | `.gitignore` é a 1ª tarefa (T-001); `.claude/settings.json` nega `Read`/`Edit`/`Write` sobre o arquivo e também os leitores de terminal mais comuns (`cat`, `head`, `tail`, `less`, `more`, `strings`, comandos PowerShell que o citem) — defesa em profundidade, não hermética, pois qualquer interpretador leria o arquivo por outro caminho; a garantia real é o `.gitignore` + regra 1 do `CLAUDE.md`. Se vazar, revogar a chave no Google Cloud e gerar outra. |
 | Edição manual na planilha quebra formato. | Médio | Linhas inválidas ignoradas e contadas (CA-16.3); localizar linha sempre por `id`, nunca por posição guardada. |
 | Cota da API (429). | Baixo | Cache + lote + backoff (§5.5). |
-| `GET /v2/transactions` não atender itens Meu Pluggy (a página do Meu Pluggy cita o `GET /transactions` antigo). | Médio | T-037 verifica contra o item real antes do resto; plano B de §11.3 já especificado. |
+| `GET /v2/transactions` não atender itens Meu Pluggy (a página do Meu Pluggy cita o `GET /transactions` antigo). | Alto | T-037 verifica contra o item real antes do resto. **Não há plano B:** o endpoint antigo sai do ar em 2026-12-31 (§11.3). Se o v2 não atender, a T-037 para com `BLOQUEIO` e a saída é decidida com o usuário. |
 | Autorização anual do Meu Pluggy vence; leituras voltam **vazias** com o item ainda `UPDATED`. | Alto (removeria importados) | Conexão vencida é pulada; cartão sem nenhuma transação na janela não remove nada (RN-24); aviso 30 dias antes (CA-20.1). |
 | Banco reapresenta transações com **id novo** (delete + create na Pluggy). | Médio | Reconhecimento por `providerId` e pela chave de §11.4 antes de tratar como nova (`03` §4.4); importado não editado é atualizado, não duplicado. |
 | Renovar a autorização pode trocar o `itemId` (e o id das contas). | Médio | Usuário atualiza `PLUGGY_ITEM_IDS`; cartão reconhecido por banco + 4 últimos dígitos e re-chaveado no livro-razão (`03` §4.4). |
@@ -340,10 +340,10 @@ Base `https://api.pluggy.ai`, JSON, timeout de 30 s, cabeçalho `X-API-KEY` em t
 |---|---|---|
 | `POST /auth` `{clientId, clientSecret}` → `{apiKey}` | Autenticar | `apiKey` vale 2 h: guardada **só em memória** e renovada com 1 h 50 min de idade ou após um `401` (uma vez por chamada). |
 | `GET /items/{id}` | Situação da conexão | Usa `status`, `executionStatus`, `lastUpdatedAt`, `consentExpiresAt`, `connector.name`. |
-| `GET /accounts?itemId=<id>&type=CREDIT` | Cartões da conexão | Mantém só `subtype = CREDIT_CARD`; usa `id`, `name`, `number` (4 últimos dígitos). |
-| `GET /v2/transactions?accountId=<id>&dateFrom=<AAAA-MM-DD>` | Transações do cartão | Paginação por cursor: repetir com `next` até vir `null` (até 500 por página). **Sem `dateTo`** (parcelas futuras entram — RN-23). |
+| `GET /accounts?itemId=<id>&type=CREDIT` | Cartões da conexão | Mantém só `subtype = CREDIT_CARD`; usa `id`, `name`, `number` (4 últimos dígitos). Resposta paginada por página (`page`, `totalPages`): o cliente percorre todas. |
+| `GET /v2/transactions?accountId=<id>&dateFrom=<AAAA-MM-DD>` | Transações do cartão | Paginação por cursor (até 500 por página): o `next` da resposta é a **query string inteira** da página seguinte (`?accountId=…&after=<cursor>`), acrescentada ao caminho como veio — o cursor é opaco, o cliente não o monta nem decodifica —, até vir `null`. `next` repetido ou fora desse formato → `PluggyIndisponivel`. **Sem `dateTo`** (parcelas futuras entram — RN-23). |
 
-**Plano B (ADR-17):** se a verificação de T-037 contra o item real mostrar que `GET /v2/transactions` não atende itens Meu Pluggy, usar `GET /transactions?accountId=<id>&from=<AAAA-MM-DD>&pageSize=500&page=<n>` iterando `page` de 1 a `totalPages`. O cliente expõe a mesma função (`listar_transacoes(conta_id, desde)`) nos dois casos; a escolha fica registrada no Log de `05` e em §10.
+**Sem plano B (decisão do usuário em 2026-11-13, T-037):** a versão anterior desta spec previa cair para o `GET /transactions` antigo se o v2 não atendesse itens Meu Pluggy. A documentação da Pluggy marca esse endpoint como descontinuado, disponível só até **2026-12-31** — não vale implementá-lo. O cliente usa apenas `GET /v2/transactions`; o resultado da verificação contra o item real fica no Log de `05`.
 
 ### 11.4 Mapeamento (RN-17, RN-18)
 
@@ -376,12 +376,12 @@ Base `https://api.pluggy.ai`, JSON, timeout de 30 s, cabeçalho `X-API-KEY` em t
 | `status = UPDATING` ou `WAITING_USER_INPUT` | `ATUALIZANDO` | "Atualização em andamento na Pluggy." | sim |
 | `status = UPDATED` | `OK` (ou `PARCIAL` se `executionStatus = PARTIAL_SUCCESS`) | "Atualizada" / "Atualizada parcialmente" | sim |
 
-`aviso_validade = true` quando `consentExpiresAt` está a 30 dias ou menos (CA-20.1).
+`aviso_validade = true` quando `consentExpiresAt` está a 30 dias ou menos (CA-20.1), inclusive quando já venceu. Um `status` que a tabela não prevê é tratado como `DESATUALIZADA` (importa com os dados que a Pluggy já tem) e registrado em `WARNING` (T-037).
 
 ### 11.5 Cotas e tentativas
 
 - Pluggy: 360 req/min por IP em `/auth`, `/accounts` e `/transactions`. Uma importação faz `1 + 2 × conexões + páginas` chamadas — muito abaixo.
-- Tentativas: `429`, `5xx`, timeout e erro de rede → até **4** tentativas, espera `min(RateLimit-Reset (se vier), 2^n + aleatório(0–1 s), 16 s)`. `401` em chamada de dados → renova a `apiKey` uma vez e repete. Demais `4xx` → erro imediato.
+- Tentativas: `429`, `5xx`, timeout e erro de rede → até **4** tentativas, espera `min(RateLimit-Reset (se vier), 2^n + aleatório(0–1 s), 16 s)`. `401` em chamada de dados → renova a `apiKey` uma vez e repete. Demais `4xx` → erro imediato (`PluggyIndisponivel`, sem nova tentativa; status e caminho só no log). Um segundo `401` depois de renovar a `apiKey` também.
 - Planilha: a importação inteira faz **no máximo 7 chamadas de escrita** (`03` §4.4), usando `atualizar_varios` (atualização em lote, uma chamada).
 
 ### 11.6 Erros
@@ -418,3 +418,4 @@ Base `https://api.pluggy.ai`, JSON, timeout de 30 s, cabeçalho `X-API-KEY` em t
 | 2026-10-02 | 1.13 | §8: a suíte de integração também mede desempenho com 5.000 lançamentos (`test_desempenho.py`, T-032). Nenhuma dependência nova. |
 | 2026-10-02 | 1.14 | §8: suíte de integração completa pelo app real, `SPREADSHEET_ID_TESTE` também do `backend/.env`, trava contra a planilha do app e limpeza das linhas marcadas (T-034; F-15 Q5, Q6). Nenhuma dependência nova (`pydantic-settings` já usado). |
 | 2026-11-12 | 1.15 | Integração com o Meu Pluggy (`/mudanca-de-requisito`, F-16): §1 e §1.1 — `httpx` vira dependência de produção (ADR-16); §2, §3 (logs), §6 (variáveis `PLUGGY_*`), §8 (marcador `pluggy`, `PluggyFalso`, `MockTransport`); ADR-16 a ADR-19; riscos; **§11** nova (caminho Meu Pluggy, preparação, chamadas, mapeamento, cotas, erros); §8: guarda do RNF-08 ignora RN *(planejada)*. §9: linhas em branco que partiam a tabela de ADRs removidas. |
+| 2026-11-13 | 1.16 | T-037 (F-16): **plano B removido** de §11.3, ADR-17 e §10 (o `GET /transactions` antigo sai do ar em 2026-12-31; decisão do usuário). §11.3: `next` do v2 é a query string da página seguinte (parâmetro `after`, cursor opaco) e `GET /accounts` é paginado. §11.4: `aviso_validade` também quando vencida; status de item desconhecido → `DESATUALIZADA`. §11.5: demais `4xx` e segundo `401` → `PluggyIndisponivel`. |

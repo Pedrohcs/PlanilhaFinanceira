@@ -97,6 +97,13 @@ def data_em_brasilia(instante: datetime) -> date:
     return instante.astimezone(FUSO_DE_BRASILIA).date()
 
 
+def hora_em_brasilia(instante: datetime) -> datetime:
+    """Data e hora em UTC−3, **sem fuso** e em segundos, como `criado_em` (`03` §6.3)."""
+    if instante.tzinfo is None:
+        raise ValueError("instante sem fuso: informe o fuso (a Pluggy envia UTC)")
+    return instante.astimezone(FUSO_DE_BRASILIA).replace(tzinfo=None, microsecond=0)
+
+
 def agora() -> datetime:
     """Hora local sem fuso, com precisão de segundos (`criado_em`/`atualizado_em`)."""
     return datetime.now().replace(microsecond=0)

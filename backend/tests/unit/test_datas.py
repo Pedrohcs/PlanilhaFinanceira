@@ -11,6 +11,7 @@ from app.domain.datas import (
     data_da_parcela,
     data_em_brasilia,
     dias_no_mes,
+    hora_em_brasilia,
     mes_anterior,
     mes_corrente,
     mes_de,
@@ -172,3 +173,12 @@ def test_data_em_brasilia_aceita_qualquer_fuso__RN_18() -> None:
 def test_data_em_brasilia_recusa_instante_sem_fuso__RN_18() -> None:
     with pytest.raises(ValueError, match="sem fuso"):
         data_em_brasilia(datetime(2026, 11, 12, 1, 30))
+
+
+def test_hora_em_brasilia_sem_fuso_e_em_segundos__RN_18() -> None:
+    """`03` §6.3: `lastUpdatedAt` sai em UTC−3, sem fuso, como `criado_em`."""
+    instante = datetime.fromisoformat("2026-11-13T02:10:59.595Z")
+
+    assert hora_em_brasilia(instante) == datetime(2026, 11, 12, 23, 10, 59)
+    with pytest.raises(ValueError, match="sem fuso"):
+        hora_em_brasilia(datetime(2026, 11, 13, 2, 10))

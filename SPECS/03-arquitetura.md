@@ -3,7 +3,7 @@
 | Campo | Valor |
 |---|---|
 | Documento | `SPECS/03-arquitetura.md` |
-| Versão | 1.37 |
+| Versão | 1.38 |
 | Atualizado em | 2026-11-13 |
 | Status | Aprovado para início |
 | Responde | **Como** o sistema se organiza: componentes, pastas, camadas, modelo de dados na planilha, contrato da API e fluxos |
@@ -81,7 +81,9 @@ PlanilhaFinanceira/
 │   │   │   ├── dinheiro.py        # tipo Dinheiro, divisão em parcelas
 │   │   │   ├── datas.py           # ajustar_dia, somar_meses, data_da_parcela, mes_de,
 │   │   │   │                      # proximo_mes, mes_anterior, meses_entre, mes_corrente,
-│   │   │   │                      # data_em_brasilia (UTC → UTC−3, ADR-19)
+│   │   │   │                      # data_em_brasilia, hora_em_brasilia (UTC → UTC−3, ADR-19)
+│   │   │   ├── pluggy.py          # ConexaoPluggy, CartaoPluggy, TransacaoPluggy: o que o cliente
+│   │   │   │                      # da Pluggy entrega à importação (F-16)
 │   │   │   └── textos.py          # normalizar_descricao (RN-19), chave sem acento/caixa (F-16)
 │   │   ├── services/              # categoria_service.py (T-013), lancamento_service.py (T-015),
 │   │   │                          # parcelamento_service.py (T-026), resumo_service.py (T-021),
@@ -183,7 +185,7 @@ flowchart TB
 | `infra` | `domain`, `gspread`, `google-auth`, `httpx` | `services`, `api` |
 | `api` | `domain`, `services`, `repositories.base`, `api.deps` | `gspread`, `httpx`, `infra` (exceto em `deps.py`/`main.py`) |
 
-`services` também não importa `httpx`: a importação recebe a Pluggy pelo Protocol `FontePluggy` (definido em `services/importacao_service.py`, implementado por `infra/pluggy_client.py` e, nos testes, por `tests/pluggy_falso.py`).
+`services` também não importa `httpx`: a importação recebe a Pluggy pelo Protocol `FontePluggy` (definido em `services/importacao_service.py`, implementado por `infra/pluggy_client.py` e, nos testes, por `tests/pluggy_falso.py`). Como `infra` e `services` não se importam, os tipos trocados entre os dois (`ConexaoPluggy`, `CartaoPluggy`, `TransacaoPluggy`) ficam em `domain/pluggy.py`; o cliente recebe Client ID e Client Secret como parâmetros simples, sem conhecer `Settings` (T-037).
 
 Somente `api/deps.py` e `main.py` conhecem as implementações concretas (composição).
 
@@ -743,4 +745,5 @@ Quando o **backend não responde** (status 0, ou 502/504 sem o envelope de §6.2
 | 2026-10-02 | 1.35 | `POST /api/sistema/recarregar` implementado (§6.1 sem mudança de contrato). §3: router `sistema`, cache em `deps.py`, mensagens pt-BR em `erros.py`, `sistema.api` e `aviso-linhas-ignoradas`; §4.5: `app.state.cache`; §6.2: `detalhes[].mensagem` do Pydantic em pt-BR; §8.2: "Recarregar dados" incrementa `versao` (T-032). |
 | 2026-11-12 | 1.36 | Integração com o Meu Pluggy (`/mudanca-de-requisito`, F-16): §1 (diagrama e princípios); §3 (pastas novas no backend e no frontend); §4.2 (`httpx` só em `infra`; Protocol `FontePluggy`); §4.3 (`atualizar_varios` e 2 repositórios novos); §4.4 (`importacao_service`, algoritmo, categorias reservadas, `vinculo` e filtro na listagem); §4.5 (migração e Pluggy no lifespan); §5 (parcela importada, reservadas, versão 2 e migração, abas `Cartoes` e `Importacoes`, enums); §6.1–6.3 (3 endpoints, filtro `cartao`, códigos 409/502, esquemas); §7.2–7.3 (abertura e busca); §8.1–8.4 (rota `/cartoes`, botão, stores, erros `PLUGGY_*`). |
 | 2026-11-13 | 1.37 | T-036 (F-16), sem mudança de contrato: schema versão 2 implementado. §4.5 e §5.4: `versao_schema` gravada por último na migração; planilha com dados e sem a chave conta como versão 1; na versão 2 a reservada apagada à mão não é recriada. §5.2: id reservado com o tipo errado → `SCHEMA_PLANILHA_INVALIDO`. |
+| 2026-11-13 | 1.38 | T-037 (F-16), sem mudança de contrato: §3 — `domain/pluggy.py` e `datas.hora_em_brasilia`; §4.2 — tipos trocados com a Pluggy no domínio e cliente sem `Settings`. |
 | 2026-09-29 | 1.1 | Frontend em Angular 22 (zoneless); pasta `shared/grafico/` com diretiva Chart.js própria (§3, §8.2.1). |

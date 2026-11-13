@@ -7,11 +7,13 @@ e a limpeza das linhas que os testes criam.
 
 import os
 from collections.abc import Iterable, Mapping
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 from uuid import uuid4
 
 from gspread.utils import ValueRenderOption
+from pydantic import SecretStr
 from pydantic_settings import BaseSettings, PydanticBaseSettingsSource, SettingsConfigDict
 
 from app.infra.schema_planilha import ABA_CATEGORIAS, ABA_LANCAMENTOS, ABA_RECORRENCIAS
@@ -25,6 +27,18 @@ ARQUIVO_ENV = PASTA_BACKEND / ".env"
 # carregado de novo com outro nome e já veria os falsos).
 SPREADSHEET_ID_DO_AMBIENTE = os.environ.get("SPREADSHEET_ID")
 CREDENCIAL_DO_AMBIENTE = os.environ.get("GOOGLE_CREDENTIALS_PATH")
+
+# O `conftest` raiz zera estas variáveis para a suíte padrão nunca ligar a
+# integração com a Pluggy; o que havia no terminal fica aqui, só para o teste de
+# contrato (`pytest -m pluggy`). O segredo nunca é impresso nem comparado em teste.
+VARIAVEIS_PLUGGY = (
+    "PLUGGY_CLIENT_ID",
+    "PLUGGY_CLIENT_SECRET",
+    "PLUGGY_ITEM_IDS",
+    "PLUGGY_DATA_INICIAL",
+    "PLUGGY_ITEM_ID_TESTE",
+)
+PLUGGY_DO_AMBIENTE = {variavel: os.environ.get(variavel) for variavel in VARIAVEIS_PLUGGY}
 
 # Tudo o que um teste de integração grava começa com uma destas marcas.
 MARCA = "teste-integracao-"
@@ -64,6 +78,9 @@ class ArquivoEnv(BaseSettings):
 
     spreadsheet_id: str | None = None
     spreadsheet_id_teste: str | None = None
+    pluggy_client_id: str | None = None
+    pluggy_client_secret: SecretStr | None = None
+    pluggy_item_id_teste: str | None = None
 
     @classmethod
     def settings_customise_sources(
@@ -86,6 +103,33 @@ def ler_planilha_teste(ambiente: Mapping[str, str], arquivo_env: Path = ARQUIVO_
     return _limpo(ambiente.get(VARIAVEL_PLANILHA_TESTE)) or _limpo(
         ArquivoEnv(_env_file=arquivo_env).spreadsheet_id_teste  # type: ignore[call-arg]
     )
+
+
+@dataclass(frozen=True)
+class PluggyDeContrato:
+    """O que o teste de contrato precisa: credenciais da aplicação e o item Sandbox."""
+
+    client_id: str
+    client_secret: SecretStr
+    item_id: str
+
+
+def ler_pluggy_de_contrato(
+    do_terminal: Mapping[str, str | None] = PLUGGY_DO_AMBIENTE, arquivo_env: Path = ARQUIVO_ENV
+) -> PluggyDeContrato | None:
+    """Credenciais e item Sandbox do terminal ou, sem ele, do `.env`; `None` se faltar algo."""
+    arquivo = ArquivoEnv(_env_file=arquivo_env)  # type: ignore[call-arg]
+    segredo_do_arquivo = (
+        arquivo.pluggy_client_secret.get_secret_value() if arquivo.pluggy_client_secret else None
+    )
+    client_id = _limpo(do_terminal.get("PLUGGY_CLIENT_ID")) or _limpo(arquivo.pluggy_client_id)
+    segredo = _limpo(do_terminal.get("PLUGGY_CLIENT_SECRET")) or _limpo(segredo_do_arquivo)
+    item_id = _limpo(do_terminal.get("PLUGGY_ITEM_ID_TESTE")) or _limpo(
+        arquivo.pluggy_item_id_teste
+    )
+    if not (client_id and segredo and item_id):
+        return None
+    return PluggyDeContrato(client_id, SecretStr(segredo), item_id)
 
 
 def caminho_da_credencial() -> Path:

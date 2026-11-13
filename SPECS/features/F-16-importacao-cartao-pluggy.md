@@ -164,11 +164,11 @@ Campos do lançamento novo: `id` determinístico (ADR-18); `data` = `date` em UT
 
 **Refinados — cliente da Pluggy (T-037)**
 
-- [ ] **CA-F16.8** Dado duas chamadas de dados em menos de 1 h 50 min, então só um `POST /auth`; após um `401` numa chamada de dados, uma nova autenticação e uma nova tentativa.
-- [ ] **CA-F16.9** Dado `POST /auth` → 401, então `PluggyCredenciaisInvalidas` → 502 `PLUGGY_CREDENCIAIS_INVALIDAS`; dado 429 nas 4 tentativas, `PluggyIndisponivel` → 502 `PLUGGY_INDISPONIVEL`.
-- [ ] **CA-F16.10** Dado 3 páginas de transações (cursor `next`), então `listar_transacoes` devolve todas, na ordem, e para no `next: null`.
-- [ ] **CA-F16.11** Dado `GET /items/{id}` → 404, então a conexão sai `NAO_ENCONTRADA` sem exceção; `consentExpiresAt` ontem → `AUTORIZACAO_VENCIDA`; daqui a 30 dias → `aviso_validade: true`; 31 dias → `false`.
-- [ ] **CA-F16.12** Nenhum log, mensagem de erro ou resposta da API contém o `PLUGGY_CLIENT_SECRET` nem a `apiKey` (teste captura os logs).
+- [x] **CA-F16.8** Dado duas chamadas de dados em menos de 1 h 50 min, então só um `POST /auth`; após um `401` numa chamada de dados, uma nova autenticação e uma nova tentativa.
+- [x] **CA-F16.9** Dado `POST /auth` → 401, então `PluggyCredenciaisInvalidas` → 502 `PLUGGY_CREDENCIAIS_INVALIDAS`; dado 429 nas 4 tentativas, `PluggyIndisponivel` → 502 `PLUGGY_INDISPONIVEL`.
+- [x] **CA-F16.10** Dado 3 páginas de transações (cursor `next`), então `listar_transacoes` devolve todas, na ordem, e para no `next: null`.
+- [x] **CA-F16.11** Dado `GET /items/{id}` → 404, então a conexão sai `NAO_ENCONTRADA` sem exceção; `consentExpiresAt` ontem → `AUTORIZACAO_VENCIDA`; daqui a 30 dias → `aviso_validade: true`; 31 dias → `false`.
+- [x] **CA-F16.12** Nenhum log, mensagem de erro ou resposta da API contém o `PLUGGY_CLIENT_SECRET` nem a `apiKey` (teste captura os logs).
 
 **Refinados — importação (T-038)**
 
@@ -273,7 +273,7 @@ Esquemas completos em `03` §6.3.
 - `Categorias`: `a-classificar`, `a-classificar-receita` (reservadas).
 - `Cartoes` (nova, §5.7) e `Importacoes` (nova, §5.8).
 
-**Pluggy** (`02` §11.3): `POST /auth`, `GET /items/{id}`, `GET /accounts?itemId&type=CREDIT`, `GET /v2/transactions?accountId&dateFrom` (plano B: `GET /transactions`).
+**Pluggy** (`02` §11.3): `POST /auth`, `GET /items/{id}`, `GET /accounts?itemId&type=CREDIT`, `GET /v2/transactions?accountId&dateFrom` (sem plano B — ver Revisões).
 
 ---
 
@@ -342,7 +342,7 @@ Esquemas completos em `03` §6.3.
 | Tarefa | Escopo nesta feature | Arquivos principais |
 |---|---|---|
 | T-036 | Schema v2, migração, reservadas, modelos/enums, parcela importada, `atualizar_varios`, repositórios `Cartoes`/`Importacoes`, RN-24 nas categorias, `data_em_brasilia`, `normalizar_descricao`; suíte de integração para 6 abas | `infra/schema_planilha.py`, `infra/bootstrap.py`, `domain/modelos.py`, `domain/enums.py`, `domain/datas.py`, `domain/textos.py`, `repositories/base.py`, `repositories/planilha/`, `repositories/memoria/`, `services/categoria_service.py`, `api/schemas.py`, `tests/...` |
-| T-037 | `Settings` `PLUGGY_*`, `.env.example`, `requirements.txt` (`httpx`), `pluggy_client.py` + `FontePluggy`, erros de domínio, marcador `pluggy`, teste de contrato; verificação v2 × plano B no item real (Log) | `config.py`, `infra/pluggy_client.py`, `domain/erros.py`, `pyproject.toml`, `tests/unit/test_pluggy_client.py`, `tests/integracao/test_pluggy_contrato.py` |
+| T-037 | `Settings` `PLUGGY_*`, `.env.example`, `requirements.txt` (`httpx`), `pluggy_client.py` + `FontePluggy`, erros de domínio, marcador `pluggy`, teste de contrato; verificação do v2 no item real (Log) | `config.py`, `infra/pluggy_client.py`, `domain/erros.py`, `pyproject.toml`, `tests/unit/test_pluggy_client.py`, `tests/integracao/test_pluggy_contrato.py` |
 | T-038 | `importacao_service` completo + `pluggy_falso.py` + testes de RN-17..24; tira a marca *(planejada — F-16)* de RN-17..24 em `01` §4 | `services/importacao_service.py`, `tests/pluggy_falso.py`, `tests/unit/test_importacao_service.py` |
 | T-039 | Routers `cartoes`/`importacoes`, composição em `deps.py`/`main.py`, erros 409/502, `vinculo` e filtro `cartao` | `api/routers/cartoes.py`, `api/routers/importacoes.py`, `api/deps.py`, `api/erros.py`, `api/schemas.py`, `services/lancamento_service.py`, `main.py`, `tests/api/...` |
 | T-040 | APIs/stores, shell, abertura, avisos, interceptor, página `/cartoes` | `core/api/`, `core/state/`, `core/avisos/avisos.ts`, `core/interceptors/erro.interceptor.ts`, `app.ts`, `app.routes.ts`, `features/cartoes/` |
@@ -370,6 +370,9 @@ Esquemas completos em `03` §6.3.
 | Id reservado ocupado por categoria do **outro tipo** → `SCHEMA_PLANILHA_INVALIDO`, sem escrever nada; do mesmo tipo, a categoria existente vira a reservada como está (T-036) | A importação lançaria gastos em categoria de receita; corrigir exige mexer numa linha do usuário | Não (`03` §5.2) |
 | `versao_schema = 2` é a última escrita da migração; dados sem a chave contam como versão 1; na versão 2 a reservada apagada à mão não é recriada (T-036) | Migração retomável sem duplicar; a spec só previa a migração a partir da versão 1 | Não (`03` §5.4) |
 | `status_pluggy` como `Literal["PENDING", "POSTED"]` no modelo, sem enum próprio (T-036) | `03` §5.5 não lista enum para ele | Não |
+| **Sem plano B** para as transações: só `GET /v2/transactions` (T-037) | O `GET /transactions` antigo sai do ar em 2026-12-31 (documentação da Pluggy); decisão do usuário em 2026-11-13 | ADR-17 revisto |
+| Tipos trocados com a Pluggy em `domain/pluggy.py`; `FontePluggy` em `services/importacao_service.py`; cliente recebe id e segredo como parâmetros (T-037) | `infra` e `services` não se importam (`03` §4.2) | Não |
+| Suíte padrão sempre com a Pluggy **desligada**: o `conftest` zera as `PLUGGY_*`; fixtures da pasta de integração só valem para testes `integracao` (T-037) | Nenhum teste padrão acessa a Pluggy nem carrega o segredo; `-m pluggy` não abre a planilha de teste | Não (`02` §8) |
 | RN-17..24 entram em `01` marcadas *(planejada — F-16)*; o guarda do RNF-08 ignora RN planejadas até T-038 | Sem isso o `pytest` ficaria vermelho até T-038, inclusive para fechar T-035 (aprovado pelo usuário) | Não (`02` §8) |
 
 ---
@@ -406,5 +409,6 @@ Nenhuma. Decisões do usuário em 2026-11-12:
 
 | Data | Alteração |
 |---|---|
+| 2026-11-13 | **T-037 (em andamento):** cliente da Pluggy, configuração e erros prontos; CA-F16.8 a CA-F16.12 atendidos com `httpx.MockTransport`; de CA-F16.1/.2 está pronta a parte de `Settings` (os endpoints são da T-039). **Plano B removido** (§6, §9, `02` 1.16). Pendente, com `BLOQUEIO`: teste de contrato no Sandbox e verificação do v2 contra o item real — aguardam as `PLUGGY_*` no `backend/.env`. |
 | 2026-11-13 | **T-036 concluída:** CA-F16.3 a CA-F16.7 atendidos (backend); CA-08.3 e CA-11.5 com a parte do modelo e da API prontas (a tela é da T-041). Três decisões registradas em §10 e em `03` 1.37 (id reservado com o tipo errado; versão gravada por último e planilha sem a chave; `status_pluggy`). Os repositórios de `Cartoes` e `Importacoes` existem, mas ainda não entram em `Repositorios` (`api/deps.py`): a composição é da T-039. |
 | 2026-11-12 | Criação via `/mudanca-de-requisito` (integração Meu Pluggy). Q1–Q19 respondidas e análise de impacto aprovada → status **Aprovada**. `01` → 1.4, `02` → 1.15, `03` → 1.36, `04` → 1.1. |

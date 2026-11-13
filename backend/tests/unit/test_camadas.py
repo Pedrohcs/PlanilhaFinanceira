@@ -98,3 +98,15 @@ def test_services_dependem_so_de_domain_e_repositories_base__T_013() -> None:
             or (mod.startswith("app.repositories") and mod != "app.repositories.base")
         }
         assert not proibidos, f"{arquivo.name} importa {proibidos}"
+
+
+def test_httpx_so_no_cliente_da_pluggy__F_16() -> None:
+    """`SPECS/03` §4.2: só `infra/pluggy_client.py` fala HTTP com a Pluggy."""
+    arquivos = sorted(RAIZ_APP.rglob("*.py"))
+    assert RAIZ_APP / "infra" / "pluggy_client.py" in arquivos
+
+    for arquivo in arquivos:
+        if arquivo == RAIZ_APP / "infra" / "pluggy_client.py":
+            continue
+        proibidos = {mod for mod in imports_de(arquivo) if mod.split(".")[0] == "httpx"}
+        assert not proibidos, f"{arquivo.relative_to(RAIZ_APP)} importa {proibidos}"

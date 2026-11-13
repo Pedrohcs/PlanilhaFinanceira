@@ -163,3 +163,41 @@ class CategoriaTipoIncompativel(ErroDominio):
         categoria = "de gasto" if tipo_da_categoria == "GASTO" else "de receita"
         lancamento = "num gasto" if tipo_do_lancamento == "GASTO" else "numa receita"
         return cls(f'A categoria "{nome}" é {categoria} e não pode ser usada {lancamento}.')
+
+
+class ErroPluggy(ErroDominio):
+    """Falha na integração com o Meu Pluggy (`SPECS/02` §11.6).
+
+    Nunca é `ErroPlanilha`: um problema na Pluggy não pode parecer queda da
+    planilha nem acionar o banner (RNF-09).
+    """
+
+    codigo = "PLUGGY_INDISPONIVEL"
+    mensagem = "Meu Pluggy indisponível no momento. Tente novamente mais tarde."
+
+
+class PluggyNaoConfigurada(ErroPluggy):
+    codigo = "PLUGGY_NAO_CONFIGURADA"
+    mensagem = (
+        "Integração com o Meu Pluggy não configurada. Preencha PLUGGY_CLIENT_ID, "
+        "PLUGGY_CLIENT_SECRET e PLUGGY_ITEM_IDS no backend/.env."
+    )
+
+
+class PluggyCredenciaisInvalidas(ErroPluggy):
+    codigo = "PLUGGY_CREDENCIAIS_INVALIDAS"
+    mensagem = "Client ID ou Client Secret da Pluggy inválidos. Confira o backend/.env."
+
+
+class PluggyIndisponivel(ErroPluggy):
+    """Rede, timeout, `429`/`5xx` após as tentativas ou resposta fora do formato esperado."""
+
+    codigo = "PLUGGY_INDISPONIVEL"
+    mensagem = "Meu Pluggy indisponível no momento. Tente novamente mais tarde."
+
+
+class ImportacaoEmAndamento(ErroDominio):
+    """Só uma importação por vez no processo; a segunda não espera (F-16 §3.7.3)."""
+
+    codigo = "IMPORTACAO_EM_ANDAMENTO"
+    mensagem = "Já existe uma busca nos cartões em andamento."

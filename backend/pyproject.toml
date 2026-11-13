@@ -13,8 +13,9 @@ select = ["E", "F", "I", "UP", "B", "SIM"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
-addopts = "-m 'not integracao'"
+addopts = "-m 'not integracao and not pluggy'"
 markers = [
     "integracao: exige a planilha real de teste (SPREADSHEET_ID_TESTE); rode com -m integracao",
+    "pluggy: contrato com a API da Pluggy (item Sandbox, PLUGGY_ITEM_ID_TESTE); rode com -m pluggy",
 ]
 filterwarnings = ["error::pytest.PytestUnknownMarkWarning"]
